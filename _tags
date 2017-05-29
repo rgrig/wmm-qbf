@@ -1,0 +1,6 @@
+<src>: include
+true: use_menhir
+<src/*.mly>: explain
+true: debug
+#true: profile
+true: annot

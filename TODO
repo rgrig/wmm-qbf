@@ -1,0 +1,4 @@
+. parse
+. ignore valid, generate qcir
+
+:load_local_vimrc
