@@ -19,17 +19,18 @@
     let f r = function
       | Conflicts xs -> { r with Wmm.conflicts = xs @ r.Wmm.conflicts }
       | Events n -> { r with Wmm.events = max n r.Wmm.events }
-      | Execution xs -> { r with Wmm.executions = xs :: r.Wmm.executions }
+      | Execution xs -> { r with Wmm.execution = xs @ r.Wmm.execution }
       | Justifies xs -> { r with Wmm.justifies = xs @ r.Wmm.justifies }
       | Order xss -> { r with Wmm.order = flatten_order xss @ r.Wmm.order } in
     Wmm.check @@ List.fold_left f Wmm.empty xs
 %}
 
 %token <int> INT
+%token BADKEYWORD
 %token CONFLICTS
 %token EOF
 %token EVENTS
-%token EXECUTIONS
+%token EXECUTION
 %token JUSTIFIES
 %token NL
 %token ORDER
@@ -54,8 +55,8 @@ events: v=delimited(EVENTS, INT, NL*) { v };
 justifies: v=nl_list(JUSTIFIES,pair(INT,INT),NL*) { v };
 conflicts: v=nl_list(CONFLICTS,pair(INT,INT),NL*) { v };
 order: v=nl_list(ORDER,nonempty_list(INT),NL+) { v };
-execution: v=nl_list(EXECUTIONS,INT,NL*) { v };
+execution: v=nl_list(EXECUTION,INT,NL*) { v };
 
-nl_list(a,element,b): v=preceded(a,list(terminated(element,b))) { v };
+nl_list(a,element,b): v=preceded(pair(a,NL*),list(terminated(element,b))) { v };
 
 %%

@@ -2,15 +2,16 @@
   open Scanf
   open WmmParser
 
-  let keyword =
+  let keyword x =
     let table = Hashtbl.create 53 in
     List.iter (fun (k, v) -> Hashtbl.add table k v)
       [ "conflicts", CONFLICTS
       ; "events", EVENTS
-      ; "executions", EXECUTIONS
+      ; "execution", EXECUTION
       ; "justifies", JUSTIFIES
       ; "order", ORDER ];
-    Hashtbl.find table
+    try Hashtbl.find table x
+    with Not_found -> BADKEYWORD
 }
 
 let id = ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*

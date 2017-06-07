@@ -7,14 +7,14 @@ type t =
   ; justifies : relation
   ; conflicts : relation
   ; order : relation
-  ; executions : set list }
+  ; execution : set }
 
 let empty =
   { events = 0
   ; justifies = []
   ; conflicts = []
   ; order = []
-  ; executions = [] }
+  ; execution = [] }
 
 exception Bad
 
@@ -26,5 +26,5 @@ let check r =
   List.iter cxx r.justifies;
   List.iter cxx r.conflicts;
   List.iter cxx r.order;
-  List.iter (List.iter cx) r.executions;
+  List.iter cx r.execution;
   r
