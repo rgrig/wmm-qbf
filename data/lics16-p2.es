@@ -12,4 +12,3 @@ order
   1 4 8
   1 5 9
 execution
-  1 2 6 4 8

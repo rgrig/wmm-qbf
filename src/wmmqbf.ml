@@ -1,4 +1,4 @@
-open Format
+open Printf
 open WmmParser
 
 exception Parsing_failed of string
@@ -15,7 +15,7 @@ let parse fn =
         (match Lexing.lexeme_start_p lexbuf with
         { Lexing.pos_lnum=line; Lexing.pos_bol=c0;
           Lexing.pos_fname=_; Lexing.pos_cnum=c1} ->
-            let msg = sprintf "@[%s:%d:%d: parse error@]" fn line (c1-c0+1) in
+            let msg = sprintf "%s:%d:%d: parse error" fn line (c1-c0+1) in
             raise (Parsing_failed msg))
 
 let mkV prefix bounds xs =
@@ -48,8 +48,16 @@ let do_one fn =
   let e = mkV2 "e" (1,n) (1,n) in
   let f = mkV3 "f" (1,n) (0,n) (1,n) in
   let g = mkV3 "g" (1,n) (0,n) (1,n) in
-  let justifies _ _ =
-    Qbf.mk_and [] in (* TODO *)
+  let justifies =
+    let js = Hashtbl.create (List.length wmm.Wmm.writes) in
+    let init w = Hashtbl.replace js w [] in
+    let add (x, y) = Hashtbl.replace js y (x :: Hashtbl.find js y) in
+    List.iter init wmm.Wmm.writes;
+    List.iter add wmm.Wmm.justifies;
+    (fun write read ->
+      let one y xs qs =
+        Qbf.mk_implies (write y) (Qbf.mk_or @@ List.map write xs) :: qs in
+      Qbf.mk_and @@ Hashtbl.fold one js []) in
   let implies x y = Qbf.mk_and @@
     List.map (fun i -> Qbf.mk_implies (x i) (y i)) (range 1 n) in
   let equal x y = Qbf.mk_and [implies x y; implies y x] in
@@ -61,14 +69,56 @@ let do_one fn =
     :: equal (x n) omega
     :: List.map (small_step x) (range 1 n) in
   let step k = Qbf.mk_and @@
-    [ equal (c (k-1)) (f k 0)
-    ; equal (f k n) (d k)
+    [ equal (c (k-1)) (c k)
     ; Qbf.mk_implies
       (before (c (k - 1)) (f k) (d k))
-      (before (d k) (g k) (e k)) ] (* TODO: add  Ek -> Ck *)
+      (Qbf.mk_and
+        [ before (d k) (g k) (e k)
+        ; justifies (e k) (c k) ]) ]
   in
-  let q = Qbf.mk_and @@ List.map step (range 1 n) in
+  let valid =
+    let ok_order x =
+      let one (i, j) = Qbf.mk_implies (x j) (x i) in
+      Qbf.mk_and @@ List.map one wmm.Wmm.order in
+    let ok_conflicts x =
+      let one (i, j) = Qbf.mk_not @@ Qbf.mk_and [x i; x j] in
+      Qbf.mk_and @@ List.map one wmm.Wmm.conflicts in
+    (fun x -> Qbf.mk_and [ok_order x; ok_conflicts x]) in
+  let v1 l h x = List.map (fun k -> valid (x k)) (range l h) in
+  let v2 l1 h1 l2 h2 x =
+    List.concat @@ List.map (fun k -> v1 l2 h2 (x k)) (range l1 h1) in
+  let is_set x js =
+    let one j =
+      if List.mem j js
+      then x j
+      else Qbf.mk_not (x j) in
+    Qbf.mk_and @@ List.map one (range 1 n) in
+  let q = Qbf.mk_and @@ List.concat
+    [ [ is_set (c 0) []; is_set (c n) wmm.Wmm.execution ]
+    ; List.map step (range 1 n)
+    ; v1 0 n c
+    ; v1 1 n d
+    ; v1 1 n e
+    ; v2 1 n 0 n f
+    ; v2 1 n 0 n g ]
+  in
   Qbf.pp_t stdout q;
+  (* FIXME HACK *)
+  let d1 l1 h1 x =
+    let one k = List.map (x k) (range 1 n) in
+    List.concat @@ List.map one (range l1 h1) in
+  let d2 l1 h1 l2 h2 x =
+    let one x = List.map x (range 1 n) in
+    let two x = List.concat @@ List.map (fun k -> one (x k)) (range l2 h2) in
+    List.concat @@ List.map (fun k -> two (x k)) (range l1 h1) in
+  let pp_var f = function
+    | Qbf.Var x -> fprintf f "%s" x
+    | _ -> failwith "(ltqsi)" in
+  printf "\n===\n";
+  printf "exists(%a)\n" (Qbf.pp_list_sep "," pp_var) (d1 0 n c);
+  printf "forall(%a)\n" (Qbf.pp_list_sep "," pp_var) (d1 1 n d);
+  printf "exists(%a)\n" (Qbf.pp_list_sep "," pp_var)
+    (List.concat [d1 1 n e; d2 1 n 0 n f; d2 1 n 0 n g]);
   ()
 
 let () =

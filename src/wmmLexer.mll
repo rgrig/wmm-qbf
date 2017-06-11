@@ -9,7 +9,8 @@
       ; "events", EVENTS
       ; "execution", EXECUTION
       ; "justifies", JUSTIFIES
-      ; "order", ORDER ];
+      ; "order", ORDER
+      ; "writes", WRITES ];
     try Hashtbl.find table x
     with Not_found -> BADKEYWORD
 }

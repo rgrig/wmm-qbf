@@ -13,6 +13,8 @@ type t =
 let mk_var v = Var v
 let mk_implies f g = Or [Not f; g]
 let mk_and xs = And xs
+let mk_or xs = Or xs
+let mk_not x = Not x
 
 let rec pp_list_sep sep pp_x f = function
   | [] -> ()
@@ -37,4 +39,5 @@ let pp_t f e =
     | And es -> go_op "and" es
     | Or es -> go_op "or" es
     | _ -> failwith "todo" in
-  go e
+  let o = go e in
+  fprintf f "output(%a)\n" pp_var o
