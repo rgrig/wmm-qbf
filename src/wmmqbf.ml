@@ -43,6 +43,8 @@ let range i k =
 let do_one fn =
   let wmm = parse fn in
   let n = wmm.Wmm.events in
+  let empty_set = mkV1 "Z" (1,n) in
+  let execution_set = mkV1 "E" (1,n) in
   let c = mkV2 "c" (0,n) (1,n) in
   let d = mkV2 "d" (1,n) (1,n) in
   let e = mkV2 "e" (1,n) (1,n) in
@@ -52,33 +54,30 @@ let do_one fn =
     List.map (fun i -> Qbf.mk_implies (x i) (y i)) (range 1 n) in
   let equal x y = Qbf.mk_and [implies x y; implies y x] in
   let justifies =
-    let js = Hashtbl.create (List.length wmm.Wmm.writes) in
+    let js = Hashtbl.create (List.length wmm.Wmm.reads) in
     let init w = Hashtbl.replace js w [] in
     let add (x, y) = Hashtbl.replace js y (x :: Hashtbl.find js y) in
-    List.iter init wmm.Wmm.writes;
+    List.iter init wmm.Wmm.reads;
     List.iter add wmm.Wmm.justifies;
     (fun write read ->
       let one y xs qs =
-        Qbf.mk_implies (write y) (Qbf.mk_or @@ List.map write xs) :: qs in
-      Qbf.mk_or
-        [ Qbf.mk_and @@ Hashtbl.fold one js []
-        ; equal write read (* force it to be reflexive *) ]
-    ) in
-  let small_step x j = Qbf.mk_and
-    [ implies (x (j - 1)) (x j)
-    ; justifies (x (j - 1)) (x j)] in
-  let before alpha x omega = Qbf.mk_and @@
-    equal alpha (x 0)
-    :: equal (x n) omega
-    :: List.map (small_step x) (range 1 n) in
-  let step k = Qbf.mk_and @@
-    [ equal (c (k-1)) (c k)
+        Qbf.mk_implies (read y) (Qbf.mk_or @@ List.map write xs) :: qs in
+      Qbf.mk_and @@ Hashtbl.fold one js []) in
+  let transitive_closure rel x ys z = Qbf.mk_and @@
+    equal x (ys 0)
+    :: Qbf.mk_or (List.map (fun k -> equal (ys k) z) (range 0 n))
+    :: List.map (rel ys) (range 1 n) in
+  let step0 fg k = Qbf.mk_and
+    [ implies (fg (k - 1)) (fg k)
+    ; justifies (fg (k - 1)) (fg k) ] in
+  let step1 c k = Qbf.mk_and
+    [ implies (c (k - 1)) (c k)
     ; Qbf.mk_implies
-      (before (c (k - 1)) (f k) (d k))
-      (Qbf.mk_and
-        [ before (d k) (g k) (e k)
-        ; justifies (e k) (c k) ]) ]
-  in
+        (transitive_closure step0 (c (k - 1)) (f k) (d k))
+        (Qbf.mk_and
+          [ transitive_closure step0 (d k) (g k) (e k)
+          ; justifies (e k) (c k) ])
+    ] in
   let valid =
     let ok_order x =
       let one (i, j) = Qbf.mk_implies (x j) (x i) in
@@ -96,17 +95,21 @@ let do_one fn =
       then x j
       else Qbf.mk_not (x j) in
     Qbf.mk_and @@ List.map one (range 1 n) in
+  let q = Qbf.mk_and
+    [ is_set empty_set []
+    ; is_set execution_set wmm.Wmm.execution
+    ; transitive_closure step1 empty_set c execution_set ] in
   let q = Qbf.mk_and @@ List.concat
-    [ [ is_set (c 0) []; is_set (c n) wmm.Wmm.execution ]
-    ; List.map step (range 1 n)
-    ; v1 0 n c
-    ; v1 1 n d
+    [ [ q ]
     ; v1 1 n e
     ; v2 1 n 0 n f
-    ; v2 1 n 0 n g ]
-  in
+    ; v2 1 n 0 n g ] in
+  let q = Qbf.mk_implies (Qbf.mk_and (v1 1 n d)) q in
+  let q = Qbf.mk_and (q :: v1 0 n c) in
   Qbf.pp_t stdout q;
   (* FIXME HACK *)
+  let d0 x =
+    List.map x (range 1 n) in
   let d1 l1 h1 x =
     let one k = List.map (x k) (range 1 n) in
     List.concat @@ List.map one (range l1 h1) in
@@ -118,7 +121,8 @@ let do_one fn =
     | Qbf.Var x -> fprintf f "%s" x
     | _ -> failwith "(ltqsi)" in
   printf "\n===\n";
-  printf "exists(%a)\n" (Qbf.pp_list_sep "," pp_var) (d1 0 n c);
+  printf "exists(%a)\n" (Qbf.pp_list_sep "," pp_var)
+    (List.concat [d1 0 n c; d0 empty_set; d0 execution_set]);
   printf "forall(%a)\n" (Qbf.pp_list_sep "," pp_var) (d1 1 n d);
   printf "exists(%a)\n" (Qbf.pp_list_sep "," pp_var)
     (List.concat [d1 1 n e; d2 1 n 0 n f; d2 1 n 0 n g]);

@@ -4,7 +4,7 @@ type relation = (event * event) list
 
 type t =
   { events : int
-  ; writes : set (* more properly named "events that need justification" *)
+  ; reads : set (* more properly named "events that need justification" *)
   ; justifies : relation
   ; conflicts : relation
   ; order : relation
@@ -12,7 +12,7 @@ type t =
 
 let empty =
   { events = 0
-  ; writes = []
+  ; reads = []
   ; justifies = []
   ; conflicts = []
   ; order = []
@@ -20,7 +20,7 @@ let empty =
 
 exception Bad_count of int
 exception Bad_event of int
-exception Bad_write of int
+exception Bad_read of int
 
 let check r =
   let cx x =
@@ -32,9 +32,9 @@ let check r =
   List.iter cxx r.conflicts;
   List.iter cxx r.order;
   List.iter cx r.execution;
-  List.iter cx r.writes;
+  List.iter cx r.reads;
   let cj (_, y) =
-    if not (List.mem y r.writes) then
-      raise (Bad_write y) in
+    if not (List.mem y r.reads) then
+      raise (Bad_read y) in
   List.iter cj r.justifies;
   r

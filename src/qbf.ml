@@ -24,7 +24,7 @@ let rec pp_list_sep sep pp_x f = function
 
 let pp_t f e =
   let i = ref 0 in
-  let g () = incr i; (true, sprintf "g%d" !i) in
+  let g () = incr i; (true, sprintf "T%d" !i) in
   let neg (b, x) = (not b, x) in
   let pp_var f (b, x) =
     fprintf f "%s%s" (if b then "" else "-") x in

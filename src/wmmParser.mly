@@ -5,7 +5,7 @@
     | Execution of Wmm.set
     | Justifies of Wmm.relation
     | Order of Wmm.event list list
-    | Writes of Wmm.set
+    | Reads of Wmm.set
 
   let flatten_order xss =
     let rec g ps x = function
@@ -23,7 +23,7 @@
       | Execution xs -> { r with Wmm.execution = xs @ r.Wmm.execution }
       | Justifies xs -> { r with Wmm.justifies = xs @ r.Wmm.justifies }
       | Order xss -> { r with Wmm.order = flatten_order xss @ r.Wmm.order }
-      | Writes xs -> { r with Wmm.writes = xs @ r.Wmm.writes }
+      | Reads xs -> { r with Wmm.reads = xs @ r.Wmm.reads }
     in
     Wmm.check @@ List.fold_left f Wmm.empty xs
 %}
@@ -37,7 +37,7 @@
 %token JUSTIFIES
 %token NL
 %token ORDER
-%token WRITES
+%token READS
 
 %start <Wmm.t> wmm
 
@@ -53,7 +53,7 @@ item:
   | v=conflicts { Conflicts v }
   | v=order { Order v }
   | v=execution { Execution v }
-  | v=writes { Writes v }
+  | v=reads { Reads v }
 ;
 
 events: v=delimited(EVENTS, INT, NL*) { v };
@@ -61,7 +61,7 @@ justifies: v=nl_list(JUSTIFIES,pair(INT,INT),NL*) { v };
 conflicts: v=nl_list(CONFLICTS,pair(INT,INT),NL*) { v };
 order: v=nl_list(ORDER,nonempty_list(INT),NL+) { v };
 execution: v=nl_list(EXECUTION,INT,NL*) { v };
-writes: v=nl_list(WRITES,INT,NL*) { v };
+reads: v=nl_list(READS,INT,NL*) { v };
 
 nl_list(a,element,b): v=preceded(pair(a,NL*),list(terminated(element,b))) { v };
 
