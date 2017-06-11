@@ -48,6 +48,9 @@ let do_one fn =
   let e = mkV2 "e" (1,n) (1,n) in
   let f = mkV3 "f" (1,n) (0,n) (1,n) in
   let g = mkV3 "g" (1,n) (0,n) (1,n) in
+  let implies x y = Qbf.mk_and @@
+    List.map (fun i -> Qbf.mk_implies (x i) (y i)) (range 1 n) in
+  let equal x y = Qbf.mk_and [implies x y; implies y x] in
   let justifies =
     let js = Hashtbl.create (List.length wmm.Wmm.writes) in
     let init w = Hashtbl.replace js w [] in
@@ -57,10 +60,10 @@ let do_one fn =
     (fun write read ->
       let one y xs qs =
         Qbf.mk_implies (write y) (Qbf.mk_or @@ List.map write xs) :: qs in
-      Qbf.mk_and @@ Hashtbl.fold one js []) in
-  let implies x y = Qbf.mk_and @@
-    List.map (fun i -> Qbf.mk_implies (x i) (y i)) (range 1 n) in
-  let equal x y = Qbf.mk_and [implies x y; implies y x] in
+      Qbf.mk_or
+        [ Qbf.mk_and @@ Hashtbl.fold one js []
+        ; equal write read (* force it to be reflexive *) ]
+    ) in
   let small_step x j = Qbf.mk_and
     [ implies (x (j - 1)) (x j)
     ; justifies (x (j - 1)) (x j)] in
