@@ -63,21 +63,6 @@ let do_one fn =
       let one y xs qs =
         Qbf.mk_implies (read y) (Qbf.mk_or @@ List.map write xs) :: qs in
       Qbf.mk_and @@ Hashtbl.fold one js []) in
-  let transitive_closure rel x ys z = Qbf.mk_and @@
-    equal x (ys 0)
-    :: Qbf.mk_or (List.map (fun k -> equal (ys k) z) (range 0 n))
-    :: List.map (rel ys) (range 1 n) in
-  let step0 fg k = Qbf.mk_and
-    [ implies (fg (k - 1)) (fg k)
-    ; justifies (fg (k - 1)) (fg k) ] in
-  let step1 c k = Qbf.mk_and
-    [ implies (c (k - 1)) (c k)
-    ; Qbf.mk_implies
-        (transitive_closure step0 (c (k - 1)) (f k) (d k))
-        (Qbf.mk_and
-          [ transitive_closure step0 (d k) (g k) (e k)
-          ; justifies (e k) (c k) ])
-    ] in
   let valid =
     let ok_order x =
       let one (i, j) = Qbf.mk_implies (x j) (x i) in
@@ -89,6 +74,23 @@ let do_one fn =
   let v1 l h x = List.map (fun k -> valid (x k)) (range l h) in
   let v2 l1 h1 l2 h2 x =
     List.concat @@ List.map (fun k -> v1 l2 h2 (x k)) (range l1 h1) in
+  let transitive_closure rel x ys z = Qbf.mk_and @@
+    equal x (ys 0)
+    :: Qbf.mk_or (List.map (fun k -> equal (ys k) z) (range 0 n))
+    :: List.map (rel ys) (range 1 n) in
+  let step0 fg k = Qbf.mk_and
+    [ implies (fg (k - 1)) (fg k)
+    ; justifies (fg (k - 1)) (fg k) ] in
+  let step1 c k = Qbf.mk_and
+    [ implies (c (k - 1)) (c k)
+    ; Qbf.mk_implies
+        (Qbf.mk_and @@
+          transitive_closure step0 (c (k - 1)) (f k) (d k)
+          :: v1 1 n (f k))
+        (Qbf.mk_and
+          [ transitive_closure step0 (d k) (g k) (e k)
+          ; justifies (e k) (c k) ])
+    ] in
   let is_set x js =
     let one j =
       if List.mem j js
@@ -102,7 +104,6 @@ let do_one fn =
   let q = Qbf.mk_and @@ List.concat
     [ [ q ]
     ; v1 1 n e
-    ; v2 1 n 0 n f
     ; v2 1 n 0 n g ] in
   let q = Qbf.mk_implies (Qbf.mk_and (v1 1 n d)) q in
   let q = Qbf.mk_and (q :: v1 0 n c) in
@@ -125,7 +126,8 @@ let do_one fn =
     (List.concat [d1 0 n c; d0 empty_set; d0 execution_set]);
   printf "forall(%a)\n" (Qbf.pp_list_sep "," pp_var) (d1 1 n d);
   printf "exists(%a)\n" (Qbf.pp_list_sep "," pp_var)
-    (List.concat [d1 1 n e; d2 1 n 0 n f; d2 1 n 0 n g]);
+    (List.concat [d1 1 n e; d2 1 n 0 n g]);
+  printf "forall(%a)\n" (Qbf.pp_list_sep "," pp_var) (d2 1 n 0 n f);
   ()
 
 let () =
