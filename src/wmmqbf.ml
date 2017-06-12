@@ -74,9 +74,11 @@ let do_one fn =
   let v1 l h x = List.map (fun k -> valid (x k)) (range l h) in
   let v2 l1 h1 l2 h2 x =
     List.concat @@ List.map (fun k -> v1 l2 h2 (x k)) (range l1 h1) in
-  let transitive_closure rel x ys z = Qbf.mk_and @@
+  let transitive_closure rel x ys z =
+    let rel ys k = Qbf.mk_or [ rel ys k; equal (ys (k-1)) (ys k) ] in
+    Qbf.mk_and @@
     equal x (ys 0)
-    :: Qbf.mk_or (List.map (fun k -> equal (ys k) z) (range 0 n))
+    :: equal (ys n) z
     :: List.map (rel ys) (range 1 n) in
   let step0 fg k = Qbf.mk_and
     [ implies (fg (k - 1)) (fg k)
@@ -107,7 +109,6 @@ let do_one fn =
     ; v2 1 n 0 n g ] in
   let q = Qbf.mk_implies (Qbf.mk_and (v1 1 n d)) q in
   let q = Qbf.mk_and (q :: v1 0 n c) in
-  Qbf.pp_t stdout q;
   (* FIXME HACK *)
   let d0 x =
     List.map x (range 1 n) in
@@ -121,14 +122,15 @@ let do_one fn =
   let pp_var f = function
     | Qbf.Var x -> fprintf f "%s" x
     | _ -> failwith "(ltqsi)" in
-  printf "\n===\n";
-  printf "exists(%a)\n" (Qbf.pp_list_sep "," pp_var)
+  printf "#QCIR-G14\n";
+  printf "exists(%a)\n" (Qbf.fpp_list_sep "," pp_var)
     (List.concat [d1 0 n c; d0 empty_set; d0 execution_set]);
-  printf "forall(%a)\n" (Qbf.pp_list_sep "," pp_var) (d1 1 n d);
-  printf "exists(%a)\n" (Qbf.pp_list_sep "," pp_var)
+  printf "forall(%a)\n" (Qbf.fpp_list_sep "," pp_var) (d1 1 n d);
+  printf "forall(%a)\n" (Qbf.fpp_list_sep "," pp_var) (d2 1 n 0 n f);
+  printf "exists(%a)\n" (Qbf.fpp_list_sep "," pp_var)
     (List.concat [d1 1 n e; d2 1 n 0 n g]);
-  printf "forall(%a)\n" (Qbf.pp_list_sep "," pp_var) (d2 1 n 0 n f);
-  ()
+
+  Qbf.pp_t stdout q
 
 let () =
   Arg.parse [] do_one "wmmqbf <infile>"
