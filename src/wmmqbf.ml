@@ -52,7 +52,7 @@ let do_one fn =
   let implies x y = Qbf.mk_and @@
     List.map (fun i -> Qbf.mk_implies (x i) (y i)) (range 1 n) in
   let equal x y = Qbf.mk_and [implies x y; implies y x] in
-  let justifies =
+  let justifies = (* justify all: current def 4.2 *)
     let js = Hashtbl.create (List.length wmm.Wmm.reads) in
     let init w = Hashtbl.replace js w [] in
     let add (x, y) = Hashtbl.replace js y (x :: Hashtbl.find js y) in
@@ -60,7 +60,8 @@ let do_one fn =
     List.iter add wmm.Wmm.justifies;
     (fun write read ->
       let one y xs qs =
-        Qbf.mk_implies (read y) (Qbf.mk_or @@ List.map write xs) :: qs in
+        (* XXX: justify new: our attempt at fixing 4.2 *)
+        Qbf.mk_implies (read y) (Qbf.mk_or @@ write y :: List.map write xs) :: qs in
       Qbf.mk_and @@ Hashtbl.fold one js []) in
   let valid =
     let ok_order x =
@@ -74,7 +75,8 @@ let do_one fn =
   let v2 l1 h1 l2 h2 x =
     List.concat @@ List.map (fun k -> v1 l2 h2 (x k)) (range l1 h1) in
   let transitive_closure rel x ys z =
-    let rel ys k = Qbf.mk_or [ rel ys k; equal (ys (k-1)) (ys k) ] in
+    (* let n = 1 in (* DBG *) *)
+    let rel ys k = Qbf.mk_or [ rel ys k ; equal (ys (k-1)) (ys k) ] in
     Qbf.mk_and @@
     equal x (ys 0)
     :: equal (ys n) z
