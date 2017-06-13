@@ -1,5 +1,4 @@
 open Printf
-open WmmParser
 
 exception Parsing_failed of string
 
