@@ -65,9 +65,9 @@ type context =
   ; f_spec : var
   ; g_spec : var }
 
-let mk_context n =
+let mk_context m n =
   { n = n
-  ; c_spec = mk_var "c" [0,n; 1,n]
+  ; c_spec = mk_var "c" [0,m; 1,n]
   ; d_spec = mk_var "d" [1,n; 1,n]
   ; e_spec = mk_var "e" [1,n; 1,n]
   ; f_spec = mk_var "f" [1,n; 0,n; 1,n]
@@ -99,9 +99,26 @@ let valid wmm =
     Qbf.mk_and @@ List.map one wmm.Wmm.conflicts in
   (fun x -> Qbf.mk_and [ok_order x; ok_conflicts x])
 
-let valid1 wmm l h x = List.map (fun k -> valid wmm (x k)) (range l h)
-let valid2 wmm l1 h1 l2 h2 x =
-  List.concat @@ List.map (fun k -> valid1 wmm l2 h2 (x k)) (range l1 h1)
+let split_at n xs =
+  let rec f ys n xs = match n, xs with
+    | 0, _ | _, [] -> (ys, xs)
+    | n, x :: xs -> f (x :: ys) (n - 1) xs in
+  let xs, ys = f [] n xs in
+  (List.rev xs, ys)
+
+let validN wmm cs n v_spec =
+  let m = List.length cs in
+  assert (m + n + 1 = List.length v_spec.bounds);
+  let _, ys = split_at m v_spec.bounds in
+  let ys, _ = split_at n ys in
+  let bs = cross @@ List.map (uncurry2 range) ys in
+  let bs = List.map (fun xs -> cs @ xs) bs in
+  let v xs k = var_at v_spec (xs @ [k]) in
+  let vs = List.map v bs in
+  List.map (valid wmm) vs
+
+let valid2 wmm v_spec = validN wmm [] 1 v_spec
+let valid3 wmm v_spec = validN wmm [] 2 v_spec
 
 let transitive_closure ctx rel x ys z =
   let rel ys k = Qbf.mk_or [ rel ys k; equal ctx (ys (k-1)) (ys k) ] in
@@ -138,23 +155,19 @@ let step1 wmm ctx c k =
   ; Qbf.mk_implies
       (Qbf.mk_and @@
         transitive_closure ctx step0 (c (k - 1)) (f k) (d k)
-        :: valid1 wmm 1 ctx.n (f k))
+        :: validN wmm [k] 1 ctx.f_spec)
       (Qbf.mk_and
         [ transitive_closure ctx step0 (d k) (g k) (e k)
         ; justifies wmm (e k) (c k) ])
   ]
 
 let add_validity wmm ctx q =
-  let c = at2 ctx.c_spec in
-  let d = at2 ctx.d_spec in
-  let e = at2 ctx.e_spec in
-  let g = at3 ctx.g_spec in
   let q = Qbf.mk_and @@ List.concat
     [ [ q ]
-    ; valid1 wmm 1 ctx.n e
-    ; valid2 wmm 1 ctx.n 0 ctx.n g ] in
-  let q = Qbf.mk_implies (Qbf.mk_and (valid1 wmm 1 ctx.n d)) q in
-  let q = Qbf.mk_and (q :: valid1 wmm 0 ctx.n c) in
+    ; valid2 wmm ctx.e_spec
+    ; valid3 wmm ctx.g_spec ] in
+  let q = Qbf.mk_implies (Qbf.mk_and (valid2 wmm ctx.d_spec)) q in
+  let q = Qbf.mk_and (q :: valid2 wmm ctx.c_spec) in
   q
 
 let add_quantifiers ctx q =

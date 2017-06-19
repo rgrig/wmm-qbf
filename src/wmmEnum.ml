@@ -4,7 +4,7 @@ module U = Util
 
 let do_one fn =
   let wmm = U.parse fn in
-  let ctx = U.mk_context wmm.Wmm.events in
+  let ctx = U.mk_context 1 wmm.Wmm.events in
   let start_var = U.mk_var "START" [1,ctx.U.n] in
   let end_var = U.mk_var "END" [1,ctx.U.n] in
   let q =
