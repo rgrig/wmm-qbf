@@ -1,4 +1,4 @@
-MAINS="wmmqbf"
+MAINS="wmmqbf wmmEnum"
 TYPE="byte"
 
 eval $(opam config env)
