@@ -1,56 +1,23 @@
 open Printf
 
-exception Parsing_failed of string
-
-let parse fn =
-  let f = open_in fn in
-  let lexbuf = Lexing.from_channel f in
-  try
-    let r = WmmParser.wmm WmmLexer.token lexbuf in
-    close_in_noerr f;
-    r
-  with
-    | WmmParser.Error ->
-        (match Lexing.lexeme_start_p lexbuf with
-        { Lexing.pos_lnum=line; Lexing.pos_bol=c0;
-          Lexing.pos_fname=_; Lexing.pos_cnum=c1} ->
-            let msg = sprintf "%s:%d:%d: parse error" fn line (c1-c0+1) in
-            raise (Parsing_failed msg))
-
-let mkV prefix bounds xs =
-  let chk (a, c) b = assert (a <= b && b <= c) in
-  List.iter2 chk bounds xs;
-  let name = Buffer.create 10 in
-  Printf.bprintf name "%s" prefix;
-  let app x = Printf.bprintf name "_%d" x in
-  List.iter app xs;
-  Qbf.mk_var (Buffer.contents name)
-
-let mkV1 prefix (l1, h1) x1 =
-  mkV prefix [(l1, h1)] [x1]
-let mkV2 prefix (l1, h1) (l2, h2) x1 x2 =
-  mkV prefix [(l1, h1); (l2, h2)] [x1; x2]
-let mkV3 prefix (l1, h1) (l2, h2) (l3, h3) x1 x2 x3 =
-  mkV prefix [(l1, h1); (l2, h2); (l3, h3)] [x1; x2; x3]
-
-let range i k =
-  let r = ref [] in
-  for j = k downto i do r := j :: !r done;
-  !r
-
+module U = Util
 
 let do_one fn =
-  let wmm = parse fn in
+  let wmm = U.parse fn in
   let n = wmm.Wmm.events in
-  let empty_set = mkV1 "Z" (1,n) in
-  let execution_set = mkV1 "E" (1,n) in
-  let c = mkV2 "c" (0,n) (1,n) in
-  let d = mkV2 "d" (1,n) (1,n) in
-  let e = mkV2 "e" (1,n) (1,n) in
-  let f = mkV3 "f" (1,n) (0,n) (1,n) in
-  let g = mkV3 "g" (1,n) (0,n) (1,n) in
+  let mV prefix bounds at =
+    let spec = U.mk_var prefix bounds in
+    let get = at spec in
+    (spec, get) in
+  let empty_set_spec, empty_set = mV "Z" [1,n] U.at1 in
+  let execution_set_spec, execution_set = mV "E" [1,n] U.at1 in
+  let c_spec, c = mV "c" [0,n; 1,n] U.at2 in
+  let d_spec, d = mV "d" [1,n; 1,n] U.at2 in
+  let e_spec, e = mV "e" [1,n; 1,n] U.at2 in
+  let f_spec, f = mV "f" [1,n; 0,n; 1,n] U.at3 in
+  let g_spec, g = mV "g" [1,n; 0,n; 1,n] U.at3 in
   let implies x y = Qbf.mk_and @@
-    List.map (fun i -> Qbf.mk_implies (x i) (y i)) (range 1 n) in
+    List.map (fun i -> Qbf.mk_implies (x i) (y i)) (U.range 1 n) in
   let equal x y = Qbf.mk_and [implies x y; implies y x] in
   let justifies = (* justify all: current def 4.2 *)
     let js = Hashtbl.create (List.length wmm.Wmm.reads) in
@@ -71,16 +38,16 @@ let do_one fn =
       let one (i, j) = Qbf.mk_not @@ Qbf.mk_and [x i; x j] in
       Qbf.mk_and @@ List.map one wmm.Wmm.conflicts in
     (fun x -> Qbf.mk_and [ok_order x; ok_conflicts x]) in
-  let v1 l h x = List.map (fun k -> valid (x k)) (range l h) in
+  let v1 l h x = List.map (fun k -> valid (x k)) (U.range l h) in
   let v2 l1 h1 l2 h2 x =
-    List.concat @@ List.map (fun k -> v1 l2 h2 (x k)) (range l1 h1) in
+    List.concat @@ List.map (fun k -> v1 l2 h2 (x k)) (U.range l1 h1) in
   let transitive_closure rel x ys z =
     (* let n = 1 in (* DBG *) *)
     let rel ys k = Qbf.mk_or [ rel ys k ; equal (ys (k-1)) (ys k) ] in
     Qbf.mk_and @@
     equal x (ys 0)
     :: equal (ys n) z
-    :: List.map (rel ys) (range 1 n) in
+    :: List.map (rel ys) (U.range 1 n) in
   let step0 fg k = Qbf.mk_and
     [ implies (fg (k - 1)) (fg k)
     ; justifies (fg (k - 1)) (fg k) ] in
@@ -99,7 +66,7 @@ let do_one fn =
       if List.mem j js
       then x j
       else Qbf.mk_not (x j) in
-    Qbf.mk_and @@ List.map one (range 1 n) in
+    Qbf.mk_and @@ List.map one (U.range 1 n) in
   let q = Qbf.mk_and
     [ is_set empty_set []
     ; is_set execution_set wmm.Wmm.execution
@@ -110,28 +77,17 @@ let do_one fn =
     ; v2 1 n 0 n g ] in
   let q = Qbf.mk_implies (Qbf.mk_and (v1 1 n d)) q in
   let q = Qbf.mk_and (q :: v1 0 n c) in
-  (* FIXME HACK *)
-  let d0 x =
-    List.map x (range 1 n) in
-  let d1 l1 h1 x =
-    let one k = List.map (x k) (range 1 n) in
-    List.concat @@ List.map one (range l1 h1) in
-  let d2 l1 h1 l2 h2 x =
-    let one x = List.map x (range 1 n) in
-    let two x = List.concat @@ List.map (fun k -> one (x k)) (range l2 h2) in
-    List.concat @@ List.map (fun k -> two (x k)) (range l1 h1) in
-  let pp_var f = function
-    | Qbf.Var x -> fprintf f "%s" x
-    | _ -> failwith "(ltqsi)" in
-  printf "#QCIR-G14\n";
-  printf "exists(%a)\n" (Qbf.fpp_list_sep "," pp_var)
-    (List.concat [d1 0 n c; d0 empty_set; d0 execution_set]);
-  printf "forall(%a)\n" (Qbf.fpp_list_sep "," pp_var) (d1 1 n d);
-  printf "forall(%a)\n" (Qbf.fpp_list_sep "," pp_var) (d2 1 n 0 n f);
-  printf "exists(%a)\n" (Qbf.fpp_list_sep "," pp_var)
-    (List.concat [d1 1 n e; d2 1 n 0 n g]);
 
-  Qbf.pp_t stdout q
+  let q = Qbf.mk_qbf q in
+  let q = Qbf.mk_exists (U.var_allnames g_spec) q in
+  let q = Qbf.mk_exists (U.var_allnames e_spec) q in
+  let q = Qbf.mk_forall (U.var_allnames f_spec) q in
+  let q = Qbf.mk_forall (U.var_allnames d_spec) q in
+  let q = Qbf.mk_exists (U.var_allnames c_spec) q in
+  let q = Qbf.mk_exists (U.var_allnames empty_set_spec) q in
+  let q = Qbf.mk_exists (U.var_allnames execution_set_spec) q in
+
+  printf "%a" Qbf.pp_qcir q
 
 let () =
   Arg.parse [] do_one "wmmqbf <infile>"
