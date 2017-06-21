@@ -1,3 +1,4 @@
+true: package(str)
 <src>: include
 true: use_menhir
 <src/*.mly>: explain, infer
