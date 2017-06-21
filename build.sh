@@ -1,9 +1,14 @@
 MAINS="wmmqbf wmmEnum"
 TYPE="byte"
 
+T=""
+for i in $MAINS; do
+  T="$T $i.$TYPE"
+done
+
 eval $(opam config env)
+ocamlbuild -use-ocamlfind $T
 mkdir -p bin
 for f in $MAINS; do
-  ocamlbuild -use-ocamlfind $f.$TYPE
   cp $(readlink -e $f.$TYPE) bin/$f
 done
