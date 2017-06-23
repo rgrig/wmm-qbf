@@ -1,26 +1,29 @@
 open Printf
 
 type variable = string
+type model = variable list
 
-type formula =
+type t =
   | Var of variable
-  | Not of formula
-  | And of formula list
-  | Or of formula list
-
-type quantifier = Exists | Forall
-
-type t = (quantifier * variable list) list * formula
+  | Not of t
+  | And of t list
+  | Or of t list
+  | Exists of variable list * t
+  | Forall of variable list * t
 
 let mk_var v = Var v
-let mk_implies f g = Or [Not f; g]
-let mk_and xs = And xs
-let mk_or xs = Or xs
-let mk_not x = Not x
+let mk_and ps = And ps
+let mk_or ps = Or ps
+let mk_not p = Not p
+let mk_exists vs p = Exists (vs, p)
+let mk_forall vs p = Forall (vs, p)
 
-let mk_qbf f = ([], f)
-let mk_exists xs (qs, f) = ((Exists, xs) :: qs, f)
-let mk_forall xs (qs, f) = ((Forall, xs) :: qs, f)
+let mk_implies ps q = mk_or (q :: List.map mk_not ps)
+
+let holds _ = failwith "wqqsh"
+let models _ = failwith "rhqmb"
+
+(* OLD
 
 let normalize_quantifiers qs =
   let rec f xss q ys = function
@@ -83,3 +86,4 @@ let pp_qcir f (qs, e) =
   let qs = normalize_quantifiers qs in (* workaround for QFUN bug *)
   fprintf f "#QCIR-G14\n%a%a" (pp_list pp_q) qs pp_formula e
 
+*)

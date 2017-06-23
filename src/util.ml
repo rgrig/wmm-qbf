@@ -6,21 +6,23 @@ let parse fn =
   let f = open_in fn in
   let lexbuf = Lexing.from_channel f in
   try
-    let r = WmmParser.wmm WmmLexer.token lexbuf in
+    let r = EsParser.event_structure EsLexer.token lexbuf in
     close_in_noerr f;
     r
   with
-    | WmmParser.Error ->
+    | EsParser.Error ->
         (match Lexing.lexeme_start_p lexbuf with
         { Lexing.pos_lnum=line; Lexing.pos_bol=c0;
           Lexing.pos_fname=_; Lexing.pos_cnum=c1} ->
             let msg = sprintf "%s:%d:%d: parse error" fn line (c1-c0+1) in
             raise (Parsing_failed msg))
 
+
 let range i k =
   let rec loop xs k = if k < i then xs else loop (k :: xs) (k - 1) in
   loop [] k
 
+(* OLD
 type var =
   { prefix : string
   ; bounds : (int * int) list }
@@ -186,3 +188,4 @@ let is_set ctx x js =
     else Qbf.mk_not (x j) in
   Qbf.mk_and @@ List.map one (range 1 ctx.n)
 
+*)

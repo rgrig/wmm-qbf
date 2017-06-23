@@ -1,13 +1,12 @@
 {
   open Scanf
-  open WmmParser
+  open EsParser
 
   let keyword x =
     let table = Hashtbl.create 53 in
     List.iter (fun (k, v) -> Hashtbl.add table k v)
       [ "conflicts", CONFLICTS
       ; "events", EVENTS
-      ; "execution", EXECUTION
       ; "justifies", JUSTIFIES
       ; "order", ORDER
       ; "reads", READS ];

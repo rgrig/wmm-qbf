@@ -1,5 +1,14 @@
 open Printf
 
+(* DBG *)
+module ES = EventStructure
+module P = EsParser
+module Q = Qbf
+module M = Mm
+module J = Jr
+
+(* OLD
+
 module U = Util
 
 let query wmm =
@@ -116,3 +125,4 @@ let do_one fn =
 let () =
   Arg.parse [] do_one "wmmEnum <infiles>"
 
+*)
