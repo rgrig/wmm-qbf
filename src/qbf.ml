@@ -41,6 +41,8 @@ let rec pp_list_sep sep pp_x f = function
 
 let pp_list pp_x = pp_list_sep "" pp_x
 
+let pp_int f x = fprintf f "%d" x
+
 let add_aux e =
   let g : unit -> variable =
     let i = ref 0 in

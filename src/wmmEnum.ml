@@ -31,6 +31,18 @@ let name_of_wmm wmm =
   done;
   Buffer.contents b
 
+let sname_of_wmm wmm =
+  let b = Buffer.create 10 in
+  let xs = List.sort compare wmm.Wmm.execution in
+  let rec loop = function
+    | [] -> ()
+    | x :: xs -> bprintf b ",%d" x; loop xs in
+  let f = function
+    | [] -> ()
+    | x :: xs -> bprintf b "%d" x; loop xs in
+  f xs;
+  Buffer.contents b
+
 (* FIXME huge hack *)
 let run_qbf_solver qcir_name out_name =
   let cmd = sprintf "qfun-enum -a -e %s > %s" qcir_name out_name in
@@ -66,31 +78,40 @@ let step prefix wmm =
   run_qbf_solver qcir_name sol_name;
   parse_qbf_output sol_name
 
+let dump_dot fn g =
+  let o = open_out fn in
+  fprintf o "digraph x {\n";
+  let dump_arc x ys =
+    let f y = fprintf o "  \"%s\" -> \"%s\";\n" x y in
+    List.iter f ys in
+  Hashtbl.iter dump_arc g;
+  fprintf o "}\n";
+  close_out o
+
 let do_one fn =
   let wmm = U.parse fn in
+  let g = Hashtbl.create 100 in
+  let arc x y =
+    let ys = try Hashtbl.find g x with Not_found -> [] in
+    Hashtbl.replace g x (y :: ys) in
   let todo = Queue.create () in
   let seen = Hashtbl.create 10 in
-  let see_config xs =
+  let see_config lbl xs =
+    arc lbl (sname_of_wmm { wmm with Wmm.execution = xs });
     if not (Hashtbl.mem seen xs) then begin
       Hashtbl.add seen xs ();
       Queue.push xs todo;
-      printf "%s\n" (name_of_wmm { wmm with Wmm.execution = xs })
+      printf "%s\n%!" (name_of_wmm { wmm with Wmm.execution = xs })
     end in
-  see_config [];
+  see_config "START" [];
   while not (Queue.is_empty todo) do begin
     let now = Queue.pop todo in
     let wmm = { wmm with Wmm.execution = now } in
-    List.iter see_config (step fn wmm)
-  end done
+    let nn = sname_of_wmm wmm in
+    List.iter (see_config nn) (step fn wmm)
+  end done;
+  dump_dot (sprintf "%s.dot" fn) g
 
-  (*
-
-  let xss = step fn wmm in
-  let xss = List.map (fun xs -> name_of_wmm { wmm with Wmm.execution = xs}) xss in
-  printf "got: %a\n" (Qbf.pp_list_sep ", " Qbf.pp_string) xss
-  let q = query { wmm with Wmm.execution = [] } in
-  printf "%a" Qbf.pp_qcir q
-*)
 
 let () =
   Arg.parse [] do_one "wmmEnum <infiles>"
