@@ -143,14 +143,13 @@ let step0 wmm ctx fg k = Qbf.mk_and (* ≾ in def 4.2 *)
   [ implies ctx (fg (k - 1)) (fg k)
   ; justifies wmm (fg (k - 1)) (fg k) ]
 
-let step1 wmm ctx c k =
+let step1 wmm ctx c k = (* ⊑ in def 4.3 *)
   let step0 = step0 wmm ctx in
-(*   let c = at2 ctx.c_spec in *)
   let d = at2 ctx.d_spec in
   let e = at2 ctx.e_spec in
   let f = at3 ctx.f_spec in
   let g = at3 ctx.g_spec in
-  Qbf.mk_and (* ⊑ in def 4.3 *)
+  Qbf.mk_and
   [ implies ctx (c (k - 1)) (c k)
   ; Qbf.mk_implies
       (Qbf.mk_and @@
