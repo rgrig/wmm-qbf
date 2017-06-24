@@ -56,10 +56,6 @@ let union p q x y = Qbf.mk_or [p x y; q x y]
 
 let equal = intersect subset (flip subset)
 
-
-(* When we introduce (existentially quantified) intemediate configurations
-we need to have access to a validity predicate. *)
-
 let sequence es p q = fun x z ->
   let y = fresh_configuration es in
   Qbf.mk_and [p x y; q y z; valid es y]
@@ -67,7 +63,8 @@ let sequence es p q = fun x z ->
 let rec iterate es n p =
   if n = 0 then equal else sequence es p (iterate es (n-1) p)
 
-let bounded_tc es n p =
-  let qs = U.range 1 n in
-  let qs = List.map (fun i -> iterate es i p) qs in
-  List.fold_left union equal qs
+let rec at_most_n es n p =
+  if n = 0
+  then equal
+  else union equal (sequence es p (at_most_n es (n-1) p))
+

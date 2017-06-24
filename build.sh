@@ -1,4 +1,4 @@
-MAINS="wmmEnum"
+MAINS="WmmEnum"
 TYPE="byte"
 
 T=""

@@ -4,8 +4,8 @@ open Printf
 module ES = EventStructure
 module P = EsParser
 module Q = Qbf
-module M = Mm
-module J = Jr
+module M = MM
+module J = JR
 
 (* OLD
 

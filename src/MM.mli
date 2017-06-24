@@ -19,8 +19,8 @@ val union : relation -> relation -> relation
 
 
 (* When we introduce (existentially quantified) intemediate configurations
-we need to have access to a validy predicate. *)
+we need to have access to a validity predicate. *)
 
 val sequence : EventStructure.t -> relation -> relation -> relation
 val iterate : EventStructure.t -> int -> relation -> relation
-val bounded_tc : EventStructure.t -> int -> relation -> relation
+val at_most_n : EventStructure.t -> int -> relation -> relation
