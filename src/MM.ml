@@ -51,7 +51,7 @@ let justifies es =
       Qbf.mk_implies [var y j] b in
     Qbf.mk_and @@ List.map justify_read es.E.reads)
 
-let valid es x =
+let valid_conf es x =
   let downclosed =
     let f (i, j) = Qbf.mk_implies [var x j] (var x i) in
     Qbf.mk_and @@ List.map f es.E.order in
@@ -59,6 +59,9 @@ let valid es x =
     let f (i, j) = Qbf.mk_not (Qbf.mk_and [var x i; var x j]) in
     Qbf.mk_and @@ List.map f es.E.conflicts in
   Qbf.mk_and [ downclosed; no_conflict ]
+
+let valid_rel es x y =
+  Qbf.mk_and [ valid_conf es x; valid_conf es y ]
 
 let fresh_configuration =
   let n = ref 0 in
@@ -88,7 +91,7 @@ let equal = intersect subset (flip subset)
 
 let sequence es p q = fun x z ->
   let y = fresh_configuration es in
-  exists y (Qbf.mk_and [p x y; q y z; valid es y])
+  exists y (Qbf.mk_and [p x y; q y z])
 
 let rec at_most_n es n p =
   if n = 0

@@ -100,9 +100,9 @@ let do_one fn =
   let es = U.parse fn in
   let x = MM.fresh_configuration es in
   let y = MM.fresh_configuration es in
-  let q = Qbf.mk_and [ MM.equals_set x []; JR.step1tc es x y ] in
+  let q = Qbf.mk_and [ MM.equals_set x []; JR.step1 es x y ] in
   let q = MM.exists x (MM.exists y q) in
-  let ms = Qbf.models q in
+  let ms = Qbf.models fn q in
   let ys = List.map (MM.set_of_model y) ms in
   ()
 

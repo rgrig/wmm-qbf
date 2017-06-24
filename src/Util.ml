@@ -30,6 +30,19 @@ let id x = x
 
 let flip f x y = f y x
 
+let rec hp_list_sep sep hp_x f = function
+  | [] -> ()
+  | [x] -> hp_x f x
+  | x :: ((_ :: _) as xs) ->
+      fprintf f (format_of_string "%a%s%a") hp_x x sep (hp_list_sep sep hp_x) xs
+
+let hp_list hp_x = hp_list_sep "" hp_x
+
+let hp_int f x = fprintf f "%d" x
+
+let hp_string f x = fprintf f "%s" x
+
+
 (* OLD
 type var =
   { prefix : string

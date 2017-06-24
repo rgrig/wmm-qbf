@@ -3,7 +3,8 @@ type predicate = configuration -> Qbf.t
 type relation = configuration -> configuration -> Qbf.t
 
 val justifies : EventStructure.t -> relation
-val valid : EventStructure.t -> predicate
+val valid_conf : EventStructure.t -> predicate
+val valid_rel : EventStructure.t -> relation
 
 val fresh_configuration : EventStructure.t -> configuration
 val forall : configuration -> Qbf.t -> Qbf.t
@@ -18,7 +19,7 @@ val intersect : relation -> relation -> relation
 val union : relation -> relation -> relation
 
 
-(* When we introduce (existentially quantified) intemediate configurations
+(* When we introduce (existentially quantified) intermediate configurations
 we need to have access to a validity predicate. *)
 
 val sequence : EventStructure.t -> relation -> relation -> relation

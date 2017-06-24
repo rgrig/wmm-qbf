@@ -144,75 +144,86 @@ let preprocess p =
   let p = optimize_quants deps p in
   p
 
-let holds _ = failwith "wqqsh"
-
-let models p =
-(*   printf "%s\n" (show p); *)
-  let p = preprocess p in
-(*   printf "%s\n" (show p); *)
-  failwith "rhqmb"
-
-(* OLD
-
-let normalize_quantifiers qs =
-  let rec f xss q ys = function
-    | [] -> (q, ys) :: xss
-    | (qq, zs) :: zss ->
-        if q = qq
-        then f xss q (zs @ ys) zss
-        else f ((q, ys) :: xss) qq zs zss in
-  (match qs with
-  | [] -> []
-  | (q, xs) :: qs -> List.rev (f [] q xs qs))
-
-let rec pp_list_sep sep pp_x f = function
-  | [] -> ()
-  | [x] -> pp_x f x
-  | x :: ((_ :: _) as xs) ->
-      fprintf f (format_of_string "%a%s%a") pp_x x sep (pp_list_sep sep pp_x) xs
-
-let pp_list pp_x = pp_list_sep "" pp_x
-
-let pp_int f x = fprintf f "%d" x
-
-let add_aux e =
+let to_clauses p =
   let g : unit -> variable =
     let i = ref 0 in
     (fun () -> incr i;  sprintf "T%d" !i) in
   let cs = ref [] in
-  let add_clause op vs =
-    let w = g () in
-    cs := (w, op, vs) :: !cs; (true, w) in
+  let add_clause op vs ps =
+    let v = g () in
+    cs := (v, op, vs, ps) :: !cs; (true, v) in
   let neg (b, x) = (not b, x) in
-  let rec go_op op es =
-    add_clause op (List.map go es)
+  let rec go_op op ps =
+    add_clause op None (List.map go ps)
+  and go_q q vs p =
+    add_clause q (Some vs) [go p]
   and go = function
     | Var x -> (true, x)
-    | Not e -> neg (go e)
+    | Not p -> neg (go p)
     | And es -> go_op "and" es
-    | Or es -> go_op "or" es in
-  let b, v = go e in
+    | Or es -> go_op "or" es
+    | Exists (vs, p, _) -> go_q "exists" vs p
+    | Forall (vs, p, _) -> go_q "forall" vs p in
+  let b, v = go p in
   assert b;
   (v, List.rev !cs)
 
-let pp_formula f e =
-  let v, cs = add_aux e in
-  let pp_v f (b, v) =
+let hp f p =
+  let top, clauses = to_clauses p in
+  let hp_v f (b, v) =
     if not b then fprintf f "-";
     fprintf f "%s" v in
-  let pp_c f (w, op, vs) =
-    fprintf f "%s = %s(%a)\n" w op (pp_list_sep "," pp_v) vs in
-  fprintf f "output(%s)\n%a" v (pp_list pp_c) cs
+  let hp_vs f = function
+    | None -> ()
+    | Some vs -> fprintf f "%a;" (U.hp_list_sep "," U.hp_string) vs in
+  let hp_c f (w, op, vs, ps) =
+    fprintf f "%s = %s(%a%a)\n" w op hp_vs vs (U.hp_list_sep "," hp_v) ps in
+  fprintf f "output(%s)\n%a" top (U.hp_list hp_c) clauses
 
-let pp_string f = fprintf f "%s"
+(* "hp" stands for hideous printing: the pretty one is done by @@deriving *)
+let hp_qcir f p =
+  let rec pm qs = function
+    | Exists (vs, p, _) -> pm ((true, vs) :: qs) p
+    | Forall (vs, p, _) -> pm ((false, vs) :: qs) p
+    | p -> (List.rev qs, p) in
+  let prefix, matrix = pm [] p in
+  let hp_q f (t, vs) =
+    let t = if t then "exists" else "forall" in
+    fprintf f "%s(%a)\n" t (U.hp_list_sep "," U.hp_string) vs in
+  fprintf f "#QCIR-G14\n%a%a" (U.hp_list hp_q) prefix hp matrix
 
-let pp_qcir f (qs, e) =
-  let str_of_q = function
-    | Exists -> "exists"
-    | Forall -> "forall" in
-  let pp_q f (q, vs) =
-    fprintf f "%s(%a)\n" (str_of_q q) (pp_list_sep "," pp_string) vs in
-  let qs = normalize_quantifiers qs in (* workaround for QFUN bug *)
-  fprintf f "#QCIR-G14\n%a%a" (pp_list pp_q) qs pp_formula e
+let run_solver in_name out_name =
+  let cmd = sprintf "qfun-enum -a -e -i64 %s > %s" in_name out_name in
+  ignore (Sys.command cmd) (* FIXME *)
 
-*)
+let re_model_line = Str.regexp "^v.*$"
+let re_var = Str.regexp "+\\([a-zA-Z0-9_]\\+\\)"
+let parse_models fn =
+  let sol = open_in fn in
+  let r = ref [] in
+  let rec loop () =
+    let line = input_line sol in
+    if Str.string_match re_model_line line 0 then begin
+      let xs = ref [] in
+      let rec get i =
+        ignore (Str.search_forward re_var line i);
+        xs := Str.matched_group 1 line :: !xs;
+        get (Str.match_end ()) in
+      try get 0 with Not_found -> ();
+      r := !xs :: !r
+    end;
+    loop () in
+  try loop () with End_of_file -> !r
+
+let holds _ = failwith "wqqsh"
+
+let models fn p =
+  let p = preprocess p in
+  let qcir_fn = sprintf "%s.qcir" fn in
+  let out_fn = sprintf "%s.out" fn in
+  let qcir = open_out qcir_fn in
+  hp_qcir qcir p;
+  close_out qcir;
+  run_solver qcir_fn out_fn;
+  parse_models out_fn
+
