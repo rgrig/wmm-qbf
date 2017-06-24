@@ -17,8 +17,17 @@ type configuration =
 
 let same_es x y =
   x.event_structure = y.event_structure
+let name x i =
+  let n = x.event_structure.E.events_number in
+  assert (1 <= i);
+  assert (i <= n);
+  sprintf "%sE%d" x.prefix i
 let var x i =
-  Qbf.mk_var (sprintf "%sE%d" x.prefix i)
+  Qbf.mk_var @@ name x i
+let allnames x =
+  let n = x.event_structure.E.events_number in
+  List.map (name x) (U.range 1 n)
+
 
 type predicate = configuration -> Qbf.t
 type relation = configuration -> configuration -> Qbf.t
@@ -39,16 +48,31 @@ let justifies es =
       Qbf.mk_implies [var y j] b in
     Qbf.mk_and @@ List.map justify_read es.E.reads)
 
-let valid es x = failwith "yriuu"
+let valid es x =
+  let downclosed =
+    let f (i, j) = Qbf.mk_implies [var x j] (var x i) in
+    Qbf.mk_and @@ List.map f es.E.order in
+  let no_conflict =
+    let f (i, j) = Qbf.mk_not (Qbf.mk_and [var x i; var x j]) in
+    Qbf.mk_and @@ List.map f es.E.conflicts in
+  Qbf.mk_and [ downclosed; no_conflict ]
 
 let fresh_configuration =
   let n = ref 0 in
   (fun es -> incr n; { prefix = sprintf "C%d" !n; event_structure = es } )
 
-let forall x a = failwith "nftph"
-let exists x a = failwith "pvfyr"
+let forall x a =
+  Qbf.mk_forall (allnames x) a
+let exists x a =
+  Qbf.mk_exists (allnames x) a
+let is_set x is =
+  failwith "uaocv"
 
-let subset x y = failwith "hfbmr"
+let subset x y =
+  assert (same_es x y);
+  let n = x.event_structure.E.events_number in
+  let f i = Qbf.mk_implies [var x i] (var y i) in
+  Qbf.mk_and @@ List.map f (U.range 1 n)
 
 let flip p x y = p y x
 let intersect p q x y = Qbf.mk_and [p x y; q x y]

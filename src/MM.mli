@@ -8,7 +8,7 @@ val valid : EventStructure.t -> predicate
 val fresh_configuration : EventStructure.t -> configuration
 val forall : configuration -> Qbf.t -> Qbf.t
 val exists : configuration -> Qbf.t -> Qbf.t
-
+val is_set : configuration -> EventStructure.set -> Qbf.t
 
 val subset : relation
 val equal : relation

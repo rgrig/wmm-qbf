@@ -3,9 +3,7 @@ open Printf
 (* DBG *)
 module ES = EventStructure
 module P = EsParser
-module Q = Qbf
-module M = MM
-module J = JR
+module U = Util
 
 (* OLD
 
@@ -96,33 +94,16 @@ let dump_dot fn g =
   Hashtbl.iter dump_arc g;
   fprintf o "}\n";
   close_out o
+*)
 
 let do_one fn =
-  let wmm = U.parse fn in
-  let g = Hashtbl.create 100 in
-  let arc x y =
-    let ys = try Hashtbl.find g x with Not_found -> [] in
-    Hashtbl.replace g x (y :: ys) in
-  let todo = Queue.create () in
-  let seen = Hashtbl.create 10 in
-  let see_config lbl xs =
-    arc lbl (sname_of_wmm { wmm with Wmm.execution = xs });
-    if not (Hashtbl.mem seen xs) then begin
-      Hashtbl.add seen xs ();
-      Queue.push xs todo;
-      printf "%s\n%!" (name_of_wmm { wmm with Wmm.execution = xs })
-    end in
-  see_config "START" [];
-  while not (Queue.is_empty todo) do begin
-    let now = Queue.pop todo in
-    let wmm = { wmm with Wmm.execution = now } in
-    let nn = sname_of_wmm wmm in
-    List.iter (see_config nn) (step fn wmm)
-  end done;
-  dump_dot (sprintf "%s.dot" fn) g
-
+  let es = U.parse fn in
+  let x = MM.fresh_configuration es in
+  let y = MM.fresh_configuration es in
+  let q = JR.step1tc es x y in (* TODO: add that x is empty set *)
+  let ms = Qbf.models q in
+  ()
 
 let () =
   Arg.parse [] do_one "wmmEnum <infiles>"
 
-*)
