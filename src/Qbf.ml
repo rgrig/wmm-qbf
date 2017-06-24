@@ -147,9 +147,9 @@ let preprocess p =
 let holds _ = failwith "wqqsh"
 
 let models p =
-  printf "%s\n" (show p);
+(*   printf "%s\n" (show p); *)
   let p = preprocess p in
-  printf "%s\n" (show p);
+(*   printf "%s\n" (show p); *)
   failwith "rhqmb"
 
 (* OLD
