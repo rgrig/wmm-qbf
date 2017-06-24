@@ -22,6 +22,14 @@ let range i k =
   let rec loop xs k = if k < i then xs else loop (k :: xs) (k - 1) in
   loop [] k
 
+let option d f = function
+  | None -> d
+  | Some x -> f x
+
+let id x = x
+
+let flip f x y = f y x
+
 (* OLD
 type var =
   { prefix : string

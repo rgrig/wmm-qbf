@@ -8,7 +8,7 @@ val valid : EventStructure.t -> predicate
 val fresh_configuration : EventStructure.t -> configuration
 val forall : configuration -> Qbf.t -> Qbf.t
 val exists : configuration -> Qbf.t -> Qbf.t
-val is_set : configuration -> EventStructure.set -> Qbf.t
+val equals_set : configuration -> EventStructure.set -> Qbf.t
 
 val subset : relation
 val equal : relation
@@ -22,5 +22,7 @@ val union : relation -> relation -> relation
 we need to have access to a validity predicate. *)
 
 val sequence : EventStructure.t -> relation -> relation -> relation
-val iterate : EventStructure.t -> int -> relation -> relation
 val at_most_n : EventStructure.t -> int -> relation -> relation
+
+val set_of_model : configuration -> Qbf.model -> EventStructure.set
+

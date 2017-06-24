@@ -15,17 +15,20 @@ type configuration =
   { prefix : string
   ; event_structure : E.t }
 
+let size_of x =
+  x.event_structure.E.events_number
+
 let same_es x y =
   x.event_structure = y.event_structure
 let name x i =
-  let n = x.event_structure.E.events_number in
+  let n = size_of x in
   assert (1 <= i);
   assert (i <= n);
   sprintf "%sE%d" x.prefix i
 let var x i =
   Qbf.mk_var @@ name x i
 let allnames x =
-  let n = x.event_structure.E.events_number in
+  let n = size_of x in
   List.map (name x) (U.range 1 n)
 
 
@@ -65,12 +68,15 @@ let forall x a =
   Qbf.mk_forall (allnames x) a
 let exists x a =
   Qbf.mk_exists (allnames x) a
-let is_set x is =
-  failwith "uaocv"
+let equals_set x is =
+  let n = size_of x in
+  let f i =
+    if List.mem i is then var x i else Qbf.mk_not (var x i) in
+  Qbf.mk_and @@ List.map f (U.range 1 n)
 
 let subset x y =
   assert (same_es x y);
-  let n = x.event_structure.E.events_number in
+  let n = size_of x in
   let f i = Qbf.mk_implies [var x i] (var y i) in
   Qbf.mk_and @@ List.map f (U.range 1 n)
 
@@ -82,13 +88,12 @@ let equal = intersect subset (flip subset)
 
 let sequence es p q = fun x z ->
   let y = fresh_configuration es in
-  Qbf.mk_and [p x y; q y z; valid es y]
-
-let rec iterate es n p =
-  if n = 0 then equal else sequence es p (iterate es (n-1) p)
+  exists y (Qbf.mk_and [p x y; q y z; valid es y])
 
 let rec at_most_n es n p =
   if n = 0
   then equal
   else union equal (sequence es p (at_most_n es (n-1) p))
 
+let set_of_model x ms =
+  failwith "hcsea"
