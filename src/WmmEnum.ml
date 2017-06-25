@@ -40,7 +40,7 @@ let name_of es xs =
 let step es fn now =
   let x = MM.fresh_configuration es in
   let y = MM.fresh_configuration es in
-  let q = Qbf.mk_and [ MM.equals_set x []; JR.step1 es x y ] in
+  let q = Qbf.mk_and [ MM.equals_set x now; JR.step1 es x y ] in
   let q = MM.exists x (MM.exists y q) in
   List.map (MM.set_of_model y) (Qbf.models fn q)
 
