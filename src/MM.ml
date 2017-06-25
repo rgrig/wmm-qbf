@@ -86,6 +86,11 @@ let flip p x y = p y x
 let intersect p q x y = Qbf.mk_and [p x y; q x y]
 let union p q x y = Qbf.mk_or [p x y; q x y]
 
+let intersect_n ps x y =
+  Qbf.mk_and @@ List.map (fun p -> p x y) ps
+let union_n ps x y =
+  Qbf.mk_or @@ List.map (fun p -> p x y) ps
+
 let equal = intersect subset (flip subset)
 
 let sequence es p q = fun x z ->

@@ -18,6 +18,9 @@ val flip : relation -> relation
 val intersect : relation -> relation -> relation
 val union : relation -> relation -> relation
 
+val intersect_n : relation list -> relation
+val union_n : relation list -> relation
+
 
 (* When we introduce (existentially quantified) intermediate configurations
 we need to have access to a validity predicate. *)
