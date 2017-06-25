@@ -1,4 +1,4 @@
-MAINS="WmmEnum"
+MAINS="JrCheck"
 TYPE="byte"
 
 T=""
