@@ -1,4 +1,3 @@
-. refactor to allow arbitrary memory models
-. check that the target configuration is (self-)justified (Def4.3)
+. reinstate decision version; then merge in master
 
 :load_local_vimrc
