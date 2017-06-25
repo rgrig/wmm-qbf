@@ -7,11 +7,12 @@
     List.iter (fun (k, v) -> Hashtbl.add table k v)
       [ "conflicts", CONFLICTS
       ; "events", EVENTS
+      ; "execution", EXECUTION
       ; "justifies", JUSTIFIES
       ; "order", ORDER
       ; "reads", READS ];
     try Hashtbl.find table x
-    with Not_found -> BADKEYWORD
+    with Not_found -> raise Error
 }
 
 let id = ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*

@@ -3,32 +3,11 @@ open Printf
 module E = EventStructure
 module U = Util
 
-(* OLD
+(* {{{ Globals. *)
 
-module U = Util
+let enum_mode = ref false
 
-let sname_of_wmm wmm =
-  let b = Buffer.create 10 in
-  let xs = List.sort compare wmm.Wmm.execution in
-  let rec loop = function
-    | [] -> ()
-    | x :: xs -> bprintf b ",%d" x; loop xs in
-  let f = function
-    | [] -> ()
-    | x :: xs -> bprintf b "%d" x; loop xs in
-  f xs;
-  Buffer.contents b
-
-let dump_dot fn g =
-  let o = open_out fn in
-  fprintf o "digraph x {\n";
-  let dump_arc x ys =
-    let f y = fprintf o "  \"%s\" -> \"%s\";\n" x y in
-    List.iter f ys in
-  Hashtbl.iter dump_arc g;
-  fprintf o "}\n";
-  close_out o
-*)
+(* }}} Globals. *)
 
 let sname_of xs =
   let b = Buffer.create 10 in
@@ -37,7 +16,7 @@ let sname_of xs =
     | [] -> ()
     | x :: xs -> bprintf b ",%d" x; loop xs in
   let f = function
-    | [] -> bprintf b "E"
+    | [] -> bprintf b "START"
     | x :: xs -> bprintf b "%d" x; loop xs in
   f xs;
   Buffer.contents b
@@ -49,19 +28,25 @@ let name_of es xs =
   done;
   Buffer.contents b
 
-let dump_dot fn es whys =
+let dump_dot fn es target whys =
+  let target = U.map_option (List.sort compare) target in
   let nodes = Hashtbl.create 101 in
   let reg_n x = Hashtbl.replace nodes x () in
   List.iter (fun (x, y) -> reg_n x; reg_n y) whys;
   let o = open_out fn in
   fprintf o "digraph x {\n";
   let dump_node x () =
-    let hp_sj o x =
-      if E.self_justified es x then fprintf o ";style=filled;fillcolor=green" in
-    fprintf o "  \"%s\" [shape=rectangle%a];\n" (sname_of x) hp_sj x in
+    let hp_style o x =
+      let shape = if Some x = target then "oval" else "box" in
+      let fillcolor = if E.self_justified es x then "green" else "white" in
+      let label = sname_of x in
+      let label = if Some x = target then "TARGET "^label else label in
+      fprintf o "style=filled;shape=%s;fillcolor=%s;label=\"%s\""
+        shape fillcolor label in
+    fprintf o "  \"%s\" [%a];\n" (name_of es x) hp_style x in
   let dump_arc (x, y) =
-    fprintf o "  \"%s\" -> \"%s\";\n" (sname_of x) (sname_of y) in
-  fprintf o "  rankdir=LR;";
+    fprintf o "  \"%s\" -> \"%s\";\n" (name_of es x) (name_of es y) in
+  fprintf o "  rankdir=LR;\n";
   Hashtbl.iter dump_node nodes;
   List.iter dump_arc whys;
   fprintf o "}\n";
@@ -74,8 +59,10 @@ let step es fn now =
   let q = MM.exists x (MM.exists y q) in
   List.map (MM.set_of_model y) (Qbf.models fn q)
 
-let do_one fn =
-  let es = U.parse fn in
+let do_decide es target =
+  failwith "ghkvg"
+
+let do_enum fn es target =
   let fn = Filename.remove_extension fn in
   let whys = ref [] in
   let seen = Hashtbl.create 101 in
@@ -92,8 +79,21 @@ let do_one fn =
     bfs (List.fold_left (look (Some x)) xs ys)
   end in
   bfs (look None Que.empty []);
-  dump_dot (sprintf "%s.dot" fn) es !whys
+  dump_dot (sprintf "%s.dot" fn) es target !whys
+
+
+let do_one fn =
+  let es, target = U.parse fn in
+  if !enum_mode
+  then do_enum fn es target
+  else (match target with
+    | None -> eprintf "W: skipping %s: no target execution\n" fn
+    | Some target -> do_decide es target)
+
+
+let cmd_spec = Arg.
+  [ "-e", Set enum_mode, "enumerate all executions" ]
 
 let () =
-  Arg.parse [] do_one "WmmEnum <infiles>"
+  Arg.parse cmd_spec do_one "JrCheck <infiles>"
 

@@ -6,7 +6,7 @@ let parse fn =
   let f = open_in fn in
   let lexbuf = Lexing.from_channel f in
   try
-    let r = EsParser.event_structure EsLexer.token lexbuf in
+    let r = EsParser.top EsLexer.token lexbuf in
     close_in_noerr f;
     r
   with
@@ -25,6 +25,10 @@ let range i k =
 let option d f = function
   | None -> d
   | Some x -> f x
+
+let map_option f = function
+  | None -> None
+  | Some x -> Some (f x)
 
 let id x = x
 
