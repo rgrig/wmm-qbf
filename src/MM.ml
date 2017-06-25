@@ -46,7 +46,7 @@ let justifies es =
     assert (es = y.event_structure);
     let justify_read j =
       let b = Qbf.mk_or @@ List.map (var x) (Hashtbl.find h j) in
-(*       let b = Qbf.mk_or [b; var x j] in (* tweak: justify only new *) *)
+      let b = Qbf.mk_or [b; var x j] in (* tweak: justify only new *)
       Qbf.mk_implies [var y j] b in
     Qbf.mk_and @@ List.map justify_read es.E.reads)
 
