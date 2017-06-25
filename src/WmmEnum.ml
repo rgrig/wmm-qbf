@@ -1,18 +1,11 @@
 open Printf
 
-(* DBG *)
+module E = EventStructure
 module U = Util
 
 (* OLD
 
 module U = Util
-
-let name_of_wmm wmm =
-  let b = Buffer.create (wmm.Wmm.events + 1) in
-  for i = 1 to wmm.Wmm.events do
-    bprintf b (if List.mem i wmm.Wmm.execution then "1" else "0")
-  done;
-  Buffer.contents b
 
 let sname_of_wmm wmm =
   let b = Buffer.create 10 in
@@ -26,16 +19,6 @@ let sname_of_wmm wmm =
   f xs;
   Buffer.contents b
 
-let step prefix wmm =
-  let q = query wmm in
-  let qcir_name = sprintf "%s-%s.qcir" prefix (name_of_wmm wmm) in
-  let sol_name = sprintf "%s-%s.out" prefix (name_of_wmm wmm) in
-  let qcir = open_out qcir_name in
-  fprintf qcir "%a" Qbf.pp_qcir q;
-  close_out qcir;
-  run_qbf_solver qcir_name sol_name;
-  parse_qbf_output sol_name
-
 let dump_dot fn g =
   let o = open_out fn in
   fprintf o "digraph x {\n";
@@ -47,17 +30,38 @@ let dump_dot fn g =
   close_out o
 *)
 
-let do_one fn =
-  (* XXX: reinstate the bfs & dot dumping *)
-  let es = U.parse fn in
+let name_of es xs =
+  let b = Buffer.create (es.E.events_number + 1) in
+  for i = 1 to es.E.events_number do
+    bprintf b (if List.mem i xs then "1" else "0")
+  done;
+  Buffer.contents b
+
+let step es fn now =
   let x = MM.fresh_configuration es in
   let y = MM.fresh_configuration es in
   let q = Qbf.mk_and [ MM.equals_set x []; JR.step1 es x y ] in
   let q = MM.exists x (MM.exists y q) in
-  let ms = Qbf.models fn q in
-  let ys = List.map (MM.set_of_model y) ms in
-  let hp_model f xs = fprintf f "exec %a\n" (U.hp_list_sep " " U.hp_int) xs in
-  printf "%a" (U.hp_list hp_model) ys
+  List.map (MM.set_of_model y) (Qbf.models fn q)
+
+let do_one fn =
+  (* XXX: reinstate dot dumping *)
+  let es = U.parse fn in
+  let fn = Filename.remove_extension fn in
+  let seen = Hashtbl.create 101 in
+  let rec bfs xs = if xs <> Que.empty then begin
+    let x, xs = Que.pop xs in
+    let fnx = sprintf "%s-%s" fn (name_of es x) in
+    let ys = step es fnx x in
+    let look xs y = if not (Hashtbl.mem seen y) then begin
+      printf "exec: %a\n%!" (U.hp_list_sep " " U.hp_int) y;
+      Hashtbl.add seen y ();
+      Que.push y xs
+    end else xs in
+    bfs (List.fold_left look xs ys)
+  end in
+  Hashtbl.add seen [] ();
+  bfs (Que.push [] Que.empty)
 
 let () =
   Arg.parse [] do_one "WmmEnum <infiles>"

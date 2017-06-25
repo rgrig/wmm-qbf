@@ -97,13 +97,6 @@ let prenex =
   in
   top
 
-let que_empty = ([], [])
-let que_push z (xs, ys) = (xs, z :: ys)
-let que_pop = function
-  | ([], []) -> failwith "INTERNAL(pdbgg): pop from empty queue"
-  | ([], y :: ys) -> (y, (List.rev ys, []))
-  | (x :: xs, ys) -> (x, (xs, ys))
-
 (* PRE: simple_quantifiers p && prenex p && is_tree deps *)
 let optimize_quants deps p =
   let quants = Hashtbl.create 101 in
@@ -118,21 +111,21 @@ let optimize_quants deps p =
   let preq t vs q cont p =
     cont (if t then Exists (vs, p, q) else Forall (vs, p, q)) in
   let rec bfs pre t now nxt =
-    if now = que_empty && nxt = que_empty then pre m
-    else if now = que_empty then bfs pre (not t) nxt now
+    if now = Que.empty && nxt = Que.empty then pre m
+    else if now = Que.empty then bfs pre (not t) nxt now
     else begin
-      let q, now = que_pop now in
+      let q, now = Que.pop now in
       let qt, qvs = Hashtbl.find quants q in
       if qt = t then begin
         let children = try Hashtbl.find deps q with Not_found -> [] in
-        let now = List.fold_left (U.flip que_push) now children in
+        let now = List.fold_left (U.flip Que.push) now children in
         bfs (preq qt qvs q pre) t now nxt
-      end else bfs pre t now (que_push q nxt)
+      end else bfs pre t now (Que.push q nxt)
     end in
-  let que_one x = que_push x que_empty in
+  let que_one x = Que.push x Que.empty in
   (match p with
-  | Exists (_, _, q) -> bfs U.id true (que_one q) que_empty
-  | Forall (_, _, q) -> bfs U.id false (que_one q) que_empty
+  | Exists (_, _, q) -> bfs U.id true (que_one q) Que.empty
+  | Forall (_, _, q) -> bfs U.id false (que_one q) Que.empty
   | p -> p)
 
 
@@ -227,4 +220,3 @@ let models fn p =
   close_out qcir;
   run_solver qcir_fn out_fn;
   parse_models out_fn
-
