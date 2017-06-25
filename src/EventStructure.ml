@@ -41,3 +41,15 @@ let check r =
       raise (Bad_read y) in
   List.iter cj r.justifies;
   r
+
+let self_justified es xs =
+  let all = Hashtbl.create 10 in
+  let reads = Hashtbl.create 10 in
+  let justified = Hashtbl.create 10 in
+  List.iter (fun x -> Hashtbl.replace all x ()) xs;
+  List.iter (fun x -> if Hashtbl.mem all x then Hashtbl.add reads x ()) es.reads;
+  let arc (x, y) =
+    if Hashtbl.mem all x then Hashtbl.replace justified y () in
+  List.iter arc es.justifies;
+  Hashtbl.fold (fun x () a -> a && Hashtbl.mem justified x) reads true
+

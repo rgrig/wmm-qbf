@@ -49,11 +49,20 @@ let name_of es xs =
   done;
   Buffer.contents b
 
-let dump_dot fn whys =
+let dump_dot fn es whys =
+  let nodes = Hashtbl.create 101 in
+  let reg_n x = Hashtbl.replace nodes x () in
+  List.iter (fun (x, y) -> reg_n x; reg_n y) whys;
   let o = open_out fn in
   fprintf o "digraph x {\n";
+  let dump_node x () =
+    let hp_sj o x =
+      if E.self_justified es x then fprintf o ";style=filled;fillcolor=green" in
+    fprintf o "  \"%s\" [shape=rectangle%a];\n" (sname_of x) hp_sj x in
   let dump_arc (x, y) =
     fprintf o "  \"%s\" -> \"%s\";\n" (sname_of x) (sname_of y) in
+  fprintf o "  rankdir=LR;";
+  Hashtbl.iter dump_node nodes;
   List.iter dump_arc whys;
   fprintf o "}\n";
   close_out o
@@ -83,7 +92,7 @@ let do_one fn =
     bfs (List.fold_left (look (Some x)) xs ys)
   end in
   bfs (look None Que.empty []);
-  dump_dot (sprintf "%s.dot" fn) !whys
+  dump_dot (sprintf "%s.dot" fn) es !whys
 
 let () =
   Arg.parse [] do_one "WmmEnum <infiles>"
