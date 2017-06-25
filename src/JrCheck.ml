@@ -60,13 +60,22 @@ let step es fn now =
   List.map (MM.set_of_model y) (Qbf.models fn q)
 
 let do_decide es target =
-  failwith "ghkvg"
+  let x = MM.fresh_configuration es in
+  let y = MM.fresh_configuration es in
+  let q = Qbf.mk_and
+    [ MM.equals_set x []
+    ; MM.equals_set y target
+    ; JR.step1tc es x y ] in
+  let q = MM.exists x (MM.exists y q) in
+  let tmpfn = Filename.(temp_file (basename Sys.executable_name) "decide") in
+  printf "result: %b\n" (Qbf.holds tmpfn q)
 
 let do_enum fn es target =
   let fn = Filename.remove_extension fn in
   let whys = ref [] in
   let seen = Hashtbl.create 101 in
   let look x xs y = if not (Hashtbl.mem seen y) then begin
+    if Some y = target then printf "TARGET ";
     printf "exec: %a\n%!" (U.hp_list_sep " " U.hp_int) y;
     Hashtbl.add seen y ();
     U.option () (fun x -> whys := (x, y) :: !whys) x;

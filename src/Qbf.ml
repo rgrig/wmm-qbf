@@ -186,8 +186,8 @@ let hp_qcir f p =
     fprintf f "%s(%a)\n" t (U.hp_list_sep "," U.hp_string) vs in
   fprintf f "#QCIR-G14\n%a%a" (U.hp_list hp_q) prefix hp matrix
 
-let run_solver in_name out_name =
-  let cmd = sprintf "qfun-enum -a -e -i64 %s > %s" in_name out_name in
+let run_solver options in_name out_name =
+  let cmd = sprintf "qfun-enum %s -a -i64 %s > %s" options in_name out_name in
   ignore (Sys.command cmd) (* FIXME *)
 
 let re_model_line = Str.regexp "^v.*$"
@@ -207,16 +207,26 @@ let parse_models fn =
       r := !xs :: !r
     end;
     loop () in
-  try loop () with End_of_file -> !r
+  try loop () with End_of_file -> (close_in sol; !r)
 
-let holds _ = failwith "wqqsh"
+let re_yes_answer = Str.regexp "^s cnf 1"
+let parse_answer fn =
+  let sol = open_in fn in
+  let rec loop () =
+    let line = input_line sol in
+    Str.string_match re_yes_answer line 0 || loop () in
+  try loop () with End_of_file -> (close_in sol; false)
 
-let models fn p =
+let call_solver options parse fn p =
   let p = preprocess p in
   let qcir_fn = sprintf "%s.qcir" fn in
   let out_fn = sprintf "%s.out" fn in
   let qcir = open_out qcir_fn in
   hp_qcir qcir p;
   close_out qcir;
-  run_solver qcir_fn out_fn;
-  parse_models out_fn
+  run_solver options qcir_fn out_fn;
+  parse out_fn
+
+let holds = call_solver "" parse_answer
+let models = call_solver "-e" parse_models
+
