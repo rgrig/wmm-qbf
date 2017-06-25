@@ -21,6 +21,7 @@ type t =
 let last_qid = ref 0
 let fresh_qid () = incr last_qid; !last_qid
 
+(* TODO: add small simplifications in these constructors *)
 let mk_var v = Var v
 let mk_and ps = And ps
 let mk_or ps = Or ps
@@ -197,7 +198,7 @@ let run_solver in_name out_name =
   ignore (Sys.command cmd) (* FIXME *)
 
 let re_model_line = Str.regexp "^v.*$"
-let re_var = Str.regexp "+\\([a-zA-Z0-9_]\\+\\)"
+let re_var = Str.regexp "\\+\\([a-zA-Z0-9_]+\\)"
 let parse_models fn =
   let sol = open_in fn in
   let r = ref [] in

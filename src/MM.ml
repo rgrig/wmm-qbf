@@ -17,7 +17,6 @@ type configuration =
 
 let size_of x =
   x.event_structure.E.events_number
-
 let same_es x y =
   x.event_structure = y.event_structure
 let name x i =
@@ -98,5 +97,6 @@ let rec at_most_n es n p =
   then equal
   else union equal (sequence es p (at_most_n es (n-1) p))
 
-let set_of_model x ms =
-  failwith "hcsea"
+let set_of_model x m =
+  let p i = List.mem (name x i) m in
+  List.filter p (U.range 1 (size_of x))

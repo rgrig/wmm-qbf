@@ -13,7 +13,7 @@ let step1 es =
       let z = MM.fresh_configuration es in
       MM.forall z
         (Qbf.mk_implies
-          [MM.valid_conf es z; step0tc x z]
+          [step0tc x z]
           (sequence step0tc justifies z y))) in
   MM.intersect (MM.valid_rel es) basic
 let step1tc es = MM.at_most_n es es.E.events_number (step1 es)
