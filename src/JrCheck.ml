@@ -59,7 +59,7 @@ let step es fn now =
   let q = MM.exists x (MM.exists y q) in
   List.map (MM.set_of_model y) (Qbf.models fn q)
 
-let do_decide es target =
+let do_decide fn es target =
   let x = MM.fresh_configuration es in
   let y = MM.fresh_configuration es in
   let q = Qbf.mk_and
@@ -67,11 +67,10 @@ let do_decide es target =
     ; MM.equals_set y target
     ; JR.step1tc es x y ] in
   let q = MM.exists x (MM.exists y q) in
-  let tmpfn = Filename.(temp_file (basename Sys.executable_name) "decide") in
-  printf "result: %b\n" (Qbf.holds tmpfn q)
+  let fn = sprintf "%s-decide" fn in
+  printf "result: %b\n" (Qbf.holds fn q)
 
 let do_enum fn es target =
-  let fn = Filename.remove_extension fn in
   let whys = ref [] in
   let seen = Hashtbl.create 101 in
   let look x xs y = if not (Hashtbl.mem seen y) then begin
@@ -93,11 +92,12 @@ let do_enum fn es target =
 
 let do_one fn =
   let es, target = U.parse fn in
+  let fn = Filename.remove_extension fn in
   if !enum_mode
   then do_enum fn es target
   else (match target with
     | None -> eprintf "W: skipping %s: no target execution\n" fn
-    | Some target -> do_decide es target)
+    | Some target -> do_decide fn es target)
 
 
 let cmd_spec = Arg.
