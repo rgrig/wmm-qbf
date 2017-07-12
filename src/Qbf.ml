@@ -188,7 +188,7 @@ let hp_qcir f p =
 
 let run_solver options in_name out_name =
   let cmd = sprintf "qfun-enum %s -a -i64 %s > %s" options in_name out_name in
-  ignore (Sys.command cmd) (* FIXME *)
+  Sys.command cmd
 
 let re_model_line = Str.regexp "^v.*$"
 let re_var = Str.regexp "\\+\\([a-zA-Z0-9_]+\\)"
@@ -224,7 +224,8 @@ let call_solver options parse fn p =
   let qcir = open_out qcir_fn in
   hp_qcir qcir p;
   close_out qcir;
-  run_solver options qcir_fn out_fn;
+  (* Discard the return code *)
+  let _ = run_solver options qcir_fn out_fn in
   parse out_fn
 
 let holds = call_solver "" parse_answer
