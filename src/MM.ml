@@ -33,6 +33,7 @@ let allnames x =
 
 type predicate = configuration -> Qbf.t
 type relation = configuration -> configuration -> Qbf.t
+type 'a relation2 = 'a -> 'a -> Qbf.t
 
 let justifies es =
   let h = Hashtbl.create 0 in
@@ -75,7 +76,7 @@ let equals_set x is =
   let f i =
     if List.mem i is then var x i else Qbf.mk_not (var x i) in
   Qbf.mk_and @@ List.map f (U.range 1 n)
-
+   
 let subset x y =
   assert (same_es x y);
   let n = size_of x in
@@ -83,6 +84,7 @@ let subset x y =
   Qbf.mk_and @@ List.map f (U.range 1 n)
 
 let flip p x y = p y x
+
 let intersect p q x y = Qbf.mk_and [p x y; q x y]
 let union p q x y = Qbf.mk_or [p x y; q x y]
 
@@ -92,6 +94,12 @@ let union_n ps x y =
   Qbf.mk_or @@ List.map (fun p -> p x y) ps
 
 let equal = intersect subset (flip subset)
+
+(*
+Reflexive relations should be a superset of equality.
+x = y ⇒ r x y
+let reflexive r = Qbf.mk_and @@ List.map equal r
+*)
 
 let sequence es p q = fun x z ->
   let y = fresh_configuration es in

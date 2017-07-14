@@ -22,6 +22,8 @@ let last_qid = ref 0
 let fresh_qid () = incr last_qid; !last_qid
 
 (* TODO: add small simplifications in these constructors *)
+(* Do we need these functions? Is it really better than having the
+   constructors? *)
 let mk_var v = Var v
 let mk_and ps = And ps
 let mk_or ps = Or ps
@@ -29,6 +31,7 @@ let mk_not = function Not p -> p | p -> Not p
 let mk_exists vs p = Exists (vs, p, fresh_qid ())
 let mk_forall vs p = Forall (vs, p, fresh_qid ())
 
+(* p₁ ∧ p₂ ∧ pₙ → q  ⇔  ¬p₁ ∨ ¬p₂ ∨ ¬pₙ ∨ q *)
 let mk_implies ps q = mk_or (q :: List.map mk_not ps)
 
 (* {{{ Helpers for preprocess. *)
@@ -162,6 +165,7 @@ let to_clauses p =
   assert b;
   (v, List.rev !cs)
 
+(* "hp" stands for hideous printing: the pretty one is done by @@deriving *)
 let hp f p =
   let top, clauses = to_clauses p in
   let hp_v f (b, v) =
@@ -174,7 +178,6 @@ let hp f p =
     fprintf f "%s = %s(%a%a)\n" w op hp_vs vs (U.hp_list_sep "," hp_v) ps in
   fprintf f "output(%s)\n%a" top (U.hp_list hp_c) clauses
 
-(* "hp" stands for hideous printing: the pretty one is done by @@deriving *)
 let hp_qcir f p =
   let rec pm qs = function
     | Exists (vs, p, _) -> pm ((true, vs) :: qs) p
@@ -225,6 +228,8 @@ let call_solver options parse fn p =
   hp_qcir qcir p;
   close_out qcir;
   (* Discard the return code *)
+  (* TODO: What is the output if the solver returns non-zero. Is it
+     worth parsing it? *)
   let _ = run_solver options qcir_fn out_fn in
   parse out_fn
 

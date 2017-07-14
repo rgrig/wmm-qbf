@@ -21,6 +21,7 @@ val union : relation -> relation -> relation
 val intersect_n : relation list -> relation
 val union_n : relation list -> relation
 
+val reflexive : relation -> Qbf.t
 
 (* When we introduce (existentially quantified) intermediate configurations
 we need to have access to a validity predicate. *)

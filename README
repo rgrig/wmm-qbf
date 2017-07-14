@@ -1,0 +1,4 @@
+# `wmm-qbf`
+
+This tool is designed to evaluate instances of Event Structure Memory
+models to QBF queries.
