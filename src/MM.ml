@@ -2,6 +2,7 @@
   x, y, z, ...    configurations
   u, v, q, ...    predicates
   p, q, r, ...    relations
+  Rl       ...    quantified relation
   a, b, c, ...    formulas
   es              event structure
 *)
@@ -11,9 +12,13 @@ open Printf
 module E = EventStructure
 module U = Util
 
+(* These structures are quantified. They only need a prefix for their
+   QBF variables *)
 type configuration =
   { prefix : string
   ; event_structure : E.t }
+type q_relation =
+  { prefix : string }
 
 let size_of x =
   x.event_structure.E.events_number
@@ -31,9 +36,8 @@ let allnames x =
   List.map (name x) (U.range 1 n)
 
 
-type predicate = configuration -> Qbf.t
+type 'a predicate = 'a -> Qbf.t
 type relation = configuration -> configuration -> Qbf.t
-type 'a relation2 = 'a -> 'a -> Qbf.t
 
 let justifies es =
   let h = Hashtbl.create 0 in
@@ -95,11 +99,13 @@ let union_n ps x y =
 
 let equal = intersect subset (flip subset)
 
-(*
-Reflexive relations should be a superset of equality.
-x = y ⇒ r x y
-let reflexive r = Qbf.mk_and @@ List.map equal r
-*)
+let fresh_relation =
+  let n = ref 0 in
+  (fun () -> incr n; { prefix = sprintf "Rl%d" !n })
+
+(* reflexive r ≜ ∀x∈Dom. r x x *)
+let reflexive es r = fun x y ->
+  Qbf.mk_forall (allnames es) (Qbf.mk_and [r x x; r y y])
 
 let sequence es p q = fun x z ->
   let y = fresh_configuration es in

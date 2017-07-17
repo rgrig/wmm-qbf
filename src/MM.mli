@@ -1,9 +1,13 @@
 type configuration
-type predicate = configuration -> Qbf.t
+type q_relation
+
+(* We're going to have predicates on configurations, like
+   down-closed, and predicates on relations like acyclic *)
+type 'a predicate = 'a -> Qbf.t
 type relation = configuration -> configuration -> Qbf.t
 
 val justifies : EventStructure.t -> relation
-val valid_conf : EventStructure.t -> predicate
+val valid_conf : EventStructure.t -> configuration predicate
 val valid_rel : EventStructure.t -> relation
 
 val fresh_configuration : EventStructure.t -> configuration
@@ -21,7 +25,8 @@ val union : relation -> relation -> relation
 val intersect_n : relation list -> relation
 val union_n : relation list -> relation
 
-val reflexive : relation -> Qbf.t
+val fresh_relation : EventStructure.t -> q_relation
+val reflexive : EventStructure.t -> q_relation predicate
 
 (* When we introduce (existentially quantified) intermediate configurations
 we need to have access to a validity predicate. *)
