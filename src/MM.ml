@@ -104,8 +104,16 @@ let fresh_relation =
   (fun () -> incr n; { prefix = sprintf "Rl%d" !n })
 
 (* reflexive r ≜ ∀x∈Dom. r x x *)
-let reflexive es r = fun x y ->
-  Qbf.mk_forall (allnames es) (Qbf.mk_and [r x x; r y y])
+let reflexive es r = fun x ->
+  Qbf.mk_forall (allnames es) (r x x)
+
+(* transitive r ≜ ∀x,y,z∈Dom . r x y ∧ r y z → r x z *)
+let transitive es r = fun x y z ->
+  Qbf.mk_forall (allnames es) (Qbf.mk_implies [Qbf.mk_and [r x y; r y z]] (r x z))
+
+(* What does this actually mean? *)
+let apply es p a b =
+  Qbf.mk_forall (allnames es) (Qbf.mk_and [p a; p b])
 
 let sequence es p q = fun x z ->
   let y = fresh_configuration es in
