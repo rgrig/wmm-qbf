@@ -36,6 +36,11 @@ let allnames (x:configuration) =
   let n = size_of x in
   List.map (name x) (U.range 1 n)
 
+(* TODO: This should be turned round into a working implementation of arity 2 SO
+     variables, but it is unlikely to perform well. Radu suggested an encoding of relations
+     that uses log(mumble) quantified variables. You should fix this up, make sure you
+     understand it, and then implement Radu's suggestion. Make a new memory model
+     (a replacement for JR.ml) that uses arity 2 SO variables to test the implementation.  *)
 let size_ofr (r:q_relation) =
   r.event_structure.E.events_number
 let same_esr (x:q_relation) y =
@@ -57,6 +62,7 @@ type 'a predicate = 'a -> Qbf.t
 type relation = configuration -> configuration -> Qbf.t
 
 let justifies es =
+(* TODO (low priority): explain this to Mark. *)
   let h = Hashtbl.create 0 in
   List.iter (fun j -> Hashtbl.replace h j []) es.E.reads;
   let add (i, j) =
@@ -76,6 +82,7 @@ let valid_conf es x =
   let downclosed =
     let f (i, j) = Qbf.mk_implies [var x j] (var x i) in
     Qbf.mk_and @@ List.map f es.E.order in
+(* Query: this differs from the definition in the doc. Why? *)
   let no_conflict =
     let f (i, j) = Qbf.mk_not (Qbf.mk_and [var x i; var x j]) in
     Qbf.mk_and @@ List.map f es.E.conflicts in
@@ -90,8 +97,10 @@ let fresh_configuration : E.t -> configuration =
 
 let forall (x:configuration) a =
   Qbf.mk_forall (allnames x) a
+
 let exists (x:configuration) a =
   Qbf.mk_exists (allnames x) a
+
 let equals_set x is =
   let n = size_of x in
   let f i =
