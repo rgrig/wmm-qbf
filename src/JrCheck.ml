@@ -53,15 +53,15 @@ let dump_dot fn es target whys =
   close_out o
 
 let step es fn now =
-  let x = MM.fresh_configuration es in
-  let y = MM.fresh_configuration es in
+  let x = MM.fresh_so_var es 1 in
+  let y = MM.fresh_so_var es 1 in
   let q = Qbf.mk_and [ MM.equals_set x now; JR.step1 es x y ] in
   let q = MM.exists x (MM.exists y q) in
   List.map (MM.set_of_model y) (Qbf.models fn q)
 
 let do_decide fn es target =
-  let x = MM.fresh_configuration es in
-  let y = MM.fresh_configuration es in
+  let x = MM.fresh_so_var es 1 in
+  let y = MM.fresh_so_var es 1 in
   let q = Qbf.mk_and
     [ MM.equals_set x []
     ; MM.equals_set y target

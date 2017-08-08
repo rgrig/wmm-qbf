@@ -86,9 +86,9 @@ let valid_conf es x =
 let valid_rel es x y =
   Qbf.mk_and [ valid_conf es x; valid_conf es y ]
 
-let fresh_configuration : E.t -> so_var =
+let fresh_so_var : E.t -> int -> so_var =
   let n = ref 0 in
-  (fun es -> incr n; { prefix = sprintf "C%d" !n; arity = 1; event_structure = es } )
+  (fun es a -> incr n; { prefix = sprintf "C%d" !n; arity = a; event_structure = es } )
 
 let forall x a =
   Qbf.mk_forall (allnames x) a
@@ -102,7 +102,7 @@ let equals_set x is =
     if List.mem i is then var x [i] else Qbf.mk_not (var x [i]) in
   Qbf.mk_and @@ List.map f (U.range 1 n)
    
-let subset (x) (y) =
+let subset x y =
   assert (same_es x y);
   let n = size_of x in
   let f i = Qbf.mk_implies [var x [i]] (var y [i]) in
@@ -120,10 +120,6 @@ let union_n ps x y =
 
 let equal = intersect subset (flip subset)
 
-let fresh_relation =
-  let n = ref 0 in
-  (fun es -> incr n; { prefix = sprintf "Rl%d" !n; arity = 1; event_structure = es})
-
 (* reflexive r ≜ ∀x∈Dom. r x x *)
 let reflexive es r =
   let n = size_of r in
@@ -131,8 +127,8 @@ let reflexive es r =
 
 let irreflexive es r =
   let n = size_of r in
-  Qbf.mk_and @@ List.map (fun i -> Qbf.mk_not (var r [i;i])) (U.range 1 n)                         
-                         
+  Qbf.mk_and @@ List.map (fun i -> Qbf.mk_not (var r [i;i])) (U.range 1 n)
+
 exception Unreachable of string
 (* TODO: There's got to be a better way... *)
 let map3 (f : 'a -> 'b -> 'c -> 'd) (a: 'a list) (b: 'b list) (c: 'c list) : 'd list =
@@ -150,7 +146,14 @@ let map3 (f : 'a -> 'b -> 'c -> 'd) (a: 'a list) (b: 'b list) (c: 'c list) : 'd 
 (* a ⊆ b *)
 let subset_r a b =
   let x = size_of a in
-  let sub a b = List.flatten (List.map (fun i -> List.map (fun j -> Qbf.mk_implies [var a [i;j]] (var b [i;j])) (U.range 1 x))  (U.range 1 x)) in
+  let sub a b =
+    let f xs =
+      match xs with
+        [i;j] -> Qbf.mk_implies [var a [i;j]] (var b [i;j])
+      | _ -> raise (U.Runtime_error "") (* compiler warns without this *)
+    in
+    List.map f (U.n_cartesian_product [(U.range 1 x); (U.range 1 x)])
+  in
   Qbf.mk_and @@ (sub a b)
 
 (* transitive r ≜ ∀x,y,z ∈ Dom . r x y ∧ r y z → r x z *)
@@ -161,12 +164,12 @@ let transitive es r =
 
 (* ∃x . y⁺ ⊆ x *)
 let trancl es y =
-  let x = fresh_relation es in
+  let x = fresh_so_var es 2 in
   let x1 = transitive es x in
   Qbf.mk_and @@ [x1; subset_r y x]
 
 let sequence es p q = fun x z ->
-  let y = fresh_configuration es in
+  let y = fresh_so_var es 1 in
   exists y (Qbf.mk_and [p x y; q y z])
 
 let rec at_most_n es n p =

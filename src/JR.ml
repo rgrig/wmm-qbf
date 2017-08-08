@@ -11,7 +11,7 @@ module E = EventStructure
   let sequence = MM.sequence es in
   let ae_justifies =
     (fun x y ->
-      let z = MM.fresh_configuration es in
+      let z = MM.fresh_so_var es 1 in
       MM.forall z
         (Qbf.mk_implies
           [step0tc x z]

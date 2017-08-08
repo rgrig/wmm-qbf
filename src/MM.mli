@@ -9,7 +9,7 @@ val justifies : EventStructure.t -> relation
 val valid_conf : EventStructure.t -> so_var predicate
 val valid_rel : EventStructure.t -> relation
 
-val fresh_configuration : EventStructure.t -> so_var
+val fresh_so_var : EventStructure.t -> int -> so_var
 val forall : so_var -> Qbf.t -> Qbf.t
 val exists : so_var -> Qbf.t -> Qbf.t
 val equals_set : so_var -> EventStructure.set -> Qbf.t
@@ -24,7 +24,6 @@ val union : relation -> relation -> relation
 val intersect_n : relation list -> relation
 val union_n : relation list -> relation
 
-val fresh_relation : EventStructure.t -> so_var
 val reflexive : EventStructure.t -> so_var predicate
 
 (* When we introduce (existentially quantified) intermediate so_vars
