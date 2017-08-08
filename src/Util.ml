@@ -1,5 +1,3 @@
-#require "batteries"
-
 open Printf
 module B = BatList
 
