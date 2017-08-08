@@ -1,4 +1,4 @@
-val step0 : EventStructure.t -> MM.relation
-val step0tc : EventStructure.t -> MM.relation
-val step1 : EventStructure.t -> MM.relation
-val step1tc : EventStructure.t -> MM.relation
+val always_justifies : EventStructure.t -> MM.relation
+val always_justifies_tc : EventStructure.t -> MM.relation
+val always_eventually_justifies : EventStructure.t -> MM.relation
+val always_eventually_justifies_tc : EventStructure.t -> MM.relation
