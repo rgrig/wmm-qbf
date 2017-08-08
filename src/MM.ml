@@ -57,6 +57,7 @@ let allnames x =
   List.map (name x) names
 
 let justifies es =
+(* TODO (low priority): explain this to Mark. *)
   let h = Hashtbl.create 0 in
   List.iter (fun j -> Hashtbl.replace h j []) es.E.reads;
   let add (i, j) =
@@ -76,6 +77,7 @@ let valid_conf es x =
   let downclosed =
     let f (i, j) = Qbf.mk_implies [var x [j]] (var x [i]) in
     Qbf.mk_and @@ List.map f es.E.order in
+(* Query: this differs from the definition in the doc. Why? *)
   let no_conflict =
     let f (i, j) = Qbf.mk_not (Qbf.mk_and [var x [i]; var x [j]]) in
     Qbf.mk_and @@ List.map f es.E.conflicts in
@@ -90,8 +92,10 @@ let fresh_configuration : E.t -> so_var =
 
 let forall x a =
   Qbf.mk_forall (allnames x) a
+
 let exists x a =
   Qbf.mk_exists (allnames x) a
+
 let equals_set x is =
   let n = size_of x in
   let f i =
