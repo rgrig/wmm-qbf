@@ -1,6 +1,19 @@
+#require "batteries"
+
 open Printf
+module B = BatList
 
 exception Parsing_failed of string
+exception Runtime_error of string
+                          
+(* From Batteries BatList.n_cartesian_product *)
+let rec n_cartesian_product = B.n_cartesian_product
+(*  function
+| [] -> [[]]
+| h :: t ->
+    let rest = n_cartesian_product t in
+    List.concat
+      (List.map (fun i -> List.map (fun r -> i :: r) rest) h) *)
 
 let parse fn =
   let f = open_in fn in

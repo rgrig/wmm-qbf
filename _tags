@@ -1,4 +1,4 @@
-<src/*>: package(ppx_deriving.std,str)
+<src/*>: package(ppx_deriving.std,str,batteries)
 <src>: include
 true: use_menhir
 <src/*.mly>: explain, infer
