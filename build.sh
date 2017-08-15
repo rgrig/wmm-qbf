@@ -1,4 +1,4 @@
-MAINS="JrCheck"
+MAINS="JrCheck Test"
 TYPE="byte"
 
 T=""

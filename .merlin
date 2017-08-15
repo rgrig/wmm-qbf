@@ -1,0 +1,4 @@
+PKG oUnit
+S ../src ./
+B _build/test
+B _build/src

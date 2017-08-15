@@ -5,6 +5,7 @@ type so_var
 type 'a predicate = 'a -> Qbf.t
 type relation = so_var -> so_var -> Qbf.t
 
+val size_of : so_var -> int
 val justifies : EventStructure.t -> relation
 val valid_conf : EventStructure.t -> so_var predicate
 val valid_rel : EventStructure.t -> relation
@@ -34,3 +35,15 @@ val at_most_n : EventStructure.t -> int -> relation -> relation
 
 val set_of_model : so_var -> Qbf.model -> EventStructure.set
 
+
+(**/**)
+(* Section ignored by ocamldoc *)
+
+val test_sizeof: OUnit.test
+val test_name: OUnit.test
+val test_var: OUnit.test
+val test_subset: OUnit.test
+val test_subset_r: OUnit.test
+val test_flip: OUnit.test
+val test_equal: OUnit.test
+val test_union: OUnit.test
