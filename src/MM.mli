@@ -6,14 +6,17 @@ type 'a predicate = 'a -> Qbf.t
 type relation = so_var -> so_var -> Qbf.t
 
 val size_of : so_var -> int
+
 val justifies : EventStructure.t -> relation
 val valid_conf : EventStructure.t -> so_var predicate
 val valid_rel : EventStructure.t -> relation
 
 val fresh_so_var : EventStructure.t -> int -> so_var
+val writes : EventStructure.t -> so_var predicate
 val forall : so_var -> Qbf.t -> Qbf.t
 val exists : so_var -> Qbf.t -> Qbf.t
 val equals_set : so_var -> EventStructure.set -> Qbf.t
+val _in: int list -> so_var -> Qbf.t
 
 val subset : relation
 val equal : relation
@@ -43,6 +46,7 @@ val test_sizeof: OUnit.test
 val test_name: OUnit.test
 val test_var: OUnit.test
 val test_subset: OUnit.test
+val test_subset2: OUnit.test
 val test_subset_r: OUnit.test
 val test_flip: OUnit.test
 val test_equal: OUnit.test

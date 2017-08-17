@@ -1,3 +1,4 @@
+open BatList
 type event = int
 type set = event list
 type relation = (event * event) list
@@ -53,3 +54,8 @@ let self_justified es xs =
   List.iter arc es.justifies;
   Hashtbl.fold (fun x () a -> a && Hashtbl.mem justified x) reads true
 
+let events es = BatList.range 1 `To (es.events_number)              
+let order es = es.order
+let reads es = es.reads
+let writes es = List.filter (fun x -> not (List.mem x es.reads)) (events es)
+let events_number es = es.events_number

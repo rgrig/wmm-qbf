@@ -44,6 +44,9 @@ let var x is =
   if (x.arity != List.length is) then raise Bad_arity;
   Qbf.mk_var @@ name x is
 
+let _in is x =
+  var x is
+
 (* Builds all the names for a given SO variable, e.g. C01R1_1,
    C01R1_2, ... *)
 let allnames x =
@@ -54,7 +57,7 @@ let allnames x =
   in
   let names = U.n_cartesian_product (lists (U.range 1 n) (x.arity)) in
   List.map (name x) names
-
+  
 let justifies es =
 (* TODO (low priority): explain this to Mark. *)
   let h = Hashtbl.create 0 in
@@ -71,7 +74,7 @@ let justifies es =
       let b = Qbf.mk_or [b; var x [j]] in (* tweak: justify only new *)
       Qbf.mk_implies [var y [j]] b in
     Qbf.mk_and @@ List.map justify_read es.E.reads)
-
+  
 let valid_conf es x =
   let downclosed =
     let f (i, j) = Qbf.mk_implies [var x [j]] (var x [i]) in
@@ -95,6 +98,12 @@ let forall x a =
 let exists x a =
   Qbf.mk_exists (allnames x) a
 
+let writes es w =
+  let reads = EventStructure.reads es in
+  Qbf.mk_and @@ List.map
+    (fun x -> if List.mem x reads then Qbf.mk_not (var w [x]) else var w [x])
+    (U.range 1 (EventStructure.events_number es))
+
 let equals_set x is =
   let n = size_of x in
   let f i =
@@ -112,6 +121,17 @@ let flip p x y = p y x
 let intersect p q x y = Qbf.mk_and [p x y; q x y]
 let union p q x y = Qbf.mk_or [p x y; q x y]
 
+let set_union es x e =
+  assert (x.arity == 1);
+  let n = size_of x in
+  let xn = fresh_so_var es 1 in
+  let f i = Qbf.mk_or @@ [Qbf.mk_implies [var xn [i]] (var x [i]); var xn e] in
+  let g i = Qbf.mk_or @@ [Qbf.mk_implies [var x [i]] (var xn [i])] in
+  Qbf.mk_and [
+      Qbf.mk_and @@ List.map f (U.range 1 n)
+    ; Qbf.mk_and @@ List.map g (U.range 1 n)
+    ]
+  
 let intersect_n ps x y =
   Qbf.mk_and @@ List.map (fun p -> p x y) ps
 let union_n ps x y =
@@ -278,26 +298,6 @@ let test_flip = "flip" >:: (fun () ->
     assert_equal (2,1) (flip pair 1 2)
   )
 
-let test_equal = "equal" >:: (fun () ->
-  let x = equal sample_conf sample_conf in
-  assert_equal (Qbf.mk_and [
-                    Qbf.mk_and [
-                        Qbf.mk_implies [var sample_conf [1]] (var sample_conf [1]);
-                        Qbf.mk_implies [var sample_conf [2]] (var sample_conf [2]);
-                        Qbf.mk_implies [var sample_conf [3]] (var sample_conf [3]);
-                        Qbf.mk_implies [var sample_conf [4]] (var sample_conf [4]);
-                      ];
-                      Qbf.mk_and [
-                        Qbf.mk_implies [var sample_conf [1]] (var sample_conf [1]);
-                        Qbf.mk_implies [var sample_conf [2]] (var sample_conf [2]);
-                        Qbf.mk_implies [var sample_conf [3]] (var sample_conf [3]);
-                        Qbf.mk_implies [var sample_conf [4]] (var sample_conf [4]);
-                      ]
-                  ]
-               ) x
-  )
-
-
 let sample_conf2 = { prefix = "C03"
                   ; arity = 1
                   ; event_structure = { events_number = 4;
@@ -307,6 +307,40 @@ let sample_conf2 = { prefix = "C03"
                                         order = [] }
                   }
 
+let test_subset2 = "subset 2" >:: (fun () ->
+  let x = subset sample_conf sample_conf2 in
+  assert_equal (Qbf.mk_and
+                  [
+                    Qbf.mk_implies [var sample_conf [1]] (var sample_conf2 [1]);
+                    Qbf.mk_implies [var sample_conf [2]] (var sample_conf2 [2]);
+                    Qbf.mk_implies [var sample_conf [3]] (var sample_conf2 [3]);
+                    Qbf.mk_implies [var sample_conf [4]] (var sample_conf2 [4]);
+                  ]
+               ) x
+  )
+                 
+let test_equal = "equal" >:: (fun () ->
+  let x = equal sample_conf sample_conf2 in
+  assert_equal (Qbf.mk_and [
+                    Qbf.mk_and [
+                        Qbf.mk_implies [var sample_conf [1]] (var sample_conf2 [1]);
+                        Qbf.mk_implies [var sample_conf [2]] (var sample_conf2 [2]);
+                        Qbf.mk_implies [var sample_conf [3]] (var sample_conf2 [3]);
+                        Qbf.mk_implies [var sample_conf [4]] (var sample_conf2 [4]);
+                      ];
+                      Qbf.mk_and [
+                        Qbf.mk_implies [var sample_conf2 [1]] (var sample_conf [1]);
+                        Qbf.mk_implies [var sample_conf2 [2]] (var sample_conf [2]);
+                        Qbf.mk_implies [var sample_conf2 [3]] (var sample_conf [3]);
+                        Qbf.mk_implies [var sample_conf2 [4]] (var sample_conf [4]);
+                      ]
+                  ]
+               ) x
+  )
+
+let print fmt a b =
+  () (*Format.fprintf fmt "%p\n%p" (a) (b)*)
+               
 let test_union = "union" >:: (fun () ->
     let x = sample_conf in
     let y = sample_conf2 in
