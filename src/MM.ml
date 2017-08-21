@@ -85,30 +85,41 @@ let valid_conf es x =
     Qbf.mk_and @@ List.map f es.E.conflicts in
   Qbf.mk_and [ downclosed; no_conflict ]
 
+let compose x rel =
+  List.map snd (List.filter (fun (l,r) -> x == l) rel)
+
+let pre_compose x rel =
+  List.map fst (List.filter (fun (l,r) -> x == r) rel)
+
+let same_label es x y =
+  if List.mem x (EventStructure.reads es) then
+    (pre_compose x (EventStructure.justifies es)) == pre_compose y (EventStructure.justifies es)
+  else
+    (compose x (EventStructure.justifies es)) == compose y (EventStructure.justifies es)
+       
+
 let valid_rel es x y =
   Qbf.mk_and [ valid_conf es x; valid_conf es y ]
 
-let fresh_so_var : E.t -> int -> so_var =
+let fresh_so_var = 
   let n = ref 0 in
-  (fun es a -> incr n; { prefix = sprintf "C%d" !n; arity = a; event_structure = es } )
+  (fun ?(prefix = "C") es a -> incr n; { prefix = sprintf "%s%d" prefix !n; arity = a; event_structure = es } )
 
 let forall x a =
   Qbf.mk_forall (allnames x) a
 
 let exists x a =
   Qbf.mk_exists (allnames x) a
-
-let writes es w =
-  let reads = EventStructure.reads es in
-  Qbf.mk_and @@ List.map
-    (fun x -> if List.mem x reads then Qbf.mk_not (var w [x]) else var w [x])
-    (U.range 1 (EventStructure.events_number es))
-
+  
 let equals_set x is =
   let n = size_of x in
   let f i =
     if List.mem i is then var x [i] else Qbf.mk_not (var x [i]) in
   Qbf.mk_and @@ List.map f (U.range 1 n)
+  
+let writes es w =
+  let writes = EventStructure.writes es in
+  equals_set w writes
 
 let subset x y =
   assert (same_es x y);
@@ -127,10 +138,11 @@ let set_union es x e =
   let xn = fresh_so_var es 1 in
   let f i = Qbf.mk_or @@ [Qbf.mk_implies [var xn [i]] (var x [i]); var xn e] in
   let g i = Qbf.mk_or @@ [Qbf.mk_implies [var x [i]] (var xn [i])] in
-  Qbf.mk_and [
-      Qbf.mk_and @@ List.map f (U.range 1 n)
-    ; Qbf.mk_and @@ List.map g (U.range 1 n)
-    ]
+  exists xn @@
+    Qbf.mk_and [
+        Qbf.mk_and @@ List.map f (U.range 1 n)
+      ; Qbf.mk_and @@ List.map g (U.range 1 n)
+      ]
   
 let intersect_n ps x y =
   Qbf.mk_and @@ List.map (fun p -> p x y) ps
@@ -186,8 +198,8 @@ let transitive es r =
 (* ∃x . y⁺ ⊆ x *)
 let trancl es y =
   let x = fresh_so_var es 2 in
-  let x1 = transitive es x in
-  Qbf.mk_and @@ [x1; subset_r y x]
+  let x_is_trans = transitive es x in
+  exists x @@ Qbf.mk_and @@ [x_is_trans; subset_r y x]
 
 let sequence es p q = fun x z ->
   assert (x.arity == z.arity);

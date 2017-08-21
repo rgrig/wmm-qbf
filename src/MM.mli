@@ -11,7 +11,7 @@ val justifies : EventStructure.t -> relation
 val valid_conf : EventStructure.t -> so_var predicate
 val valid_rel : EventStructure.t -> relation
 
-val fresh_so_var : EventStructure.t -> int -> so_var
+val fresh_so_var : ?prefix:string -> EventStructure.t -> int -> so_var
 val writes : EventStructure.t -> so_var predicate
 val forall : so_var -> Qbf.t -> Qbf.t
 val exists : so_var -> Qbf.t -> Qbf.t
@@ -35,7 +35,7 @@ we need to have access to a validity predicate. *)
 
 val sequence : EventStructure.t -> relation -> relation -> relation
 val at_most_n : EventStructure.t -> int -> relation -> relation
-
+val same_label : EventStructure.t -> int -> int -> bool
 val set_of_model : so_var -> Qbf.model -> EventStructure.set
 
 

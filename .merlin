@@ -1,4 +1,4 @@
-PKG oUnit
+PKG oUnit ppx_deriving.std ppx_deriving.show
 S ../src ./
 B _build/test
 B _build/src

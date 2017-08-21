@@ -58,4 +58,5 @@ let events es = BatList.range 1 `To (es.events_number)
 let order es = es.order
 let reads es = es.reads
 let writes es = List.filter (fun x -> not (List.mem x es.reads)) (events es)
+let justifies es = es.justifies
 let events_number es = es.events_number
