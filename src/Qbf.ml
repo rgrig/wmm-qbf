@@ -165,7 +165,14 @@ let to_clauses p =
   assert b;
   (v, List.rev !cs)
 
-(* "hp" stands for hideous printing: the pretty one is done by @@deriving *)
+(* TODO: Replace/remove. *)
+(* WIP. *)
+let rec build_list separator_fn print_fn = function
+  | [] -> ()
+  | [x] -> print_fn x
+  | x :: xs -> begin print_fn x; separator_fn end
+
+(* TODO: Rewrite. *)
 let hp f p =
   let top, clauses = to_clauses p in
   let hp_v f (b, v) =
@@ -178,6 +185,7 @@ let hp f p =
     fprintf f "%s = %s(%a%a)\n" w op hp_vs vs (U.hp_list_sep "," hp_v) ps in
   fprintf f "output(%s)\n%a" top (U.hp_list hp_c) clauses
 
+(* TODO: Rewrite. *)
 let hp_qcir f p =
   let rec pm qs = function
     | Exists (vs, p, _) -> pm ((true, vs) :: qs) p
@@ -189,12 +197,16 @@ let hp_qcir f p =
     fprintf f "%s(%a)\n" t (U.hp_list_sep "," U.hp_string) vs in
   fprintf f "#QCIR-G14\n%a%a" (U.hp_list hp_q) prefix hp matrix
 
+(* TODO: Replace. *)
 let run_solver options in_name out_name =
-  let cmd = sprintf "qfun-enum %s -a -i64 %s > %s" options in_name out_name in
+  (* HACK. *)
+  let cmd = sprintf "qemu-x86_64 qfun-enum %s -a -i64 %s > %s" options in_name out_name in
   Sys.command cmd
 
-let re_model_line = Str.regexp "^v.*$"
+let re_model = Str.regexp "^v.*$"
 let re_var = Str.regexp "\\+\\([a-zA-Z0-9_]+\\)"
+(*
+TODO: Remove.
 let parse_models fn =
   let sol = open_in fn in
   let r = ref [] in
@@ -211,15 +223,60 @@ let parse_models fn =
     end;
     loop () in
   try loop () with End_of_file -> (close_in sol; !r)
+*)
+let parse_models data =
+  (* TODO: Someone who understands what the models in question are should check this explanation. *)
+  (* Returns a list of variables found in data within the given range, accumulating list in found. *)
+  let rec find_vars (start_index : int) (end_index : int) (found : string list) : string list =
+    try
+      (* Find next variable. *)
+      let var_start = Str.search_forward re_var data start_index in
+      let var_end = Str.match_end () in
+      let var = String.sub data var_start (var_end - var_start) in
+
+      (* Accumulate variables. *)
+      (* TODO: Check order. *)
+      find_vars var_end end_index var::found
+    (* Done. *)
+    with Not_found -> found
+
+  (* TODO: Someone who understands what the models in question are should check this explanation. *)
+  (* Returns a list of models found in data, starting from index, accumulating list in found. *)
+  (* Each model is represented as a list of variables. *)
+  let rec find_models (start_index : int) (found : string list) : string list =
+    try
+      (* Find line containing model data. *)
+      let model_start = Str.search_forward re_model data start_index in
+      let model_end = Str.match_end () in
+
+      (* Find vars in this model. *)
+      let model = find_vars model_start model_end [] in
+
+      (* Accumulate models. *)
+      (* TODO: Check order. *)
+      find_models model_end model::found
+    (* Done. *)
+    with Not_found -> found
+  
+  find_models 0 []
 
 let re_yes_answer = Str.regexp "^s cnf 1"
+(*
+TODO: Remove.
 let parse_answer fn =
   let sol = open_in fn in
   let rec loop () =
     let line = input_line sol in
     Str.string_match re_yes_answer line 0 || loop () in
   try loop () with End_of_file -> (close_in sol; false)
+*)
+let parse_answer data =
+  try
+    ignore (Str.search_forward re_yes_answer data 0);
+    true
+  with Not_found -> false
 
+(* TODO: Rewrite. *)
 let call_solver options parse fn p =
   let p = preprocess p in
   let qcir_fn = sprintf "%s.qcir" fn in
@@ -233,6 +290,7 @@ let call_solver options parse fn p =
   let _ = run_solver options qcir_fn out_fn in
   parse out_fn
 
+(* TODO: Rewrite. *)
 let holds = call_solver "" parse_answer
 let models = call_solver "-e" parse_models
 

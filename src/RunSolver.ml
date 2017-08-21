@@ -1,0 +1,108 @@
+(* WIP fix for wmm-qbf to make it use pipes. *)
+(* NOTE: This is likely only to work on POSIX. *)
+
+(* Thrown when the called subprocess encounters an error, includes the any output to stderr. *)
+exception SubprocessFailed of string
+
+(* Read from a file descriptor into a buffer, ignoring irrelevant blocking errors. *)
+(* Return true on EOF. *)
+let nonblock_read (file : Unix.file_descr) (buffer : Buffer.t) : bool =
+	try
+		let max_bytes = 256 in
+		let chunk = Bytes.create max_bytes in
+		let bytes_read = Unix.read file chunk 0 max_bytes in
+		Buffer.add_subbytes buffer chunk 0 bytes_read;
+		bytes_read = 0
+	(* NOTE: EWOULDBLOCK is only for sockets according to read(3) *)
+	(* NOTE: EAGAIN only occurs if no bytes are read. *)
+	with Unix.Unix_error (Unix.EAGAIN, _, _) -> false
+
+(* Write from a buffer to a file descriptor, ignoring irrelevant blocking errors. *)
+let nonblock_write (buffer : bytes) (offset : int ref) (file : Unix.file_descr) =
+	try
+		(* Write remaining bytes. *)
+		let remaining = (Bytes.length buffer) - !offset in
+		if remaining <> 0 then begin
+			let bytes_written = Unix.single_write file buffer !offset remaining in
+			offset := !offset + bytes_written;
+
+			(* Close pipe when finished. *)
+			if !offset = Bytes.length buffer then begin
+				Unix.close file;
+			end
+		end
+	(* NOTE: EWOULDBLOCK is only for sockets according to write(3) *)
+	(* NOTE: EAGAIN only occurs if no bytes are written. *)
+	with Unix.Unix_error (Unix.EAGAIN, _, _) -> ()
+
+(* Call the solver as a subprocess, passing it the given input. *)
+(* Either returns the resulting output or throws SubprocessFailed if the process writes to stderr. *)
+let run_solver (data : string) : string =
+	(* Create stdio pipes to talk to subprocess. *)
+	(* NOTE: Pipes could be left open if an exception is thrown, doesn't matter if we're only called once. *)
+	let (child_stdin_r, child_stdin_w) = Unix.pipe () in
+	let (child_stdout_r, child_stdout_w) = Unix.pipe () in
+	let (child_stderr_r, child_stderr_w) = Unix.pipe () in
+
+	(* Mark our end of each pipe to be closed by the child. *)
+	Unix.set_close_on_exec child_stdin_w;
+	Unix.set_close_on_exec child_stdout_r;
+	Unix.set_close_on_exec child_stderr_r;
+
+	(* Launch process with the new pipes. *)
+	(* NOTE: Using create_process to avoid calling /bin/sh because it might cause trouble. *)
+	let pid = Unix.create_process
+		(* HACK.
+		 "./qfun-enum"
+		 [|"qfun-enum";"-a";"-i64"|] *)
+		"/usr/bin/cat"
+		[|"cat"|]
+		child_stdin_r
+		child_stdout_w
+		child_stderr_w
+	in
+
+	(* Close our copy of child's end of each pipe. *)
+	Unix.close child_stdin_r;
+	Unix.close child_stdout_w;
+	Unix.close child_stderr_w;
+
+	(* Make pipes nonblocking so we can check each in turn. *)
+	Unix.set_nonblock child_stdin_w;
+	Unix.set_nonblock child_stdout_r;
+	Unix.set_nonblock child_stderr_r;
+
+	(* Setup buffers for IO. *)
+	let to_child_offset = ref 0 in
+	let to_child_data = Bytes.of_string data in
+	let output = Buffer.create 16 in
+	let errors = Buffer.create 16 in
+
+	(* Concurrently write stdin, read stdout, read stderr, until subprocess ends and closes stdout. *)
+	(* Works this way because a blocking write of all input could block waiting for the process to read. *)
+	(* The process won't read if it's own output pipe is blocked, which it might be if we don't read it. *)
+	(* On Linux the default pipe buffer is ~64KB, so this may not be needed in reality... *)
+	(* ...but we can't guarantee it won't! *)
+	(* TODO: Avoid polling (ideally). *)
+	let waiting = ref true in
+	(* If you're a functional purist, how much do you hate me right now? :P *)
+	while !waiting do
+		(* Poll each pipe, doing this with select() would be very awkward. *)
+		nonblock_write to_child_data to_child_offset child_stdin_w;
+		if nonblock_read child_stdout_r output then waiting := false;
+		let _ = nonblock_read child_stderr_r errors in
+
+		(* Let the OS do something else. *)
+		Unix.sleepf 0.01;
+	done;
+
+	(* Close pipes. *)
+	Unix.close child_stdout_r;
+	Unix.close child_stderr_r;
+
+	(* Clean up zombie subprocess and get it's exit code. *)
+	let (_, status) = Unix.waitpid [] pid in
+	match status with
+	(* Success. *)
+	| Unix.WEXITED 0 -> Buffer.contents output
+	| _ -> raise (SubprocessFailed (Buffer.contents errors))
