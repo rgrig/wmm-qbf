@@ -37,9 +37,6 @@ let nonblock_write (buffer : bytes) (offset : int ref) (file : Unix.file_descr) 
   with Unix.Unix_error (Unix.EAGAIN, _, _) -> ()
 
 let run_solver (options : string array) (data : string) : string =
-  (* HACK. *)
-  Printf.printf "Calling solver...\n%!";
-
   (* Create stdio pipes to talk to subprocess. *)
   (* NOTE: Pipes could be left open if an exception is thrown, doesn't matter if we're only called once. *)
   let (child_stdin_r, child_stdin_w) = Unix.pipe () in
@@ -51,23 +48,16 @@ let run_solver (options : string array) (data : string) : string =
   Unix.set_close_on_exec child_stdout_r;
   Unix.set_close_on_exec child_stderr_r;
 
-  (* HACK. *)
-  Printf.printf "Data:\n%s\n%!" data;
-
   (* Launch process with the new pipes. *)
   (* NOTE: Using create_process to avoid calling /bin/sh because it might cause trouble. *)
   let pid = Unix.create_process
     (* HACK. *)
     (*
-	"./qfun-enum"
+	"utils/qfun-enum"
     (Array.append [|"qfun-enum"; "-a"; "-i64"|] options)
 	*)
 	"qemu-x86_64"
-    (Array.append [|"qemu-x86_64"; "./qfun-enum"; "-a"; "-i64"|] options )
-	(*
-	"qemu-i386"
-	[|"qemu-i386"; "/usr/bin/cat"|]
-	*)
+    (Array.append [|"qemu-x86_64"; "utils/qfun-enum"; "-a"; "-i64"|] options )
     child_stdin_r
     child_stdout_w
     child_stderr_w
@@ -102,8 +92,6 @@ let run_solver (options : string array) (data : string) : string =
   (* TODO: Avoid polling (ideally). *)
   let waiting = ref true in
   (* If you're a functional purist, how much do you hate me right now? :P *)
-  (* HACK. *)
-  (try (
   while !waiting do
     (* Poll each pipe, doing this with select() would be very awkward. *)
     nonblock_write to_child_data to_child_offset child_stdin_w;
@@ -112,12 +100,7 @@ let run_solver (options : string array) (data : string) : string =
 
     (* Let the OS do something else. *)
     Unix.sleepf 0.01;
-	Printf.printf "Polling\n%!";
   done;
-  ) with _ -> (Printf.printf "Failed\n%!"));
-
-  (* HACK. *)
-  Printf.printf "Done\n%s\n%!" (Buffer.contents output);
 
   (* Close pipes. *)
   Unix.close child_stdout_r;
