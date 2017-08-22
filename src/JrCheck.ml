@@ -59,7 +59,7 @@ let step es fn now =
   let q = MM.exists x (MM.exists y q) in
   List.map (MM.set_of_model y) (Qbf.models fn q)
 
-let do_decide fn es target =
+let j_r_do_decide fn es target =
   let x = MM.fresh_so_var es 1 in
   let y = MM.fresh_so_var es 1 in
   let q = Qbf.mk_and
@@ -70,6 +70,8 @@ let do_decide fn es target =
   let fn = sprintf "%s-decide" fn in
   printf "result: %b\n" (Qbf.holds fn q)
 
+let pes_do_decide = PES.do_decide
+              
 let do_enum fn es target =
   let whys = ref [] in
   let seen = Hashtbl.create 101 in
@@ -89,6 +91,22 @@ let do_enum fn es target =
   bfs (look None Que.empty []);
   dump_dot (sprintf "%s.dot" fn) es target !whys
 
+let models = [
+  ("j+r", j_r_do_decide)
+; ("pes", pes_do_decide)
+]
+
+let default_model = List.hd models
+let model_name = ref (fst default_model)
+
+let pick_model m =
+  let rec p ms =
+    match ms with
+      (x, f)::ms when x = m -> f
+    | _::ms -> p ms
+    | [] -> snd default_model
+  in
+  p models
 
 let do_one fn =
   let es, target = U.parse fn in
@@ -97,11 +115,14 @@ let do_one fn =
   then do_enum fn es target
   else (match target with
     | None -> eprintf "W: skipping %s: no target execution\n" fn
-    | Some target -> do_decide fn es target)
+    | Some target -> (pick_model !model_name) fn es target
+    )
 
-
-let cmd_spec = Arg.
-  [ "-e", Set enum_mode, "enumerate all executions" ]
+let cmd_spec =
+  Arg.align [
+    "-e", Arg.Set enum_mode, "  enumerate all executions"
+  ;"--model", Arg.Set_string model_name, (Format.sprintf "  pick a model. Default is %s" !model_name)
+  ]
 
 let () =
   Arg.parse cmd_spec do_one "JrCheck <infiles>"

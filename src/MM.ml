@@ -188,23 +188,25 @@ let subset_r a b =
   Qbf.mk_and @@ (sub a b)
 
 
+let sequence es p q = fun x z ->
+  assert (x.arity == z.arity);
+  let y = fresh_so_var es x.arity in
+  exists y (Qbf.mk_and [p x y; q y z])
 
 (* transitive r ≜ ∀x,y,z ∈ Dom . r x y ∧ r y z → r x z *)
 let transitive es r =
   let n = size_of r in
+  (* !!! *)
+  (*  subset (sequence es r r) r *)
   let f x y z = Qbf.mk_implies [Qbf.mk_and [var r [x;y]; var r [y;z]]] (var r [x;z]) in
   Qbf.mk_and @@ map3 f (U.range 1 n) (U.range 1 n) (U.range 1 n)
+
 
 (* ∃x . y⁺ ⊆ x *)
 let trancl es y =
   let x = fresh_so_var es 2 in
   let x_is_trans = transitive es x in
   exists x @@ Qbf.mk_and @@ [x_is_trans; subset_r y x]
-
-let sequence es p q = fun x z ->
-  assert (x.arity == z.arity);
-  let y = fresh_so_var es x.arity in
-  exists y (Qbf.mk_and [p x y; q y z])
 
 let rec at_most_n es n p =
   if n = 0
