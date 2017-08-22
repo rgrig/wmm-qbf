@@ -52,14 +52,14 @@ let dump_dot fn es target whys =
   fprintf o "}\n";
   close_out o
 
-let step es fn now =
+let step es now =
   let x = MM.fresh_so_var es 1 in
   let y = MM.fresh_so_var es 1 in
   let q = Qbf.mk_and [ MM.equals_set x now; JR.always_eventually_justifies es x y ] in
   let q = MM.exists x (MM.exists y q) in
-  List.map (MM.set_of_model y) (Qbf.models fn q)
+  List.map (MM.set_of_model y) (Qbf.models q)
 
-let do_decide fn es target =
+let do_decide es target =
   let x = MM.fresh_so_var es 1 in
   let y = MM.fresh_so_var es 1 in
   let q = Qbf.mk_and
@@ -67,8 +67,7 @@ let do_decide fn es target =
     ; MM.equals_set y target
     ; JR.always_eventually_justifies_tc es x y ] in
   let q = MM.exists x (MM.exists y q) in
-  let fn = sprintf "%s-decide" fn in
-  printf "result: %b\n" (Qbf.holds fn q)
+  printf "result: %b\n" (Qbf.holds q)
 
 let do_enum fn es target =
   let whys = ref [] in
@@ -82,8 +81,7 @@ let do_enum fn es target =
   end else xs in
   let rec bfs xs = if xs <> Que.empty then begin
     let x, xs = Que.pop xs in
-    let fnx = sprintf "%s-%s" fn (name_of es x) in
-    let ys = step es fnx x in
+    let ys = step es x in
     bfs (List.fold_left (look (Some x)) xs ys)
   end in
   bfs (look None Que.empty []);
@@ -97,7 +95,7 @@ let do_one fn =
   then do_enum fn es target
   else (match target with
     | None -> eprintf "W: skipping %s: no target execution\n" fn
-    | Some target -> do_decide fn es target)
+    | Some target -> do_decide es target)
 
 
 let cmd_spec = Arg.

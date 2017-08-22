@@ -172,8 +172,7 @@ let rec buffer_list_sep separator buffer_x buffer = function
   | [] -> ()
   | [x] -> buffer_x buffer x
   | x :: ((_ :: _) as xs) ->
-  (* TODO: Tidy. *)
-  bprintf buffer (format_of_string "%a%s%a") buffer_x x separator (buffer_list_sep separator buffer_x) xs
+  bprintf buffer "%a%s%a" buffer_x x separator (buffer_list_sep separator buffer_x) xs
 let buffer_list buffer_x = buffer_list_sep "" buffer_x
 
 let to_buffer buffer p =
@@ -213,7 +212,6 @@ let parse_models data =
       let var = String.sub data var_start (var_end - var_start) in
 
       (* Accumulate variables. *)
-      (* TODO: Check order. *)
       find_vars var_end end_index (var::found)
     (* Done. *)
     with Not_found -> found
@@ -232,7 +230,6 @@ let parse_models data =
       let model = find_vars model_start model_end [] in
 
       (* Accumulate models. *)
-      (* TODO: Check order. *)
       find_models model_end (model::found)
     (* Done. *)
     with Not_found -> found
@@ -248,14 +245,12 @@ let parse_answer data =
   (* TODO: Is there a way to detect if the output is malformed due to errors? *)
   with Not_found -> false
 
-(* TODO: Tidy up unused fn ("filename"). *)
-let call_solver options parse fn p =
+let call_solver options parse p =
   let p = preprocess p in
   let qcir = Buffer.create 16 in
   qcir_to_buffer qcir p;
   (* Discard the return code *)
-  (* TODO: What is the output if the solver returns non-zero. Is it
-     worth parsing it? *)
+  (* TODO: Handle solver errors? *)
   let out = R.run_solver options (Buffer.contents qcir) in
   parse out
 
