@@ -29,9 +29,13 @@ let pick_model m models =
   in
   p models
 
-let do_one fn =
-  let es, target = U.parse fn in
-  let fn = Filename.remove_extension fn in
+let run filename =
+  let file_chan = match !use_stdin with
+      true -> stdin
+    | false -> open_in filename
+  in
+  let es, target = U.parse filename file_chan in
+  let fn = Filename.remove_extension filename in
   if !enum_mode
   then (pick_model !model_name enums) fn es target
   else (match target with
@@ -53,9 +57,12 @@ let cmd_spec =
   ;"--model", Arg.Set_string model_name, (Format.sprintf "  pick a model. Default is %s" !model_name)
   ; "--list-models", Arg.Unit print_models, "  print list of models"
   ; "--list-enum-models", Arg.Unit print_enum_models, "  print list of models which support enumeration with -e"
-  ; "-", Arg.Set use_stdin, "  read input data from stdin"
+  (* This is a bit of a hack, when we see a '-' argument we need to
+     turn the switch and then execute `run' right away.  The Arg
+     module is a bit limitting for doing this nicely, sadly. *)
+  ; "-",  Arg.Unit (fun x -> use_stdin:= true; (run "stdin")), "  read from stdin"
   ]
 
 let () =
-  Arg.parse cmd_spec do_one (sprintf "%s <infiles>" (Sys.executable_name))
+  Arg.parse cmd_spec run (sprintf "%s <infiles>" (Sys.executable_name))
 
