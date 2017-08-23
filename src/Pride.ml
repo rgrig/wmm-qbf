@@ -14,6 +14,7 @@ let decides = [
 ]
 
 let enum_mode = ref false
+let use_stdin = ref false
 let default_model = List.hd decides
 let model_name = ref (fst default_model)
 
@@ -38,10 +39,21 @@ let do_one fn =
     | Some target -> (pick_model !model_name decides) es target
     )
 
+let print_models () =
+  ignore @@ List.map (fun x -> Printf.eprintf "%s\n" (fst x)) decides;
+  exit 0
+
+let print_enum_models () =
+  ignore @@ List.map (fun x -> Printf.eprintf "%s\n" (fst x)) enums;
+  exit 0
+
 let cmd_spec =
   Arg.align [
     "-e", Arg.Set enum_mode, "  enumerate all executions"
   ;"--model", Arg.Set_string model_name, (Format.sprintf "  pick a model. Default is %s" !model_name)
+  ; "--list-models", Arg.Unit print_models, "  print list of models"
+  ; "--list-enum-models", Arg.Unit print_enum_models, "  print list of models which support enumeration with -e"
+  ; "-", Arg.Set use_stdin, "  read input data from stdin"
   ]
 
 let () =
