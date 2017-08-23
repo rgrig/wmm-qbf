@@ -1,9 +1,11 @@
-(* WIP fix for wmm-qbf to make it use pipes. *)
-(* NOTE: This is likely only to work on POSIX. *)
+(* This is likely only to work on POSIX. *)
 
 (* Thrown when the called subprocess encounters an error. *)
 (* Gives a short reason, and stderr from the process. *)
 exception SubprocessFailed of string * string
+
+(* Path to the solver executable. *)
+let solver = "utils/qfun-enum"
 
 (* Read from a file descriptor into a buffer, ignoring irrelevant blocking errors. *)
 (* Return true on EOF. *)
@@ -37,6 +39,11 @@ let nonblock_write (buffer : bytes) (offset : int ref) (file : Unix.file_descr) 
   with Unix.Unix_error (Unix.EAGAIN, _, _) -> ()
 
 let run_solver (options : string array) (data : string) : string =
+  (* This is technically handled by execvp after forking, but the error returned is just an exit code. *)
+  (* Checking here means we can give a clearer error when the problem is simply a missing exectuable. *)
+  if not (Sys.file_exists solver) then
+    raise (SubprocessFailed ("missing executable (" ^ solver ^ ")", ""));
+
   (* Create stdio pipes to talk to subprocess. *)
   (* NOTE: Pipes could be left open if an exception is thrown, doesn't matter if we're only called once. *)
   let (child_stdin_r, child_stdin_w) = Unix.pipe () in
@@ -51,13 +58,13 @@ let run_solver (options : string array) (data : string) : string =
   (* Launch process with the new pipes. *)
   (* NOTE: Using create_process to avoid calling /bin/sh because it might cause trouble. *)
   let pid = Unix.create_process
-	"utils/qfun-enum"
+    solver
     (Array.append [|"qfun-enum"; "-a"; "-i64"|] options)
-	(*
-	NOTE: For testing on 32 bit systems...
-	"qemu-x86_64"
-    (Array.append [|"qemu-x86_64"; "utils/qfun-enum"; "-a"; "-i64"|] options )
-	*)
+    (*
+    NOTE: For testing on 32 bit systems...
+    "qemu-x86_64"
+    (Array.append [|"qemu-x86_64"; solver; "-a"; "-i64"|] options )
+    *)
     child_stdin_r
     child_stdout_w
     child_stderr_w
@@ -92,15 +99,20 @@ let run_solver (options : string array) (data : string) : string =
   (* TODO: Avoid polling (ideally). *)
   let waiting = ref true in
   (* If you're a functional purist, how much do you hate me right now? :P *)
-  while !waiting do
-    (* Poll each pipe, doing this with select() would be very awkward. *)
-    nonblock_write to_child_data to_child_offset child_stdin_w;
-    if nonblock_read child_stdout_r output then waiting := false;
-    let _ = nonblock_read child_stderr_r errors in
-
-    (* Let the OS do something else. *)
-    Unix.sleepf 0.01;
-  done;
+  begin try
+    while !waiting do
+      (* Poll each pipe, doing this with select() would be very awkward. *)
+      nonblock_write to_child_data to_child_offset child_stdin_w;
+      if nonblock_read child_stdout_r output then waiting := false;
+      let _ = nonblock_read child_stderr_r errors in
+      
+      (* Let the OS do something else. *)
+      Unix.sleepf 0.01;
+    done
+  (* Ignore broken pipe because it means the process exited before reading all it's input. *)
+  (* In that case we want to continue so we can find out what happened. *)
+  with Unix.Unix_error (Unix.EPIPE, _, _) -> ()
+  end;
 
   (* Close pipes. *)
   Unix.close child_stdout_r;
@@ -115,19 +127,17 @@ let run_solver (options : string array) (data : string) : string =
   (* Success. *)
   (* TODO: Interpret status code. *)
   (* Non-zero is normally an error, but the solver returns code 10 for what looks like a non-error case. *)
-  | Unix.WEXITED _ -> Buffer.contents output
+  | Unix.WEXITED 10 -> Buffer.contents output
   (* Failure. *)
-  (* TODO: Remove, left for reference for the above.
   | Unix.WEXITED status -> raise (SubprocessFailed (
-  	(Printf.sprintf "Exited with code %d" status),
-	(Buffer.contents errors)
+    (Printf.sprintf "Exited with code %d" status),
+    (Buffer.contents errors)
   ))
-  *)
   | Unix.WSIGNALED status -> raise (SubprocessFailed (
     (Printf.sprintf "Caught signal %d" status),
-	(Buffer.contents errors)
+    (Buffer.contents errors)
   ))
   | Unix.WSTOPPED status -> raise (SubprocessFailed (
-  	(Printf.sprintf "Stopped by signal %d" status),
-	(Buffer.contents errors)
+    (Printf.sprintf "Stopped by signal %d" status),
+    (Buffer.contents errors)
   ))
