@@ -1,4 +1,4 @@
-MAINS="JrCheck Test"
+MAINS="Pride Test"
 TYPE="byte"
 
 T=""

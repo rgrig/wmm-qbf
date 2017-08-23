@@ -1,5 +1,5 @@
 open Printf
-
+module U = Util
 module E = EventStructure
 
 (**
@@ -46,17 +46,6 @@ let promise_read es (conf, proms) (conf', proms') =
   let writes_in_promises i =
     Qbf.mk_implies [MM._in [i] writes] (MM._in [i] proms)
   in
-
-  (* TODO: Scrutinise *)
-  (* ∀w . (w ∈ conf) → (w ∈ conf') ∧ (w != x) → (w ∈ conf' → w ∈ conf) ∧ (w = x) → w ∈ conf'*)
-  (*
-  let conf_has_e x =
-    Qbf.mk_and @@
-      List.map (fun w -> Qbf.mk_implies [MM._in [w] conf] (MM._in [w] conf')) events
-      @ List.map (fun w -> if w != x then (Qbf.mk_implies [MM._in [w] conf'] (MM._in [w] conf)) else
-                             MM._in [w] conf') events
-  in
-  *)
 
   (* conf ⊆ conf' ∧ (∀b∈events . b∈conf' → (b = e) ∨ b ∈ conf) *)
   let conf_has_e e =
