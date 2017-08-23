@@ -127,12 +127,16 @@ let run_solver (options : string array) (data : string) : string =
   (* Success. *)
   (* TODO: Interpret status code. *)
   (* Non-zero is normally an error, but the solver returns code 10 for what looks like a non-error case. *)
-  | Unix.WEXITED 10 -> Buffer.contents output
+  | Unix.WEXITED _ -> Buffer.contents output
+
+  (* TODO: We do not know any status code means, we shouldn't assume failure. *)
+  (*
   (* Failure. *)
   | Unix.WEXITED status -> raise (SubprocessFailed (
     (Printf.sprintf "Exited with code %d" status),
     (Buffer.contents errors)
   ))
+  *)
   | Unix.WSIGNALED status -> raise (SubprocessFailed (
     (Printf.sprintf "Caught signal %d" status),
     (Buffer.contents errors)
