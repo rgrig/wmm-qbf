@@ -1,6 +1,7 @@
 open Printf
 
 module U = Util
+module R = RunSolver
 
 type variable = string
   [@@deriving show] (* DBG *)
@@ -165,74 +166,94 @@ let to_clauses p =
   assert b;
   (v, List.rev !cs)
 
-(* "hp" stands for hideous printing: the pretty one is done by @@deriving *)
-let hp f p =
-  let top, clauses = to_clauses p in
-  let hp_v f (b, v) =
-    if not b then fprintf f "-";
-    fprintf f "%s" v in
-  let hp_vs f = function
-    | None -> ()
-    | Some vs -> fprintf f "%a;" (U.hp_list_sep "," U.hp_string) vs in
-  let hp_c f (w, op, vs, ps) =
-    fprintf f "%s = %s(%a%a)\n" w op hp_vs vs (U.hp_list_sep "," hp_v) ps in
-  fprintf f "output(%s)\n%a" top (U.hp_list hp_c) clauses
+(* Hideous printing functions that print into a buffer instead. *)
+let buffer_string buffer x = bprintf buffer "%s" x
+let rec buffer_list_sep separator buffer_x buffer = function
+  | [] -> ()
+  | [x] -> buffer_x buffer x
+  | x :: ((_ :: _) as xs) ->
+  bprintf buffer "%a%s%a" buffer_x x separator (buffer_list_sep separator buffer_x) xs
+let buffer_list buffer_x = buffer_list_sep "" buffer_x
 
-let hp_qcir f p =
+let to_buffer buffer p =
+  let top, clauses = to_clauses p in
+  let buffer_v buffer (b, v) =
+    if not b then bprintf buffer "-";
+    bprintf buffer "%s" v in
+  let buffer_vs buffer = function
+    | None -> ()
+    | Some vs -> bprintf buffer "%a;" (buffer_list_sep "," buffer_string) vs in
+  let buffer_c buffer (w, op, vs, ps) =
+    bprintf buffer "%s = %s(%a%a)\n" w op buffer_vs vs (buffer_list_sep "," buffer_v) ps in
+  bprintf buffer "output(%s)\n%a" top (buffer_list buffer_c) clauses
+
+let qcir_to_buffer buffer p =
   let rec pm qs = function
     | Exists (vs, p, _) -> pm ((true, vs) :: qs) p
     | Forall (vs, p, _) -> pm ((false, vs) :: qs) p
     | p -> (List.rev qs, p) in
   let prefix, matrix = pm [] p in
-  let hp_q f (t, vs) =
+  let buffer_q buffer (t, vs) =
     let t = if t then "exists" else "forall" in
-    fprintf f "%s(%a)\n" t (U.hp_list_sep "," U.hp_string) vs in
-  fprintf f "#QCIR-G14\n%a%a" (U.hp_list hp_q) prefix hp matrix
+    bprintf buffer "%s(%a)\n" t (buffer_list_sep "," buffer_string) vs in
+  bprintf buffer "#QCIR-G14\n%a%a" (buffer_list buffer_q) prefix to_buffer matrix
 
-let run_solver options in_name out_name =
-  let cmd = sprintf "qfun-enum %s -a -i64 %s > %s" options in_name out_name in
-  Sys.command cmd
 
-let re_model_line = Str.regexp "^v.*$"
+let re_model = Str.regexp "^v.*$"
 let re_var = Str.regexp "\\+\\([a-zA-Z0-9_]+\\)"
-let parse_models fn =
-  let sol = open_in fn in
-  let r = ref [] in
-  let rec loop () =
-    let line = input_line sol in
-    if Str.string_match re_model_line line 0 then begin
-      let xs = ref [] in
-      let rec get i =
-        ignore (Str.search_forward re_var line i);
-        xs := Str.matched_group 1 line :: !xs;
-        get (Str.match_end ()) in
-      try get 0 with Not_found -> ();
-      r := !xs :: !r
-    end;
-    loop () in
-  try loop () with End_of_file -> (close_in sol; !r)
+let parse_models data =
+  (* TODO: Someone who understands what the models in question are should check this explanation. *)
+  (* Returns a list of variables found in data within the given range, accumulating list in found. *)
+  let rec find_vars (start_index : int) (end_index : int) (found : string list) : string list =
+    try
+      (* Find next variable. *)
+      let var_start = Str.search_forward re_var data start_index in
+      let var_end = Str.match_end () in
+      let var = String.sub data var_start (var_end - var_start) in
+
+      (* Accumulate variables. *)
+      find_vars var_end end_index (var::found)
+    (* Done. *)
+    with Not_found -> found
+  in
+
+  (* TODO: Someone who understands what the models in question are should check this explanation. *)
+  (* Returns a list of models found in data, starting from index, accumulating list in found. *)
+  (* Each model is represented as a list of variables. *)
+  let rec find_models (start_index : int) (found : string list list) : string list list =
+    try
+      (* Find line containing model data. *)
+      let model_start = Str.search_forward re_model data start_index in
+      let model_end = Str.match_end () in
+
+      (* Find vars in this model. *)
+      let model = find_vars model_start model_end [] in
+
+      (* Accumulate models. *)
+      find_models model_end (model::found)
+    (* Done. *)
+    with Not_found -> found
+  in
+  
+  find_models 0 []
 
 let re_yes_answer = Str.regexp "^s cnf 1"
-let parse_answer fn =
-  let sol = open_in fn in
-  let rec loop () =
-    let line = input_line sol in
-    Str.string_match re_yes_answer line 0 || loop () in
-  try loop () with End_of_file -> (close_in sol; false)
+let parse_answer data =
+  try
+    ignore (Str.search_forward re_yes_answer data 0);
+    true
+  (* TODO: Is there a way to detect if the output is malformed due to errors? *)
+  with Not_found -> false
 
-let call_solver options parse fn p =
+let call_solver options parse p =
   let p = preprocess p in
-  let qcir_fn = sprintf "%s.qcir" fn in
-  let out_fn = sprintf "%s.out" fn in
-  let qcir = open_out qcir_fn in
-  hp_qcir qcir p;
-  close_out qcir;
+  let qcir = Buffer.create 16 in
+  qcir_to_buffer qcir p;
   (* Discard the return code *)
-  (* TODO: What is the output if the solver returns non-zero. Is it
-     worth parsing it? *)
-  let _ = run_solver options qcir_fn out_fn in
-  parse out_fn
+  (* TODO: Handle solver errors? *)
+  let out = R.run_solver options (Buffer.contents qcir) in
+  parse out
 
-let holds = call_solver "" parse_answer
-let models = call_solver "-e" parse_models
+let holds = call_solver [||] parse_answer
+let models = call_solver [|"-e"|] parse_models
 
