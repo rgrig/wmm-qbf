@@ -115,7 +115,7 @@ let promising es conf proms goal =
   in
   do_step (conf, proms) (EventStructure.events_number es)
 
-let do_decide fn es target =
+let do_decide es target =
   let c = MM.fresh_so_var es 1 in
   let p = MM.fresh_so_var es 1 in
   let g = MM.fresh_so_var es 1 in
@@ -129,5 +129,4 @@ let do_decide fn es target =
     ] in
   (* ? *)
   let q = MM.exists c (MM.exists p (MM.exists g q)) in
-  let fn = sprintf "%s-decide" fn in
-  printf "result: %b\n" (Qbf.holds fn q)
+  printf "result: %b\n" (Qbf.holds q)

@@ -13,7 +13,6 @@ let decides = [
 ; ("pes", PES.do_decide)
 ]
 
-
 let enum_mode = ref false
 let default_model = List.hd decides
 let model_name = ref (fst default_model)
@@ -36,7 +35,7 @@ let do_one fn =
   then (pick_model !model_name enums) fn es target
   else (match target with
     | None -> eprintf "W: skipping %s: no target execution\n" fn
-    | Some target -> (pick_model !model_name decides) fn es target
+    | Some target -> (pick_model !model_name decides) es target
     )
 
 let cmd_spec =
