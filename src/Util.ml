@@ -13,8 +13,7 @@ let rec n_cartesian_product = B.n_cartesian_product
     List.concat
       (List.map (fun i -> List.map (fun r -> i :: r) rest) h) *)
 
-let parse fn =
-  let f = open_in fn in
+let parse filename f =
   let lexbuf = Lexing.from_channel f in
   try
     let r = EsParser.top EsLexer.token lexbuf in
@@ -25,7 +24,7 @@ let parse fn =
         (match Lexing.lexeme_start_p lexbuf with
         { Lexing.pos_lnum=line; Lexing.pos_bol=c0;
           Lexing.pos_fname=_; Lexing.pos_cnum=c1} ->
-            let msg = sprintf "%s:%d:%d: parse error" fn line (c1-c0+1) in
+            let msg = sprintf "%s:%d:%d: parse error" filename line (c1-c0+1) in
             raise (Parsing_failed msg))
 
 
