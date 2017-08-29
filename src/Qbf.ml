@@ -245,15 +245,19 @@ let parse_answer data =
   (* TODO: Is there a way to detect if the output is malformed due to errors? *)
   with Not_found -> false
 
-let call_solver options parse p =
+let build_query_string p =
   let p = preprocess p in
   let qcir = Buffer.create 16 in
   qcir_to_buffer qcir p;
+  Buffer.contents qcir
+
+let call_solver options parse p debug =
+  let query = build_query_string p in
+  if debug then printf "Query: %s\n" query;
   (* Discard the return code *)
   (* TODO: Handle solver errors? *)
-  let out = R.run_solver options (Buffer.contents qcir) in
+  let out = R.run_solver options query in
   parse out
 
 let holds = call_solver [||] parse_answer
 let models = call_solver [|"-e"|] parse_models
-

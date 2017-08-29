@@ -17,6 +17,7 @@ let enum_mode = ref false
 let use_stdin = ref false
 let default_model = List.hd decides
 let model_name = ref (fst default_model)
+let dump_query = ref false
 
 let pick_model m models =
   let rec p ms =
@@ -40,7 +41,7 @@ let run filename =
   then (pick_model !model_name enums) fn es target
   else (match target with
     | None -> eprintf "W: skipping %s: no target execution\n" fn
-    | Some target -> (pick_model !model_name decides) es target
+    | Some target -> (pick_model !model_name decides) es target !dump_query
     )
 
 let print_models () =
@@ -54,6 +55,7 @@ let print_enum_models () =
 let cmd_spec =
   Arg.align [
     "-e", Arg.Set enum_mode, "  enumerate all executions"
+  ;"--dump-query", Arg.Set dump_query, "  print QBF query before executing"
   ;"--model", Arg.Set_string model_name, (Format.sprintf "  pick a model. Default is %s" !model_name)
   ; "--list-models", Arg.Unit print_models, "  print list of models"
   ; "--list-enum-models", Arg.Unit print_enum_models, "  print list of models which support enumeration with -e"

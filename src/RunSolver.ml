@@ -58,13 +58,15 @@ let run_solver (options : string array) (data : string) : string =
   (* Launch process with the new pipes. *)
   (* NOTE: Using create_process to avoid calling /bin/sh because it might cause trouble. *)
   let pid = Unix.create_process
+    (*
     solver
     (Array.append [|"qfun-enum"; "-a"; "-i64"|] options)
+	*)
     (*
     NOTE: For testing on 32 bit systems...
+    *)
     "qemu-x86_64"
     (Array.append [|"qemu-x86_64"; solver; "-a"; "-i64"|] options )
-    *)
     child_stdin_r
     child_stdout_w
     child_stderr_w

@@ -104,9 +104,9 @@ let step es fn now =
   let y = MM.fresh_so_var es 1 in
   let q = Qbf.mk_and [ MM.equals_set x now; always_eventually_justifies es x y ] in
   let q = MM.exists x (MM.exists y q) in
-  List.map (MM.set_of_model y) (Qbf.models q)
+  List.map (MM.set_of_model y) (Qbf.models q false)
 
-let do_decide es target =
+let do_decide es target debug =
   let x = MM.fresh_so_var es 1 in
   let y = MM.fresh_so_var es 1 in
   let q = Qbf.mk_and
@@ -114,7 +114,7 @@ let do_decide es target =
     ; MM.equals_set y target
     ; always_eventually_justifies_tc es x y ] in
   let q = MM.exists x (MM.exists y q) in
-  printf "result: %b\n" (Qbf.holds q)
+  printf "result: %b\n" (Qbf.holds q debug)
               
 let do_enum fn es target =
   let whys = ref [] in
