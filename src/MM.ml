@@ -217,7 +217,6 @@ let set_of_model x m =
   let p i = List.mem (name x [i]) m in
   List.filter p (U.range 1 (size_of x))
 
-
 (**/**)
 (* Section ignored by ocamldoc *)
 open OUnit

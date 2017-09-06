@@ -28,6 +28,10 @@ let fresh_qid () = incr last_qid; !last_qid
 let mk_var v = Var v
 let mk_and ps = And ps
 let mk_or ps = Or ps
+(* An and gate with zero inputs represents the constant true. *)
+let mk_true () = And []
+(* An or gate with zero inputs represents the constant false. *)
+let mk_false () = Or []
 let mk_not = function Not p -> p | p -> Not p
 let mk_exists vs p = Exists (vs, p, fresh_qid ())
 let mk_forall vs p = Forall (vs, p, fresh_qid ())

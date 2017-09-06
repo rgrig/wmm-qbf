@@ -3,26 +3,54 @@ module U = Util
 module E = EventStructure
 
 (**
-   maximal x ≜ valid_conf x ∧ ∃y . valid_conf y → y ⊆ x
+   maximal x ≜ valid_conf x ∧ ∃y . valid_conf y ‌∧ x ⊆ y → x = y
 *)
 let maximal_conf es x =
   let y = MM.fresh_so_var es 1 in
   MM.forall y @@ Qbf.mk_and [
     MM.valid_conf es x;
-    (Qbf.mk_implies [MM.valid_conf es y] (MM.subset y x))
+    Qbf.mk_implies
+      [MM.valid_conf es y; MM.subset x y]
+      (MM.equal x y)
   ]
 
 (**
-   certifiable e ≜ ∀y . maximal y → (∃z∈(equiv e) . z ∈ y)
+   Assume e is a write
+
+   certifiable e C ≜ ∀Y . (C ⊆ Y) ∧ maximal_conf Y → (∃z∈(equiv e) . z ∈ Y)
+
+   This might be that we want to do z ∈ (Y\C). Intuition: are we
+   certifying a new memory access, or can we rely on those that have
+   already been executed?
 *)
-let certifiable es e =
+let certifiable es e c =
   let y = MM.fresh_so_var es 1 in
   let s_writes = List.filter (MM.same_label es e) (EventStructure.writes es) in
   MM.forall y
     (Qbf.mk_implies
-       [maximal_conf es y]
+       [MM.subset c y; maximal_conf es y]
        (Qbf.mk_or @@ List.map (fun z -> MM._in [z] y) s_writes)
     )
+
+let grows_by es x y ev =
+  let events = EventStructure.events es in
+  Qbf.mk_and @@ [
+    MM.subset x y
+  ; MM._in [ev] y
+  ] @
+    List.map (fun b ->
+        Qbf.mk_implies [MM._in [b] y] (
+          if b == ev
+          then Qbf.mk_true ()
+          else (MM._in [b] x)
+        )
+      ) events
+
+let is_write es e =
+  if List.mem e (EventStructure.writes es)
+  then Qbf.mk_true ()
+  else Qbf.mk_false ()
+
 
 (** 
      e follows config    e∈W → e∈P    conf' = conf ∪ {e}
@@ -30,45 +58,38 @@ let certifiable es e =
                  <conf, P> ––→ <conf', P>
 *)
 let promise_read es (conf, proms) (conf', proms') =
-  (*Qbf.mk_or @@ List.map (fun x -> Qbf.mk_implies *)
-  let writes = MM.fresh_so_var es 1 in
-  let events = EventStructure.events es in
-
   let compose x rel =
     List.map snd (List.filter (fun (l,r) -> x == l) rel)
   in
 
   (* This relies on the input relation being the transitive reduction *)
-  let follows_config x =
-    let ns = compose x (EventStructure.order es) in
-    Qbf.mk_or @@ List.map (fun n -> Qbf.mk_not (MM._in [x] conf)) ns
-  in
-  let writes_in_promises i =
-    Qbf.mk_implies [MM._in [i] writes] (MM._in [i] proms)
-  in
+  (* This is wrong. This should be a function
+     follows_config -> so_var -> int -> Qbf.t
 
-  (* conf ⊆ conf' ∧ (∀b∈events . b∈conf' → (b = e) ∨ b ∈ conf) *)
-  let conf_has_e e =
-    Qbf.mk_and @@ [
-      MM.subset conf conf'
-    ; Qbf.mk_and @@ List.map (fun b -> Qbf.mk_implies [MM._in [b] conf'] (if b = e then Qbf.mk_or [] else (MM._in [b] conf))) events
-    ]
+     Such that given an conf, the event should immediately follow but
+     not be a member of conf.
+  *)
+  let follows_config c x =
+    let ns = compose x (EventStructure.order es) in
+    if List.mem x ns then
+      Qbf.mk_not (MM._in [x] c)
+    else
+      Qbf.mk_false ()
   in
 
   let preconds x =
     Qbf.mk_and [
-      follows_config x
-    ; writes_in_promises x
-    ; conf_has_e x
+      follows_config conf x
+    ; Qbf.mk_implies [is_write es x] (MM._in [x] proms)
+    ; grows_by es conf conf' x
     ]
   in
 
-  (* We need to constrain our SO var to being the writes *)
   (* ∃ev∈W . follows_config ev ∧ ev∈proms ∧ conf_has_e ev ∧ ev∈conf' *)
-  let k = Qbf.mk_or (List.map (fun x -> Qbf.mk_implies [preconds x] (MM._in [x] conf')) (EventStructure.writes es)) in
-  MM.exists writes @@ (Qbf.mk_and @@ [MM.writes es writes; k])
-
-
+  Qbf.mk_and [
+    Qbf.mk_or (List.map preconds (EventStructure.events es))
+  ; MM.equal proms proms'
+  ]
 
 (** 
      e∈W     e is certifiable      proms' = proms ∪ {e}
@@ -76,16 +97,29 @@ let promise_read es (conf, proms) (conf', proms') =
             <conf, proms> ––→ <conf', proms'>
 *)
 let make_promise es (conf,proms) (conf',proms') =
-  let writes = MM.fresh_so_var es 1 in
+  let writes = EventStructure.writes es in
   let events = EventStructure.events es in
 
-  (* {e} ∈ W ∧ certifiable e *)
-  let f e = Qbf.mk_and [MM._in [e] writes; certifiable es e] in
-
+  (* e∈W ∧ certifiable e *)
+  (* This is terribly named. What about 'certifiable_write' *)
+  let is_certifiable e =
+    if List.mem e writes
+    then certifiable es e conf
+    else Qbf.mk_false ()
+  in
+  
   (* ∀ev∈events . f ev → ev ∈ proms' *)
-  let k = Qbf.mk_and @@ List.map (fun x -> Qbf.mk_implies [f x] (MM._in [x] proms')) events in
+  (* This has the effect of adding all certifiable writes at once,
+     which is wrong. I should do a "grows by e" type thing as in the
+     rule above. This would suggest I should macro such a function,
+     too.*)
+(*  let k = Qbf.mk_and @@ List.map (fun x -> Qbf.mk_implies [f x] (MM._in [x] proms')) events in
   MM.exists writes @@ (Qbf.mk_and [MM.writes es writes; k])
-
+*)
+  Qbf.mk_and [
+    Qbf.mk_or @@ List.map (fun e -> Qbf.mk_implies [is_certifiable e] (grows_by es proms proms' e)) events
+  ; MM.equal conf conf'
+  ]
 
 let promise_step es (conf,proms) (conf',proms') =
   Qbf.mk_or [
@@ -103,22 +137,24 @@ let promising es conf proms goal =
         MM.equal conf goal
       else
         Qbf.mk_or [
-          MM.equal conf goal            
+          MM.equal conf goal
         ; Qbf.mk_and @@ [
             MM.valid_conf es conf'
           ; promise_step es (conf,proms) (conf',proms')
           ; do_step (conf', proms') (n-1)
-          ] @ List.map (fun e -> Qbf.mk_implies [MM._in [e] proms] (certifiable es e)) writes
+          ] @ List.map (fun e -> Qbf.mk_implies [MM._in [e] proms] (certifiable es e conf)) writes
         ]
     in
     MM.exists conf' @@ MM.exists proms' @@ r
   in
   do_step (conf, proms) (EventStructure.events_number es)
 
+(* Find out if these 3 are the only quantified variables. Name them
+   and check the QCIR. Compare to J+R. *)
 let do_decide es target debug =
-  let c = MM.fresh_so_var es 1 in
-  let p = MM.fresh_so_var es 1 in
-  let g = MM.fresh_so_var es 1 in
+  let c = MM.fresh_so_var es 1 ~prefix:"conf" in
+  let p = MM.fresh_so_var es 1 ~prefix:"proms" in
+  let g = MM.fresh_so_var es 1 ~prefix:"goal" in
   let q = Qbf.mk_and [
       MM.equals_set c []
     ; MM.equals_set p []
@@ -127,6 +163,5 @@ let do_decide es target debug =
     ; MM.valid_conf es g
     ; promising es c p g
     ] in
-  (* ? *)
   let q = MM.exists c (MM.exists p (MM.exists g q)) in
   printf "result: %b\n" (Qbf.holds q debug)

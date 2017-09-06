@@ -38,7 +38,6 @@ val at_most_n : EventStructure.t -> int -> relation -> relation
 val same_label : EventStructure.t -> int -> int -> bool
 val set_of_model : so_var -> Qbf.model -> EventStructure.set
 
-
 (**/**)
 (* Section ignored by ocamldoc *)
 

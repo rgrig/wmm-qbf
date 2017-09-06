@@ -44,12 +44,8 @@ let run filename =
     | Some target -> (pick_model !model_name decides) es target !dump_query
     )
 
-let print_models () =
-  ignore @@ List.map (fun x -> Printf.eprintf "%s\n" (fst x)) decides;
-  exit 0
-
-let print_enum_models () =
-  ignore @@ List.map (fun x -> Printf.eprintf "%s\n" (fst x)) enums;
+let print_models ms () =
+  ignore @@ List.map (fun x -> Printf.eprintf "%s\n" (fst x)) ms;
   exit 0
 
 let cmd_spec =
@@ -57,8 +53,8 @@ let cmd_spec =
     "-e", Arg.Set enum_mode, "  enumerate all executions"
   ;"--dump-query", Arg.Set dump_query, "  print QBF query before executing"
   ;"--model", Arg.Set_string model_name, (Format.sprintf "  pick a model. Default is %s" !model_name)
-  ; "--list-models", Arg.Unit print_models, "  print list of models"
-  ; "--list-enum-models", Arg.Unit print_enum_models, "  print list of models which support enumeration with -e"
+  ; "--list-models", Arg.Unit (print_models decides), "  print list of models"
+  ; "--list-enum-models", Arg.Unit (print_models enums), "  print list of models which support enumeration with -e"
   (* This is a bit of a hack, when we see a '-' argument we need to
      turn the switch and then execute `run' right away.  The Arg
      module is a bit limitting for doing this nicely, sadly. *)

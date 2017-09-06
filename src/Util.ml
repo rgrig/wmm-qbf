@@ -3,15 +3,8 @@ module B = BatList
 
 exception Parsing_failed of string
 exception Runtime_error of string
-                          
-(* From Batteries BatList.n_cartesian_product *)
-let rec n_cartesian_product = B.n_cartesian_product
-(*  function
-| [] -> [[]]
-| h :: t ->
-    let rest = n_cartesian_product t in
-    List.concat
-      (List.map (fun i -> List.map (fun r -> i :: r) rest) h) *)
+
+let n_cartesian_product = B.n_cartesian_product
 
 let parse filename f =
   let lexbuf = Lexing.from_channel f in
@@ -49,7 +42,7 @@ let rec hp_list_sep sep hp_x f = function
   | [x] -> hp_x f x
   | x :: ((_ :: _) as xs) ->
       fprintf f (format_of_string "%a%s%a") hp_x x sep (hp_list_sep sep hp_x) xs
-
+        
 let hp_list hp_x = hp_list_sep "" hp_x
 
 let hp_int f x = fprintf f "%d" x

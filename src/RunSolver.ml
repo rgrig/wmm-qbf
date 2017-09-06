@@ -59,7 +59,8 @@ let run_solver (options : string array) (data : string) : string =
   (* NOTE: Using create_process to avoid calling /bin/sh because it might cause trouble. *)
   let pid = Unix.create_process
     solver
-    (Array.append [|"qfun-enum"; "-a"; "-i64"|] options)
+    (* (Array.append [|"qfun-enum"; "-a"; "-i64"|] options) *)
+    ([|"tee"; "/home/simon/foo"|])
     (*
     NOTE: For testing on 32 bit systems...
     "qemu-x86_64"
