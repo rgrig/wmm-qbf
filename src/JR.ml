@@ -99,14 +99,14 @@ let dump_dot fn es target whys =
   fprintf o "}\n";
   close_out o
 
-let step es fn now =
+let step es fn now debug =
   let x = MM.fresh_so_var es 1 in
   let y = MM.fresh_so_var es 1 in
   let q = Qbf.mk_and [ MM.equals_set x now; always_eventually_justifies es x y ] in
   let q = MM.exists x (MM.exists y q) in
-  List.map (MM.set_of_model y) (Qbf.models q false)
+  List.map (MM.set_of_model y) (Qbf.models q debug)
 
-let do_decide es target debug =
+let do_decide es target solver_opts =
   let x = MM.fresh_so_var es 1 in
   let y = MM.fresh_so_var es 1 in
   let q = Qbf.mk_and
@@ -114,9 +114,12 @@ let do_decide es target debug =
     ; MM.equals_set y target
     ; always_eventually_justifies_tc es x y ] in
   let q = MM.exists x (MM.exists y q) in
-  printf "result: %b\n" (Qbf.holds q debug)
+    (match (Qbf.holds q solver_opts) with
+     Some b -> printf "result: %b\n" b
+   | None -> ()
+  )
               
-let do_enum fn es target =
+let do_enum fn es target debug =
   let whys = ref [] in
   let seen = Hashtbl.create 101 in
   let look x xs y = if not (Hashtbl.mem seen y) then begin
@@ -129,7 +132,7 @@ let do_enum fn es target =
   let rec bfs xs = if xs <> Que.empty then begin
     let x, xs = Que.pop xs in
     let fnx = sprintf "%s-%s" fn (name_of es x) in
-    let ys = step es fnx x in
+    let ys = step es fnx x debug in
     bfs (List.fold_left (look (Some x)) xs ys)
   end in
   bfs (look None Que.empty []);

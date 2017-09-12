@@ -1,2 +1,2 @@
-PKG batteries oUnit
+PKG batteries oUnit extlib
 B ../_build/*

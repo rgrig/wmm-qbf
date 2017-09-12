@@ -18,6 +18,7 @@ let use_stdin = ref false
 let default_model = List.hd decides
 let model_name = ref (fst default_model)
 let dump_query = ref false
+let use_solver = ref true
 
 let pick_model m models =
   let rec p ms =
@@ -38,10 +39,10 @@ let run filename =
   let es, target = U.parse filename file_chan in
   let fn = Filename.remove_extension filename in
   if !enum_mode
-  then (pick_model !model_name enums) fn es target
+  then (pick_model !model_name enums) fn es target !dump_query
   else (match target with
-    | None -> eprintf "W: skipping %s: no target execution\n" fn
-    | Some target -> (pick_model !model_name decides) es target !dump_query
+      | None -> eprintf "W: skipping %s: no target execution\n" fn
+      | Some target -> (pick_model !model_name decides) es target (!dump_query, !use_solver)
     )
 
 let print_models ms () =
@@ -55,6 +56,7 @@ let cmd_spec =
   ;"--model", Arg.Set_string model_name, (Format.sprintf "  pick a model. Default is %s" !model_name)
   ; "--list-models", Arg.Unit (print_models decides), "  print list of models"
   ; "--list-enum-models", Arg.Unit (print_models enums), "  print list of models which support enumeration with -e"
+  ; "--no-exec", Arg.Clear use_solver, "  skip running the solver. Useful with --dump-query option"
   (* This is a bit of a hack, when we see a '-' argument we need to
      turn the switch and then execute `run' right away.  The Arg
      module is a bit limitting for doing this nicely, sadly. *)

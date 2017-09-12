@@ -1,5 +1,5 @@
-<src/*>: package(ppx_deriving.std,str,batteries,oUnit)
-<test/*>: package(oUnit,ppx_deriving.std,str,batteries)
+<src/*>: package(ppx_deriving.std,str,batteries,oUnit,extlib)
+<test/*>: package(oUnit,ppx_deriving.std,str,batteries,extlib)
 <test>: include
 <src>: include
 true: use_menhir

@@ -13,5 +13,5 @@ val mk_not : t -> t
 val mk_exists : variable list -> t -> t
 val mk_forall : variable list -> t -> t
 
-val holds : t -> bool -> bool
+val holds : t -> bool * bool -> bool option
 val models : t -> bool -> model list

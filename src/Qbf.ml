@@ -203,65 +203,27 @@ let qcir_to_buffer buffer p =
   bprintf buffer "#QCIR-G14\n%a%a" (buffer_list buffer_q) prefix to_buffer matrix
 
 
-let re_model = Str.regexp "^v.*$"
-let re_var = Str.regexp "\\+\\([a-zA-Z0-9_]+\\)"
-let parse_models data =
-  (* TODO: Someone who understands what the models in question are should check this explanation. *)
-  (* Returns a list of variables found in data within the given range, accumulating list in found. *)
-  let rec find_vars (start_index : int) (end_index : int) (found : string list) : string list =
-    try
-      (* Find next variable. *)
-      let var_start = Str.search_forward re_var data start_index in
-      let var_end = Str.match_end () in
-      let var = String.sub data var_start (var_end - var_start) in
-
-      (* Accumulate variables. *)
-      find_vars var_end end_index (var::found)
-    (* Done. *)
-    with Not_found -> found
-  in
-
-  (* TODO: Someone who understands what the models in question are should check this explanation. *)
-  (* Returns a list of models found in data, starting from index, accumulating list in found. *)
-  (* Each model is represented as a list of variables. *)
-  let rec find_models (start_index : int) (found : string list list) : string list list =
-    try
-      (* Find line containing model data. *)
-      let model_start = Str.search_forward re_model data start_index in
-      let model_end = Str.match_end () in
-
-      (* Find vars in this model. *)
-      let model = find_vars model_start model_end [] in
-
-      (* Accumulate models. *)
-      find_models model_end (model::found)
-    (* Done. *)
-    with Not_found -> found
-  in
-  
-  find_models 0 []
-
-let re_yes_answer = Str.regexp "^s cnf 1"
-let parse_answer data =
-  try
-    ignore (Str.search_forward re_yes_answer data 0);
-    true
-  (* TODO: Is there a way to detect if the output is malformed due to errors? *)
-  with Not_found -> false
-
 let build_query_string p =
   let p = preprocess p in
   let qcir = Buffer.create 16 in
   qcir_to_buffer qcir p;
   Buffer.contents qcir
 
-let call_solver options parse p debug =
+let call_solver options parse p (debug, use_solver) =
   let query = build_query_string p in
-  if debug then printf "Query: %s\n" query;
+  if debug then printf "%s\n" query;
   (* Discard the return code *)
   (* TODO: Handle solver errors? *)
-  let out = R.run_solver options query in
-  parse out
+  if use_solver
+  then
+    let out = R.run_solver options query in
+    Some (parse out)
+  else
+    None
 
-let holds = call_solver [||] parse_answer
-let models = call_solver [|"-e"|] parse_models
+let holds = call_solver [||] Results.parse_answer
+let models p debug =
+  (* We really can't do enum if the user turns off the solver *)
+  match call_solver [|"-e"|] Results.parse_models p (debug, true) with
+    Some r -> r
+  | None -> raise (Util.Runtime_error "solver returned no response")
