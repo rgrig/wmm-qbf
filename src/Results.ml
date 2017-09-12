@@ -46,9 +46,3 @@ let parse_answer data =
     true
   (* TODO: Is there a way to detect if the output is malformed due to errors? *)
   with Not_found -> false
-
-let () =
-  let ans = parse_answer (Std.input_all stdin) in
-  Printf.printf "%b\n" ans
-  
-    

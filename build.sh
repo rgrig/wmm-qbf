@@ -1,4 +1,4 @@
-MAINS="Pride Test Results"
+MAINS="Pride Test ResultsBin"
 TYPE="byte"
 
 T=""
