@@ -11,6 +11,8 @@ let enums = [
 let decides = [
   ("j+r", JR.do_decide)
 ; ("pes", PES.do_decide)
+; ("pes-certifies", PESCertifies.do_decide)
+; ("common-valid-conf", ValidConf.do_decide)
 ]
 
 let enum_mode = ref false

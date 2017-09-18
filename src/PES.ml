@@ -11,7 +11,7 @@ let maximal_conf es x =
     MM.valid_conf es x;
     Qbf.mk_implies
       [MM.valid_conf es y; MM.subset x y]
-      (MM.equal x y)
+      (MM.equal x y) (* more effeciently could be `MM.subset y x' but less literate *)
   ]
 
 (**
@@ -24,7 +24,7 @@ let maximal_conf es x =
    already been executed?
 *)
 let certifiable es e c =
-  let y = MM.fresh_so_var es 1 in
+  let y = MM.fresh_so_var es 1 ~prefix:(Printf.sprintf "cert%d" e) in
   let s_writes = List.filter (MM.same_label es e) (EventStructure.writes es) in
   MM.forall y
     (Qbf.mk_implies
@@ -153,7 +153,7 @@ let promising es conf proms goal =
    and check the QCIR. Compare to J+R. *)
 let do_decide es target solver_opts =
   let c = MM.fresh_so_var es 1 ~prefix:"conf" in
-  let p = MM.fresh_so_var es 1 ~prefix:"proms" in
+  let p = MM.fresh_so_var es 1 ~prefix:"proms" in  
   let g = MM.fresh_so_var es 1 ~prefix:"goal" in
   let q = Qbf.mk_and [
       MM.equals_set c []
@@ -163,8 +163,12 @@ let do_decide es target solver_opts =
     ; MM.valid_conf es g
     ; promising es c p g
     ] in
-  let q = MM.exists c (MM.exists p (MM.exists g q)) in
+  let q = MM.exists c
+    @@ MM.exists p
+    @@ MM.exists g q
+  in
   (match (Qbf.holds q solver_opts) with
      Some b -> printf "result: %b\n" b
    | None -> ()
   )
+

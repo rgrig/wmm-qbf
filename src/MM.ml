@@ -92,10 +92,13 @@ let pre_compose x rel =
   List.map fst (List.filter (fun (l,r) -> x == r) rel)
 
 let same_label es x y =
+  (* remember that in OCaml `=' does structural equality checking and
+     `==' does reference equality checking. This was previously the
+     source of a bug. *)
   if List.mem x (EventStructure.reads es) then
-    (pre_compose x (EventStructure.justifies es)) == pre_compose y (EventStructure.justifies es)
+    (pre_compose x (EventStructure.justifies es)) = pre_compose y (EventStructure.justifies es)
   else
-    (compose x (EventStructure.justifies es)) == compose y (EventStructure.justifies es)
+    (compose x (EventStructure.justifies es)) = compose y (EventStructure.justifies es)
        
 
 let valid_rel es x y =
@@ -359,4 +362,15 @@ let test_union = "union" >:: (fun () ->
     let y = sample_conf2 in
     assert_equal (Qbf.mk_or [subset x y; subset y x])
                  (union subset subset x y)
+  )
+
+let test_same_label = "same_label" >:: (fun () ->
+    let es = { events_number = 5;
+               reads = [3;5];
+               justifies = [(2,3); (2,5); (4,3); (4,5)];
+               conflicts = [(2,4)];
+               order = [(1,2);(2,3);(1,4);(4,5)] }
+    in
+    assert_bool "same_label" (same_label es 1 1);
+    assert_bool "same label" (same_label es 2 4)
   )

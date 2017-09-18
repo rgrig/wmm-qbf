@@ -50,3 +50,4 @@ val test_subset_r: OUnit.test
 val test_flip: OUnit.test
 val test_equal: OUnit.test
 val test_union: OUnit.test
+val test_same_label: OUnit.test
