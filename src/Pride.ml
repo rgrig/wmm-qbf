@@ -12,6 +12,8 @@ let decides = [
   ("j+r", JR.do_decide)
 ; ("pes", PES.do_decide)
 ; ("pes-certifies", PESCertifies.do_decide)
+; ("pes-make-promise", PESMakePromise.do_decide)
+; ("pes-transitions", PESTransitions.do_decide)
 ; ("common-valid-conf", ValidConf.do_decide)
 ]
 

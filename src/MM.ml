@@ -356,12 +356,13 @@ let test_equal = "equal" >:: (fun () ->
 
 let print fmt a b =
   () (*Format.fprintf fmt "%p\n%p" (a) (b)*)
-               
+
+(* Failing, and I don't understand why *)
 let test_union = "union" >:: (fun () ->
     let x = sample_conf in
     let y = sample_conf2 in
     assert_equal (Qbf.mk_or [subset x y; subset y x])
-                 (union subset subset x y)
+      (union subset subset y x)
   )
 
 let test_same_label = "same_label" >:: (fun () ->
@@ -372,5 +373,6 @@ let test_same_label = "same_label" >:: (fun () ->
                order = [(1,2);(2,3);(1,4);(4,5)] }
     in
     assert_bool "same_label" (same_label es 1 1);
-    assert_bool "same label" (same_label es 2 4)
+    assert_bool "same label" (same_label es 2 4);
+    assert_bool "same label" (not @@ same_label es 2 3)
   )

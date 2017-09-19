@@ -7,6 +7,8 @@ from sys import argv
 TEST_DIRECTORIES = [
     ("data/pes-regression", "pes"),
     ("data/pes-regression/certifies", "pes-certifies"),
+    ("data/pes-regression/transitions", "pes-transitions"),
+    ("data/pes-regression/transitions/make-promise", "pes-make-promise"),
     ("data/common-regression/valid-conf", "common-valid-conf")
 #    ("data/jctc", "j+r")
 ]
