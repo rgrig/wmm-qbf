@@ -49,6 +49,11 @@ let hp_int f x = fprintf f "%d" x
 
 let hp_string f x = fprintf f "%s" x
 
+let maybe a f =
+  match a with
+    Some a' -> f a'
+  | None -> ()
+
 
 (* OLD
 type var =

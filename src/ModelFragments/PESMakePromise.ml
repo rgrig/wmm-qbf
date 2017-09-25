@@ -12,7 +12,7 @@ let do_decide es target solver_opts =
   let c' = MM.fresh_so_var es 1 in
   let p' = MM.fresh_so_var es 1 in
   let q = Qbf.mk_and [
-      MM.equals_set c [1]
+      MM.equals_set c [1;2]
     ; MM.equals_set p [1]
     ; MM.equals_set c' [1;2]
     ; MM.equals_set p' [1;3]
@@ -24,4 +24,4 @@ let do_decide es target solver_opts =
     @@ MM.exists c'
     @@ MM.exists p' q
   in
-  maybe (Qbf.holds q solver_opts) (printf "result: %b")
+  Util.maybe (Qbf.holds q solver_opts) (printf "result: %b")

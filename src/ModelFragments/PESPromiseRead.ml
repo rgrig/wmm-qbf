@@ -1,11 +1,6 @@
 open PES
 open Printf
 
-let maybe a f =
-  match a with
-    Some a' -> f a'
-  | None -> ()
-
 let do_decide es target solver_opts =
   let c = MM.fresh_so_var es 1 in
   let p = MM.fresh_so_var es 1 in  
@@ -24,4 +19,4 @@ let do_decide es target solver_opts =
     @@ MM.exists c'
     @@ MM.exists p' q
   in
-  maybe (Qbf.holds q solver_opts) (printf "result: %b")
+  Util.maybe (Qbf.holds q solver_opts) (printf "result: %b")

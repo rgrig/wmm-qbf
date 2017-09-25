@@ -114,10 +114,7 @@ let do_decide es target solver_opts =
     ; MM.equals_set y target
     ; always_eventually_justifies_tc es x y ] in
   let q = MM.exists x (MM.exists y q) in
-    (match (Qbf.holds q solver_opts) with
-     Some b -> printf "result: %b\n" b
-   | None -> ()
-  )
+  Util.maybe (Qbf.holds q solver_opts) (printf "result: %b\n")
               
 let do_enum fn es target debug =
   let whys = ref [] in

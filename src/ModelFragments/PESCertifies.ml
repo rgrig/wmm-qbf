@@ -11,7 +11,4 @@ let do_decide es target solver_opts =
     ] in
   let q = MM.exists g q
   in
-  (match (Qbf.holds q solver_opts) with
-     Some b -> printf "result: %b\n" b
-   | None -> ()
-  )
+  Util.maybe (Qbf.holds q solver_opts) (printf "result: %b\n")
