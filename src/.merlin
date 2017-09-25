@@ -1,4 +1,4 @@
 PKG batteries oUnit extlib
-B ../_build/*
+B ../_build/**
 B ../_build/
-S ModelFragments
+S ./ModelFragments/
