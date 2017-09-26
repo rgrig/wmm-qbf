@@ -2,3 +2,28 @@
 
 This tool is designed to evaluate instances of Event Structure Memory
 models to QBF queries.
+
+## Dependencies
+
+- OCaml 4.04
+- opam packages
+    - ppx_deriving
+    - batteries
+    - oUnit
+    - extlib
+    - ocamlgraph
+
+## Usage
+
+```
+./Pride.byte <infiles>
+  -e                   enumerate all executions
+  --dump-query         print QBF query before executing
+  --model              pick a model. Default is j+r
+  --list-models        print list of models
+  --list-enum-models   print list of models which support enumeration with -e
+  --no-exec            skip running the solver. Useful with --dump-query option
+  -                    read from stdin
+  -help                Display this list of options
+  --help               Display this list of options
+```
