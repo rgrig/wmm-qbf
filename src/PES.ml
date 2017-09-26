@@ -46,11 +46,12 @@ let grows_by es x y ev =
         )
       ) events
 
-let is_write es e =
-  if List.mem e (EventStructure.writes es)
-  then Qbf.mk_true ()
-  else Qbf.mk_false ()
-
+let follows_config es c e =
+  Qbf.mk_and @@ List.map (fun f ->
+      if List.mem (f, e) (EventStructure.order_tc es)
+      then MM._in [f] c
+      else Qbf.mk_true ()
+    ) (EventStructure.events es)
 
 (** 
      e follows config    e∈W → e∈P    conf' = conf ∪ {e}
@@ -58,10 +59,6 @@ let is_write es e =
                  <conf, P> ––→ <conf', P>
 *)
 let promise_read es (conf, proms) (conf', proms') =
-  let compose x rel =
-    List.map snd (List.filter (fun (l,r) -> x == l) rel)
-  in
-
   (* This relies on the input relation being the transitive reduction *)
   (* This is wrong. This should be a function
      follows_config -> so_var -> int -> Qbf.t
@@ -69,18 +66,16 @@ let promise_read es (conf, proms) (conf', proms') =
      Such that given an conf, the event should immediately follow but
      not be a member of conf.
   *)
-  let follows_config c x =
-    let ns = compose x (EventStructure.order es) in
-    if List.mem x ns then
-      Qbf.mk_not (MM._in [x] c)
-    else
-      Qbf.mk_false ()
-  in
-
   let preconds x =
+    let write_imp_prom =
+      if List.mem x (EventStructure.writes es)
+      then MM._in [x] proms
+      else Qbf.mk_true ()
+    in
+    
     Qbf.mk_and [
-      follows_config conf x
-    ; Qbf.mk_implies [is_write es x] (MM._in [x] proms)
+      follows_config es conf x
+    ; write_imp_prom
     ; grows_by es conf conf' x
     ]
   in

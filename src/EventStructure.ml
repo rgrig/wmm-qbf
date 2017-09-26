@@ -54,9 +54,29 @@ let self_justified es xs =
   List.iter arc es.justifies;
   Hashtbl.fold (fun x () a -> a && Hashtbl.mem justified x) reads true
 
-let events es = BatList.range 1 `To (es.events_number)              
+let events es = BatList.range 1 `To (es.events_number)          
 let order es = es.order
 let reads es = es.reads
 let writes es = List.filter (fun x -> not (List.mem x es.reads)) (events es)
 let justifies es = es.justifies
 let events_number es = es.events_number
+
+
+open Graph
+module EventGraph = Imperative.Digraph.Concrete(struct
+  type t = int
+  let compare = Pervasives.compare
+  let hash = Hashtbl.hash
+  let equal = (=)
+end)
+open EventGraph
+module EventGraphBuilder = Builder.I(EventGraph)
+module EventGraphOps = Oper.Make(EventGraphBuilder)
+
+let transitive_closure edges =
+  let g = EventGraph.create () in
+  let _ = List.map (fun (l, r) -> EventGraph.add_edge g l r) edges in
+  let g = EventGraphOps.transitive_closure g in
+  EventGraph.fold_edges (fun l r acc -> (l, r)::acc) g []
+
+let order_tc es = transitive_closure (order es)

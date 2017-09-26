@@ -1,6 +1,5 @@
-<src/*>: package(ppx_deriving.std,str,batteries,oUnit,extlib)
-<src/ModelFragments/*>: package(ppx_deriving.std,str,batteries,oUnit,extlib)
-<test/*>: package(oUnit,ppx_deriving.std,str,batteries,extlib)
+<src/**>: package(ppx_deriving.std,str,batteries,oUnit,extlib,ocamlgraph)
+<test/*>: package(oUnit,ppx_deriving.std,str,batteries,extlib,ocamlgraph)
 <test>: include
 <src>: include
 <src/ModelFragments>: include

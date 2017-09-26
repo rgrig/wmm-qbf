@@ -35,6 +35,7 @@ TESTS = get_suite(argv, get_skip(argv, [
     ("data/pes-regression/transitions", "pes-transitions"),
     ("data/pes-regression/transitions/make-promise", "pes-make-promise"),
     ("data/pes-regression/transitions/promise-read", "pes-promise-read"),
+    ("data/pes-regression/transitions/follows", "pes-follows"),
 
     # -- Common Model Validation --
     ("data/common-regression/valid-conf", "common-valid-conf"),
