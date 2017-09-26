@@ -1,10 +1,9 @@
 <src/**>: package(ppx_deriving.std,str,batteries,oUnit,extlib,ocamlgraph)
+<src/**>: include
+<src/*.mly>: explain, infer
 <test/*>: package(oUnit,ppx_deriving.std,str,batteries,extlib,ocamlgraph)
 <test>: include
-<src>: include
-<src/ModelFragments>: include
 true: use_menhir
-<src/*.mly>: explain, infer
 true: debug
 #true: profile
 true: annot
