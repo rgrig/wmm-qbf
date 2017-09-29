@@ -15,3 +15,4 @@ val mk_forall : variable list -> t -> t
 
 val holds : t -> bool * bool -> bool option
 val models : t -> bool -> model list
+val show_t: t -> string

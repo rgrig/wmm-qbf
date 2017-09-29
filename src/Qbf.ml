@@ -19,6 +19,21 @@ type t =
   | Forall of variable list * t * qid
   [@@deriving show] (* DBG *)
 
+(* No idea why PPX isn't doing the lifting for me. Probably because
+   I've messed up the compile options *)
+let show_variable v = v
+let rec show_t t =
+  match t with
+    Var v -> v
+  | Not t -> "¬" ^ (show_t t)
+  | And [] -> "True"
+  | Or [] -> "False"
+  | And ts -> String.concat "∧" (List.map show_t ts)
+  | Or ts -> String.concat "∨" (List.map show_t ts)
+  | Exists (ts, t, q) ->
+    "∃" ^ (String.concat "," (List.map show_variable ts)) ^ ". " ^ (show_t t)
+  | Forall (ts, t, q) -> "∀" ^ show_t t ^ ". " ^ (show_t t)
+
 let last_qid = ref 0
 let fresh_qid () = incr last_qid; !last_qid
 

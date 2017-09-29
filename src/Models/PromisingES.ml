@@ -58,7 +58,7 @@ let follows_config es c e =
    ———————————————————————————————————————————————————————
                  <conf, P> ––→ <conf', P>
 *)
-let promise_read es (conf, proms) (conf', proms') =
+let promise_read es  (c,q,rf) (c',q',rf') =
   (* This relies on the input relation being the transitive reduction *)
   (* This is wrong. This should be a function
      follows_config -> so_var -> int -> Qbf.t
@@ -69,26 +69,21 @@ let promise_read es (conf, proms) (conf', proms') =
   let preconds x =
     let write_imp_prom =
       if List.mem x (EventStructure.writes es)
-      then MM._in [x] proms
+      then MM._in [x] q
       else Qbf.mk_true ()
     in
 
-    (*let justifying_writes = List.map fst
-        (List.filter (fun (_,y) -> x == y) (EventStructure.justifies es))
-      in*)
-    
     Qbf.mk_and [
-      follows_config es conf x
+      follows_config es c x
     ; write_imp_prom
-    ; grows_by es conf conf' x
-    (*; Qbf.mk_implies [MM._in [x] conf'] (Qbf.mk_or (List.map (fun x -> MM._in [x] proms) justifying_writes))*)
+    ; grows_by es c c' x
     ]
   in
 
   (* ∃ev∈W . follows_config ev ∧ ev∈proms ∧ conf_has_e ev ∧ ev∈conf' *)
   Qbf.mk_and [
     Qbf.mk_or (List.map preconds (EventStructure.events es))
-  ; MM.equal proms proms'
+  ; MM.equal q q'
   ]
 
 (** 
@@ -96,7 +91,7 @@ let promise_read es (conf, proms) (conf', proms') =
    —————————————————————————————————————————————————–————
             <conf, proms> ––→ <conf', proms'>
 *)
-let make_promise es (conf,proms) (conf',proms') =
+let make_promise es (c,q,rf) (c',q',rf') =
   let writes = EventStructure.writes es in
   let events = EventStructure.events es in
 
@@ -104,7 +99,7 @@ let make_promise es (conf,proms) (conf',proms') =
   (* This is terribly named. What about 'certifiable_write' *)
   let is_certifiable e =
     if List.mem e writes
-    then certifiable es e conf
+    then certifiable es e c
     else Qbf.mk_false ()
   in
   
@@ -117,55 +112,61 @@ let make_promise es (conf,proms) (conf',proms') =
   MM.exists writes @@ (Qbf.mk_and [MM.writes es writes; k])
 *)
   Qbf.mk_and [
-    Qbf.mk_or @@ List.map (fun e -> Qbf.mk_implies [is_certifiable e] (grows_by es proms proms' e)) events
-  ; MM.equal conf conf'
+    Qbf.mk_or @@ List.map (fun e -> Qbf.mk_implies [is_certifiable e] (grows_by es q q' e)) events
+  ; MM.equal c c'
   ]
 
-let promise_step es (conf,proms) (conf',proms') =
+let promise_step es co (c,q, rf) (c',q', rf') =
   Qbf.mk_or [
-    promise_read es (conf,proms) (conf',proms')
-  ; make_promise es (conf,proms) (conf',proms')
+    promise_read es (c,q,rf) (c',q',rf')
+  ; make_promise es (c,q,rf) (c',q',rf')
   ]
 
-let promising es conf proms goal =
+let promising es co (c,q,rf) goal =
   (*  let writes = EventStructure.writes es in *)
-  let rec do_step (conf, proms) n =
-    let conf' = MM.fresh_so_var es 1 in
-    let proms' = MM.fresh_so_var es 1 in
+  let rec do_step (c,q,rf) n =
+    let c' = MM.fresh_so_var es 1 in
+    let q' = MM.fresh_so_var es 1 in
+    let rf' = MM.fresh_so_var es 2 in
     let r =
       if n = 0 then
-        MM.equal conf goal
+        MM.equal c goal
       else
         Qbf.mk_or [
-          MM.equal conf goal
+          MM.equal c goal
         ; Qbf.mk_and @@ [
-            MM.valid_conf es conf'
-          ; promise_step es (conf,proms) (conf',proms')
-          ; do_step (conf', proms') (n-1)
+            MM.valid_conf es c'
+          ; promise_step es co (c,q,rf) (c',q',rf')
+          ; do_step (c', q', rf') (n-1)
           ] (*@ List.map (fun e -> Qbf.mk_implies [MM._in [e] proms] (certifiable es e conf)) writes*)
         ]
     in
-    MM.exists conf' @@ MM.exists proms' @@ r
+    MM.exists c' @@ MM.exists q' @@ MM.exists rf r
   in
-  do_step (conf, proms) (EventStructure.events_number es)
+  do_step (c,q,rf) (EventStructure.events_number es)
 
 (* Find out if these 3 are the only quantified variables. Name them
    and check the QCIR. Compare to J+R. *)
 let do_decide es target solver_opts =
-  let c = MM.fresh_so_var es 1 ~prefix:"conf" in
-  let p = MM.fresh_so_var es 1 ~prefix:"proms" in  
-  let g = MM.fresh_so_var es 1 ~prefix:"goal" in
-  let q = Qbf.mk_and [
+  let c = MM.fresh_so_var es 1 in
+  let q = MM.fresh_so_var es 1 in
+  let g = MM.fresh_so_var es 1 in
+  let rf = MM.fresh_so_var es 2 in
+  let co = MM.fresh_so_var es 2 in
+  let query = Qbf.mk_and [
       MM.equals_set c []
-    ; MM.equals_set p []
+    ; MM.equals_set q []
+    ; MM.equals_set rf []
     ; MM.equals_set g target
     ; MM.valid_conf es c
     ; MM.valid_conf es g
-    ; promising es c p g
+    ; promising es co (c,q,rf) g
     ] in
-  let q = MM.exists c
-    @@ MM.exists p
-    @@ MM.exists g q
+  let query = MM.exists c
+    @@ MM.exists q
+    @@ MM.exists g
+    @@ MM.exists co
+    @@ MM.exists rf query
   in
-  Util.maybe (Qbf.holds q solver_opts) (printf "result: %b\n")
+  Util.maybe (Qbf.holds query solver_opts) (printf "result: %b\n")
 
