@@ -41,6 +41,9 @@ TESTS = get_suite(argv, get_skip(argv, [
     # -- Common Model Validation --
     ("data/common-regression/valid-conf", "common-valid-conf"),
 
+    # -- Promising Event Structures
+    ("data/jctc", "promising-es"),
+
     # -- Java Causaility Test Cases --
     ("data", "j+r"),
     ("data/jctc", "j+r"),

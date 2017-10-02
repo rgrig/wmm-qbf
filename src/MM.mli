@@ -37,6 +37,7 @@ val sequence : EventStructure.t -> relation -> relation -> relation
 val at_most_n : EventStructure.t -> int -> relation -> relation
 val same_label : EventStructure.t -> int -> int -> bool
 val set_of_model : so_var -> Qbf.model -> EventStructure.set
+val show_so_var : so_var -> string
 
 (**/**)
 (* Section ignored by ocamldoc *)

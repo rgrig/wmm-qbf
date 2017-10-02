@@ -34,17 +34,22 @@ let certifiable es e c =
 
 let grows_by es x y ev =
   let events = EventStructure.events es in
+  printf "%s expected arity: %d\n" (MM.show_so_var x) (List.length ev);
+  let rec copy xs = function
+      1 -> [xs]
+    | n -> xs :: copy xs (n - 1)
+  in
   Qbf.mk_and @@ [
     MM.subset x y
-  ; MM._in [ev] y
+  ; MM._in ev y
   ] @
     List.map (fun b ->
-        Qbf.mk_implies [MM._in [b] y] (
+        Qbf.mk_implies [MM._in b y] (
           if b == ev
           then Qbf.mk_true ()
-          else (MM._in [b] x)
+          else (MM._in b x)
         )
-      ) events
+      ) (Util.n_cartesian_product (copy events (List.length events)))
 
 let follows_config es c e =
   Qbf.mk_and @@ List.map (fun f ->
@@ -53,45 +58,15 @@ let follows_config es c e =
       else Qbf.mk_true ()
     ) (EventStructure.events es)
 
-(** 
-     e follows config    e∈W → e∈P    conf' = conf ∪ {e}
-   ———————————————————————————————————————————————————————
-                 <conf, P> ––→ <conf', P>
-*)
-let promise_read es  (c,q,rf) (c',q',rf') =
-  (* This relies on the input relation being the transitive reduction *)
-  (* This is wrong. This should be a function
-     follows_config -> so_var -> int -> Qbf.t
-
-     Such that given an conf, the event should immediately follow but
-     not be a member of conf.
-  *)
-  let preconds x =
-    let write_imp_prom =
-      if List.mem x (EventStructure.writes es)
-      then MM._in [x] q
-      else Qbf.mk_true ()
-    in
-
-    Qbf.mk_and [
-      follows_config es c x
-    ; write_imp_prom
-    ; grows_by es c c' x
-    ]
-  in
-
-  (* ∃ev∈W . follows_config ev ∧ ev∈proms ∧ conf_has_e ev ∧ ev∈conf' *)
-  Qbf.mk_and [
-    Qbf.mk_or (List.map preconds (EventStructure.events es))
-  ; MM.equal q q'
-  ]
+let coh es rf =
+  Qbf.mk_true ()
 
 (** 
      e∈W     e is certifiable      proms' = proms ∪ {e}
    —————————————————————————————————————————————————–————
-            <conf, proms> ––→ <conf', proms'>
+          <conf, proms, rf> ––→ <conf, proms', rf>
 *)
-let make_promise es (c,q,rf) (c',q',rf') =
+let promise es (c,q,rf) (c',q',rf') =
   let writes = EventStructure.writes es in
   let events = EventStructure.events es in
 
@@ -103,23 +78,57 @@ let make_promise es (c,q,rf) (c',q',rf') =
     else Qbf.mk_false ()
   in
   
-  (* ∀ev∈events . f ev → ev ∈ proms' *)
-  (* This has the effect of adding all certifiable writes at once,
-     which is wrong. I should do a "grows by e" type thing as in the
-     rule above. This would suggest I should macro such a function,
-     too.*)
-(*  let k = Qbf.mk_and @@ List.map (fun x -> Qbf.mk_implies [f x] (MM._in [x] proms')) events in
-  MM.exists writes @@ (Qbf.mk_and [MM.writes es writes; k])
-*)
   Qbf.mk_and [
-    Qbf.mk_or @@ List.map (fun e -> Qbf.mk_implies [is_certifiable e] (grows_by es q q' e)) events
+    Qbf.mk_or @@ List.map (fun e -> Qbf.mk_implies [is_certifiable e] (grows_by es q q' [e])) events
   ; MM.equal c c'
+  ; MM.equal rf rf'
+  ]
+
+let b_to_qbf b = if b then Qbf.mk_true () else Qbf.mk_false ()
+
+let read es (c,q,rf) (c',q',rf') =
+  let reads = EventStructure.reads es in
+  let writes = EventStructure.writes es in
+  let events = EventStructure.events es in
+  let justifies = EventStructure.justifies es in
+  
+  let is_readable r =
+    if List.mem r reads
+    then Qbf.mk_or @@ List.map (
+        fun w -> Qbf.mk_and [
+            grows_by es rf rf' [r;w]
+          (*; grows_by es c c' [r]*)
+          ; coh es rf'
+          ; MM._in [w] q
+          ; b_to_qbf (List.mem (w,r) justifies)
+          ]
+      ) writes
+    else Qbf.mk_false ()
+  in
+  
+  Qbf.mk_and [
+    Qbf.mk_or @@ List.map is_readable events
+  ; MM.equal q q'
+  ]
+
+let fulfill es (c,q,rf) (c',q',rf') =
+  let is_fulfillable w = Qbf.mk_or [
+      follows_config es c w
+    ; MM._in [w] q
+    ; coh es rf
+    ]
+  in
+  Qbf.mk_and [
+    Qbf.mk_or @@ List.map is_fulfillable (EventStructure.writes es)
+  ; MM.equal q q'
+  ; MM.equal rf rf'
   ]
 
 let promise_step es co (c,q, rf) (c',q', rf') =
   Qbf.mk_or [
-    promise_read es (c,q,rf) (c',q',rf')
-  ; make_promise es (c,q,rf) (c',q',rf')
+    promise es (c,q,rf) (c',q',rf')
+  ; read es (c,q,rf) (c',q',rf')
+  ; fulfill es (c,q,rf) (c',q',rf')
   ]
 
 let promising es co (c,q,rf) goal =

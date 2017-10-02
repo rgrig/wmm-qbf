@@ -29,6 +29,9 @@ let size_of x =
 let same_es x y =
   x.event_structure = y.event_structure
 
+let show_so_var s =
+  sprintf "%s(%d)" s.prefix s.arity
+
 (* Builds a name from the list of indexes. Indexes are separated by
    underscores *)
 let name x is =
