@@ -1,5 +1,5 @@
 MAINS="Pride Test ResultsBin"
-TYPE="byte"
+TYPE="native"
 
 T=""
 for i in $MAINS; do
