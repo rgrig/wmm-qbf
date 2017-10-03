@@ -2,5 +2,6 @@
 *.out
 *.qcir
 /*.byte
+/*.native
 /_build
 /bin
