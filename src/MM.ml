@@ -21,7 +21,7 @@ type so_var  =
 
 type 'a predicate = 'a -> Qbf.t
 type relation = so_var -> so_var -> Qbf.t
-exception Bad_arity
+exception Bad_arity of string
 
 let size_of x =
   x.event_structure.E.events_number
@@ -44,7 +44,8 @@ let name x is =
 
 (* Generates a variable string, with indexes from list is *)
 let var x is =
-  if (x.arity != List.length is) then raise Bad_arity;
+  if (x.arity != List.length is)
+  then raise (Bad_arity (sprintf "Argument is %s, expected argument arity %d" (show_so_var x) (List.length is)));
   Qbf.mk_var @@ name x is
 
 let _in is x =
@@ -122,16 +123,29 @@ let equals_set x is =
   let f i =
     if List.mem i is then var x [i] else Qbf.mk_not (var x [i]) in
   Qbf.mk_and @@ List.map f (U.range 1 n)
-  
+
+let rec copy xs = function
+    1 -> [xs]
+  | n -> xs :: copy xs (n-1)
+
+let equals_sets x iss =
+  let n = size_of x in
+  let arity = x.arity in
+  let f i =
+    if List.mem i iss then var x i else Qbf.mk_not (var x i) in
+  Qbf.mk_and @@ List.map f (Util.n_cartesian_product (copy (U.range 1 n) arity))
+
 let writes es w =
   let writes = EventStructure.writes es in
   equals_set w writes
 
 let subset x y =
   assert (same_es x y);
+  assert (x.arity == y.arity);
   let n = size_of x in
-  let f i = Qbf.mk_implies [var x [i]] (var y [i]) in
-  Qbf.mk_and @@ List.map f (U.range 1 n)
+  let f i = Qbf.mk_implies [var x i] (var y i) in
+  let edges = Util.n_cartesian_product (copy (U.range 1 n) (x.arity)) in
+  Qbf.mk_and @@ List.map f edges
 
 let flip p x y = p y x
 
@@ -261,11 +275,11 @@ let test_name = "name var" >:: (fun () ->
 
 (* Naming FO variables matches SO variable arity *)
 let test_var = "var" >:: (fun () ->
-    assert_raises Bad_arity (fun () -> var sample_rel [1;2;3]);
+(*    assert_raises Bad_arity (fun () -> var sample_rel [1;2;3]);
     assert_raises Bad_arity (fun () -> var sample_rel [1]);
     assert_raises Bad_arity (fun () -> var sample_conf [1;3]);
     assert_raises Bad_arity (fun () -> var sample_conf [1;2;3]);
-
+*)
     (* Checking these do not raise an exception *)
     let _ = var sample_conf [1] in
     let _ = var sample_rel [1;1] in

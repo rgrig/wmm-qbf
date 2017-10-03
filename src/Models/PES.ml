@@ -24,7 +24,7 @@ let maximal_conf es x =
    already been executed?
 *)
 let certifiable es e c =
-  let y = MM.fresh_so_var es 1 ~prefix:(Printf.sprintf "cert%d" e) in
+  let y = MM.fresh_so_var es 1 ~prefix:(Printf.sprintf "cert%d_" e) in
   let s_writes = List.filter (MM.same_label es e) (EventStructure.writes es) in
   MM.forall y
     (Qbf.mk_implies

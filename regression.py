@@ -2,6 +2,8 @@
 from functools import reduce
 from os import listdir
 from os.path import isfile, join
+#from signal import signal, CTRL_C_EVENT
+import signal
 from subprocess import check_output, CalledProcessError
 from sys import argv
 import sys
@@ -66,6 +68,13 @@ def colorise(color, text):
         return "{}{}{}".format(color, text, "\033[0m")
     else:
         return text
+
+def interrupt_irq(signum, stack):
+    print()
+    sys.exit()
+
+signal.signal(signal.SIGINT, interrupt_irq)
+
     
 for directory, model in TESTS:
     files = [path for path in listdir(directory) if isfile(join(directory, path))]
@@ -84,20 +93,25 @@ for directory, model in TESTS:
             result = False
             elapsed_time = time.time() - start_time
             results.append((model, test, result, elapsed_time))
+            result_string = colorise("\033[31m", "Error")
+            print("{}:  {:20s}{: 6.02f}s {}".format(result_string, model, elapsed_time, join(directory, test)))
             continue
-            
+        
         if not QUIET:
             result_string = colorise("\033[34m", "Passed") if result else colorise("\033[33m", "Failed")
-            print("{}: {:20s}{:.02f}s {}".format(result_string, model, elapsed_time, join(directory, test)))
+            print("{}: {:20s}{: 6.02f}s {}".format(result_string, model, elapsed_time, join(directory, test)))
         results.append((model, test, result, elapsed_time))
 
 passed = [p for p in results if result_to_bool(p)]
 total_time = reduce((lambda x,y: x + y[3]), results, 0)
 print(
-    "Passed: {} of {}. {:.1f}% in {:.1f}s".format(
+    """\n=== Passed {} of {} ===
+   {:.1f}% in {:.1f}s""".format(
         len(passed),
         len(results),
         len(passed)/len(results) * 100.0,
         total_time
     )
 )
+
+

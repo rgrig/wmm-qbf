@@ -60,13 +60,14 @@ let simple_quantifiers p =
   let module S = Set.Make (String) in
   let all_quantified p =
     let rec f xs = function
-      | Var v -> S.mem v xs
+      | Var v -> if S.mem v xs then true else (Printf.printf "%s not quantified\n" v; false)
       | Not p -> f xs p
       | And ps | Or ps -> List.for_all (f xs) ps
       | Exists (vs, p, _) | Forall (vs, p, _) ->
           let xs = S.union xs (S.of_list vs) in
           f xs p in
-    f S.empty p in
+    f S.empty p
+  in
   let no_repeated_quantifiers p =
     let exception Repeated in
     let rec f xs = function
@@ -75,12 +76,25 @@ let simple_quantifiers p =
       | And ps | Or ps -> List.fold_left f xs ps
       | Exists (vs, p, _) | Forall (vs, p, _) ->
           let chk xs v =
-            if S.mem v xs then raise Repeated;
+            if S.mem v xs then
+                begin
+                  Printf.printf "%s repeated\n" v;
+                  raise Repeated;
+                end;
             S.add v xs in
           let xs = List.fold_left chk xs vs in
           f xs p in
-    try ignore (f S.empty p); true with Repeated -> false in
-  all_quantified p && no_repeated_quantifiers p
+    try ignore (f S.empty p); true with Repeated -> false
+  in
+  let repeats = no_repeated_quantifiers p in
+  let all_quant = all_quantified p in
+  if not repeats then
+    Printf.printf "Repeated quantifiers.\n"
+  else ();
+  if not all_quant then
+    Printf.printf "Not all variables are quantified.\n"
+  else ();
+  repeats && all_quant
 
 (* PRE: simple_quantifiers;  POST: returns a tree *)
 let quant_deps p =

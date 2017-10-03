@@ -2,6 +2,10 @@ open Printf
 module U = Util
 module E = EventStructure
 
+let debugging = false
+
+let debug f = if debugging then f () else ()
+
 (**
    maximal x ≜ valid_conf x ∧ ∃y . valid_conf y ‌∧ x ⊆ y → x = y
 *)
@@ -24,7 +28,7 @@ let maximal_conf es x =
    already been executed?
 *)
 let certifiable es e c =
-  let y = MM.fresh_so_var es 1 ~prefix:(Printf.sprintf "cert%d" e) in
+  let y = MM.fresh_so_var es 1 ~prefix:(Printf.sprintf "cert%d_" e) in
   let s_writes = List.filter (MM.same_label es e) (EventStructure.writes es) in
   MM.forall y
     (Qbf.mk_implies
@@ -33,11 +37,12 @@ let certifiable es e c =
     )
 
 let grows_by es x y ev =
+  debug @@ (fun x -> Printf.printf "  entering grows_by\n");
+  debug @@ (fun x -> Printf.printf "    List.length ev = %d\n" (List.length ev));
   let events = EventStructure.events es in
-  printf "%s expected arity: %d\n" (MM.show_so_var x) (List.length ev);
   let rec copy xs = function
       1 -> [xs]
-    | n -> xs :: copy xs (n - 1)
+    | n -> xs :: copy xs (n-1)
   in
   Qbf.mk_and @@ [
     MM.subset x y
@@ -49,24 +54,29 @@ let grows_by es x y ev =
           then Qbf.mk_true ()
           else (MM._in b x)
         )
-      ) (Util.n_cartesian_product (copy events (List.length events)))
+      ) (Util.n_cartesian_product (copy events (List.length ev)))
 
 let follows_config es c e =
+  debug @@ (fun x ->Printf.printf "  entering follows_config\n");
   Qbf.mk_and @@ List.map (fun f ->
       if List.mem (f, e) (EventStructure.order_tc es)
       then MM._in [f] c
       else Qbf.mk_true ()
     ) (EventStructure.events es)
 
-let coh es rf =
+let coh es co rf =
+  debug @@ (fun x -> Printf.printf "  entering coh\n");
   Qbf.mk_true ()
+
+let b_to_qbf b = if b then Qbf.mk_true () else Qbf.mk_false ()
 
 (** 
      e∈W     e is certifiable      proms' = proms ∪ {e}
    —————————————————————————————————————————————————–————
           <conf, proms, rf> ––→ <conf, proms', rf>
 *)
-let promise es (c,q,rf) (c',q',rf') =
+let promise es co (c,q,rf) (c',q',rf') =
+  debug @@ (fun x -> Printf.printf "\n=== entering promise ===\n");
   let writes = EventStructure.writes es in
   let events = EventStructure.events es in
 
@@ -84,9 +94,8 @@ let promise es (c,q,rf) (c',q',rf') =
   ; MM.equal rf rf'
   ]
 
-let b_to_qbf b = if b then Qbf.mk_true () else Qbf.mk_false ()
-
-let read es (c,q,rf) (c',q',rf') =
+let read es co (c,q,rf) (c',q',rf') =
+  debug @@ (fun x ->Printf.printf "\n=== entering read ===\n");
   let reads = EventStructure.reads es in
   let writes = EventStructure.writes es in
   let events = EventStructure.events es in
@@ -97,8 +106,8 @@ let read es (c,q,rf) (c',q',rf') =
     then Qbf.mk_or @@ List.map (
         fun w -> Qbf.mk_and [
             grows_by es rf rf' [r;w]
-          (*; grows_by es c c' [r]*)
-          ; coh es rf'
+          ; grows_by es c c' [r]
+          ; coh es co rf'
           ; MM._in [w] q
           ; b_to_qbf (List.mem (w,r) justifies)
           ]
@@ -111,11 +120,12 @@ let read es (c,q,rf) (c',q',rf') =
   ; MM.equal q q'
   ]
 
-let fulfill es (c,q,rf) (c',q',rf') =
+let fulfill es co (c,q,rf) (c',q',rf') =
+  debug @@ (fun x -> Printf.printf "\n=== entering fulfill ===\n");
   let is_fulfillable w = Qbf.mk_or [
       follows_config es c w
     ; MM._in [w] q
-    ; coh es rf
+    ; coh es co rf
     ]
   in
   Qbf.mk_and [
@@ -125,18 +135,20 @@ let fulfill es (c,q,rf) (c',q',rf') =
   ]
 
 let promise_step es co (c,q, rf) (c',q', rf') =
+  debug @@ (fun x -> Printf.printf "entering promise_step\n");
   Qbf.mk_or [
-    promise es (c,q,rf) (c',q',rf')
-  ; read es (c,q,rf) (c',q',rf')
-  ; fulfill es (c,q,rf) (c',q',rf')
+    promise es co (c,q,rf) (c',q',rf')
+  ; read es co (c,q,rf) (c',q',rf')
+  ; fulfill es co (c,q,rf) (c',q',rf')
   ]
 
 let promising es co (c,q,rf) goal =
+  debug @@ (fun x -> Printf.printf "entering promising\n");
   (*  let writes = EventStructure.writes es in *)
   let rec do_step (c,q,rf) n =
     let c' = MM.fresh_so_var es 1 in
     let q' = MM.fresh_so_var es 1 in
-    let rf' = MM.fresh_so_var es 2 in
+    let rf' = MM.fresh_so_var es 2 ~prefix:"rf" in
     let r =
       if n = 0 then
         MM.equal c goal
@@ -150,7 +162,7 @@ let promising es co (c,q,rf) goal =
           ] (*@ List.map (fun e -> Qbf.mk_implies [MM._in [e] proms] (certifiable es e conf)) writes*)
         ]
     in
-    MM.exists c' @@ MM.exists q' @@ MM.exists rf r
+    MM.exists c' @@ MM.exists q' @@ MM.exists rf' r
   in
   do_step (c,q,rf) (EventStructure.events_number es)
 
@@ -160,12 +172,12 @@ let do_decide es target solver_opts =
   let c = MM.fresh_so_var es 1 in
   let q = MM.fresh_so_var es 1 in
   let g = MM.fresh_so_var es 1 in
-  let rf = MM.fresh_so_var es 2 in
+  let rf = MM.fresh_so_var es 2 ~prefix:"rf" in
   let co = MM.fresh_so_var es 2 in
   let query = Qbf.mk_and [
       MM.equals_set c []
     ; MM.equals_set q []
-    ; MM.equals_set rf []
+    ; MM.equals_sets rf []
     ; MM.equals_set g target
     ; MM.valid_conf es c
     ; MM.valid_conf es g
@@ -174,8 +186,8 @@ let do_decide es target solver_opts =
   let query = MM.exists c
     @@ MM.exists q
     @@ MM.exists g
-    @@ MM.exists co
-    @@ MM.exists rf query
+    @@ MM.exists rf
+    @@ MM.exists co query
   in
   Util.maybe (Qbf.holds query solver_opts) (printf "result: %b\n")
 

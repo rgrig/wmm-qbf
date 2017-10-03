@@ -16,6 +16,7 @@ val writes : EventStructure.t -> so_var predicate
 val forall : so_var -> Qbf.t -> Qbf.t
 val exists : so_var -> Qbf.t -> Qbf.t
 val equals_set : so_var -> EventStructure.set -> Qbf.t
+val equals_sets : so_var -> EventStructure.set list -> Qbf.t
 val _in: int list -> so_var -> Qbf.t
 
 val subset : relation
