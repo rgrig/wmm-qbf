@@ -124,16 +124,12 @@ let equals_set x is =
     if List.mem i is then var x [i] else Qbf.mk_not (var x [i]) in
   Qbf.mk_and @@ List.map f (U.range 1 n)
 
-let rec copy xs = function
-    1 -> [xs]
-  | n -> xs :: copy xs (n-1)
-
 let equals_sets x iss =
   let n = size_of x in
   let arity = x.arity in
   let f i =
     if List.mem i iss then var x i else Qbf.mk_not (var x i) in
-  Qbf.mk_and @@ List.map f (Util.n_cartesian_product (copy (U.range 1 n) arity))
+  Qbf.mk_and @@ List.map f (Util.n_cartesian_product (U.copy (U.range 1 n) arity))
 
 let writes es w =
   let writes = EventStructure.writes es in
@@ -144,7 +140,7 @@ let subset x y =
   assert (x.arity == y.arity);
   let n = size_of x in
   let f i = Qbf.mk_implies [var x i] (var y i) in
-  let edges = Util.n_cartesian_product (copy (U.range 1 n) (x.arity)) in
+  let edges = Util.n_cartesian_product (U.copy (U.range 1 n) (x.arity)) in
   Qbf.mk_and @@ List.map f edges
 
 let flip p x y = p y x

@@ -40,7 +40,7 @@ let grows_by es x y ev =
   ] @
     List.map (fun b ->
         Qbf.mk_implies [MM._in [b] y] (
-          if b == ev
+          if b = ev
           then Qbf.mk_true ()
           else (MM._in [b] x)
         )

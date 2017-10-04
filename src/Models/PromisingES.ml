@@ -28,36 +28,29 @@ let maximal_conf es x =
    already been executed?
 *)
 let certifiable es e c =
-  let y = MM.fresh_so_var es 1 ~prefix:(Printf.sprintf "cert%d_" e) in
+  let y = MM.fresh_so_var es 1 in
   let s_writes = List.filter (MM.same_label es e) (EventStructure.writes es) in
-  MM.forall y
-    (Qbf.mk_implies
-       [MM.subset c y; maximal_conf es y]
-       (Qbf.mk_or @@ List.map (fun z -> MM._in [z] y) s_writes)
-    )
-
+  MM.forall y @@ Qbf.mk_implies [MM.justifies es c y; maximal_conf es y]
+    (Qbf.mk_or @@ List.map (fun z -> MM._in [z] y) s_writes)
+    
 let grows_by es x y ev =
   debug @@ (fun x -> Printf.printf "  entering grows_by\n");
   debug @@ (fun x -> Printf.printf "    List.length ev = %d\n" (List.length ev));
   let events = EventStructure.events es in
-  let rec copy xs = function
-      1 -> [xs]
-    | n -> xs :: copy xs (n-1)
-  in
   Qbf.mk_and @@ [
     MM.subset x y
   ; MM._in ev y
   ] @
     List.map (fun b ->
         Qbf.mk_implies [MM._in b y] (
-          if b == ev
+          if b = ev
           then Qbf.mk_true ()
           else (MM._in b x)
         )
-      ) (Util.n_cartesian_product (copy events (List.length ev)))
+      ) (Util.n_cartesian_product (U.copy events (List.length ev)))
 
 let follows_config es c e =
-  debug @@ (fun x ->Printf.printf "  entering follows_config\n");
+  debug @@ (fun x -> Printf.printf "  entering follows_config\n");
   Qbf.mk_and @@ List.map (fun f ->
       if List.mem (f, e) (EventStructure.order_tc es)
       then MM._in [f] c
@@ -89,16 +82,15 @@ let promise es co (c,q,rf) (c',q',rf') =
   in
   
   Qbf.mk_and [
-    Qbf.mk_or @@ List.map (fun e -> Qbf.mk_implies [is_certifiable e] (grows_by es q q' [e])) events
+    Qbf.mk_or @@ List.map (fun e -> Qbf.mk_and [is_certifiable e; (grows_by es q q' [e])]) events
   ; MM.equal c c'
   ; MM.equal rf rf'
   ]
 
 let read es co (c,q,rf) (c',q',rf') =
-  debug @@ (fun x ->Printf.printf "\n=== entering read ===\n");
+  debug @@ (fun x -> Printf.printf "\n=== entering read ===\n");
   let reads = EventStructure.reads es in
   let writes = EventStructure.writes es in
-  let events = EventStructure.events es in
   let justifies = EventStructure.justifies es in
   
   let is_readable r =
@@ -107,6 +99,7 @@ let read es co (c,q,rf) (c',q',rf') =
         fun w -> Qbf.mk_and [
             grows_by es rf rf' [r;w]
           ; grows_by es c c' [r]
+          ; follows_config es c r
           ; coh es co rf'
           ; MM._in [w] q
           ; b_to_qbf (List.mem (w,r) justifies)
@@ -116,20 +109,23 @@ let read es co (c,q,rf) (c',q',rf') =
   in
   
   Qbf.mk_and [
-    Qbf.mk_or @@ List.map is_readable events
+    Qbf.mk_or @@ List.map is_readable reads
+  ; MM.valid_conf es c'
   ; MM.equal q q'
   ]
 
 let fulfill es co (c,q,rf) (c',q',rf') =
   debug @@ (fun x -> Printf.printf "\n=== entering fulfill ===\n");
-  let is_fulfillable w = Qbf.mk_or [
+  let is_fulfillable w = Qbf.mk_and [
       follows_config es c w
     ; MM._in [w] q
     ; coh es co rf
+    ; grows_by es c c' [w]
     ]
   in
   Qbf.mk_and [
-    Qbf.mk_or @@ List.map is_fulfillable (EventStructure.writes es)
+    Qbf.mk_or @@ List.map is_fulfillable (EventStructure.events es)
+  ; MM.valid_conf es c
   ; MM.equal q q'
   ; MM.equal rf rf'
   ]
@@ -138,7 +134,7 @@ let promise_step es co (c,q, rf) (c',q', rf') =
   debug @@ (fun x -> Printf.printf "entering promise_step\n");
   Qbf.mk_or [
     promise es co (c,q,rf) (c',q',rf')
-  ; read es co (c,q,rf) (c',q',rf')
+  ; read    es co (c,q,rf) (c',q',rf')
   ; fulfill es co (c,q,rf) (c',q',rf')
   ]
 
@@ -156,15 +152,14 @@ let promising es co (c,q,rf) goal =
         Qbf.mk_or [
           MM.equal c goal
         ; Qbf.mk_and @@ [
-            MM.valid_conf es c'
-          ; promise_step es co (c,q,rf) (c',q',rf')
+            promise_step es co (c,q,rf) (c',q',rf')
           ; do_step (c', q', rf') (n-1)
           ] (*@ List.map (fun e -> Qbf.mk_implies [MM._in [e] proms] (certifiable es e conf)) writes*)
         ]
     in
     MM.exists c' @@ MM.exists q' @@ MM.exists rf' r
   in
-  do_step (c,q,rf) (EventStructure.events_number es)
+  do_step (c,q,rf) ((EventStructure.events_number es) + (List.length (EventStructure.writes es)))
 
 (* Find out if these 3 are the only quantified variables. Name them
    and check the QCIR. Compare to J+R. *)

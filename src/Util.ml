@@ -54,6 +54,9 @@ let maybe a f =
     Some a' -> f a'
   | None -> ()
 
+let rec copy xs = function
+    1 -> [xs]
+  | n -> xs :: copy xs (n-1)
 
 (* OLD
 type var =
