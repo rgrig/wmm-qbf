@@ -19,6 +19,7 @@ let decides = [
 ; ("pes-promise-read", PESPromiseRead.do_decide)
 ; ("pes-transitions", PESTransitions.do_decide)
 ; ("promising-es", PromisingES.do_decide)
+; ("promising-es-mod", PromisingESMod.do_decide)
 ; ("common-valid-conf", ValidConf.do_decide)
 ]
 

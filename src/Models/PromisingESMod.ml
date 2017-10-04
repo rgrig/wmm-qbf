@@ -30,11 +30,8 @@ let maximal_conf es x =
 let certifiable es e c =
   let y = MM.fresh_so_var es 1 in
   let s_writes = List.filter (MM.same_label es e) (EventStructure.writes es) in
-  MM.forall y
-    (Qbf.mk_implies
-       [MM.subset c y; maximal_conf es y]
-       (Qbf.mk_or @@ List.map (fun z -> MM._in [z] y) s_writes)
-    )
+  MM.forall y @@ Qbf.mk_implies [MM.justifies es c y; maximal_conf es y]
+    (Qbf.mk_or @@ List.map (fun z -> MM._in [z] y) s_writes)
     
 let grows_by es x y ev =
   debug @@ (fun x -> Printf.printf "  entering grows_by\n");
