@@ -46,6 +46,7 @@ TESTS = get_suite(argv, get_skip(argv, [
     # -- Promising Event Structures
     ("data/jctc", "promising-es"),
     ("data/jctc", "promising-es-mod"),
+    ("data/jctc", "promising-es-cert"),
 
     # -- Java Causaility Test Cases --
     ("data", "j+r"),

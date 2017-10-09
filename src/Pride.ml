@@ -20,6 +20,7 @@ let decides = [
 ; ("pes-transitions", PESTransitions.do_decide)
 ; ("promising-es", PromisingES.do_decide)
 ; ("promising-es-mod", PromisingESMod.do_decide)
+; ("promising-es-cert", PromisingESCert.do_decide)
 ; ("common-valid-conf", ValidConf.do_decide)
 ]
 
