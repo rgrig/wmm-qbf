@@ -2,14 +2,14 @@
 %token <int> INT
 %token <int> REGISTER
 %token <int> THREAD
-%token <string> VARIABLE
-%token SEMICOLON
+%token <string> WORD
 %token SEMICOLON
 %token DOT
 %token COMMA
 %token PIPE
 %token COLON
 %token PLUS
+(* TODO: Remove.
 %token BRANCH
 %token READ
 %token WRITE
@@ -20,6 +20,7 @@
 %token AND
 %token EQUAL
 %token NOT_EQUAL
+*)
 %token ROUNDL
 %token ROUNDR
 %token SQUAREL
@@ -29,6 +30,16 @@
 
 %nonassoc SEMICOLON
 
+(* HACK. *)
+%start <string> parse
+
+%%
+
+parse:
+| CURLYL CURLYR w=WORD EOF { "Word: " ^ w }
+
+
+(*
 %start <TODO> parse
 
 %%
@@ -39,44 +50,50 @@ parse:
 
 (* List of thread names. *)
 thread_list:
-| THREAD SEMICOLON												{ [$1] }
-| THREAD PIPE thread_list										{ $1 :: $3 }
+| t=THREAD SEMICOLON											{ [t] }
+| t=THREAD PIPE ts=thread_list									{ t::ts }
 
 (* List of groups of instructions, one entry for each line down the program. *)
 instruction_sequence:
-| instruction_strata SEMICOLON									{ [$1] }
-| instruction_strata SEMICOLON instruction_sequence				{ $1 :: $3 }
+| i=instruction_strata SEMICOLON								{ [i] }
+| i=instruction_strata SEMICOLON is=instruction_sequence		{ i::is }
 
 (* List of instructions that happen on the same line, one entry for each column. *)
 instruction_strata:
-| instruction													{ [$1] }
-| instruction PIPE instruction_strata							{ $1 :: $3 }
+| i=instruction													{ [i] }
+| i=instruction PIPE is=instruction_strata						{ i::is }
 
 (* A single instruction, which can be left empty. *)
 instruction:
-|																{ NoOp }
-(* TODO: Handle case where NAME is consumed by READ or something. *)
-(* TODO: Don't allow `label: label: label: instruction`?
-| NAME COLON instruction										{ Label ($1, $3) }
+| (* Empty *)													{ NoOp }
+| l=WORD COLON i=instruction									{ Label (l, i) }
 (* TODO: Make sure symbolic registers aren't needed. *)
-| READ annotations REGISTER address								{ TODO }
-| WRITE annotations address expression							{ TODO }
-| FENCE annotations fence_labels								{ TODO }
-| RMW annotations REGISTER operation address					{ TODO }
-| BRANCH annotations REGISTER NAME								{ TODO }
-| BRANCH annotations NAME										{ TODO }
-| MOV REGISTER operation										{ TODO }
+| (WORD "r") l=annotations dst=REGISTER src=address				{ Read (l, src, dst) }
+| (WORD "w") l=annotations dst=address src=expression			{ Write (l, src, dst) }
+| (WORD "f") l=annotations f=fence_labels						{ Fence (l, f) }
+| (WORD "rmw") l=annotations REGISTER operation address			{ TODO }
+| (WORD "b") l=annotations REGISTER WORD							{ TODO }
+| (WORD "b") l=annotations WORD									{ TODO }
+| (WORD "mov") REGISTER operation								{ TODO }
 
 (* Extra tags for things like C++ memory order stuff. *)
 annotations:
-| SQUAREL SQUARER -> { [] }
-| SQUAREL annotation_list SQUARER -> { $2 }
+| SQUAREL SQUARER ->											{ [] }
+| SQUAREL annotation_list SQUARER ->							{ $2 }
 
 (* List of tag names inside the brackets of annotations. *)
 annotation_list:
-| NAME -> { [$1] }
-| NAME COMMA annotation_list -> { $1 :: $3 }
+| WORD ->														{ [$1] }
+| WORD COMMA annotation_list ->									{ $1 :: $3 }
 
 (* TODO: expression. *)
 (* TODO: fence_labels. *)
 (* TODO: operation. *)
+
+(* TODO: Make sure these are handled after being moved from tokens to identifiers.
+| "add"					{ ADD }
+| "and"					{ AND }
+| "eq"					{ EQUAL }
+| "ne"					{ NOT_EQUAL }
+*)
+*)

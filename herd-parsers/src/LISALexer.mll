@@ -2,38 +2,37 @@
 	open Lexing
 	open LISAParser
 
-	exception LexerError of string
+	exception Error of string
 
-	(* Utility function that takes an indentifier and tries to parse it as a register or variable name. *)
-	let parse_identifier (name : string) : token option =
-		try
+	(* Utility function that takes an indentifier and tries to parse it as a register or variable name. *) let parse_identifier (name : string) : token = try
 			let length = String.length name in
 			let start = String.get name 0 in
 			let id = String.sub name 1 (length - 1) in
-			if start = 'r' then REGISTER (int_of_string id) else VARIABLE name
-		with _ -> VARIABLE name
+			if start = 'r' then REGISTER (int_of_string id) else WORD name
+		with _ -> WORD name
 }
 
-let whitespace = [' ' '\t' '\r']*
+let whitespace = [' ' '\t' '\r']+
 let digit = ['0'-'9']
 let alpha = ['a'-'z' 'A'-'Z']
 let identifier = alpha (alpha | digit | '_' | '/' | '-')*
 (* TODO: `digit` doesn't include 'a'-'f', so the 0x prefix is useless. Remove, fix, or issue warnings. *)
 let number = '-'? "0x"? digit+
 
+(* TODO: Check architecture name. *)
 (* Lexer for litmus tests written in LISA (Litmus Instruction Set Architecture). *)
 (* This entry point actually just discards the header metadata before starting the real lexer. *)
 rule lex = parse
-| [^ '{']* '\n'			{ new_line lexbuf; parse lexbuf }
-| [^ '{']* '{'			{ program lexbuf }
-| eof					{ raise (LexerError "Found EOF but no program") }
+| [^ '{']* '\n'			{ new_line lexbuf; lex lexbuf }
+| [^ '{']*				{ program lexbuf }
+| eof					{ raise (Error "found EOF but no program") }
 
 (* The real lexer, triggered after the header is discarded. *)
 and program = parse
 | whitespace			{ program lexbuf }
 | '\n'					{ new_line lexbuf; program lexbuf }
-(* TODO: Ocaml comments are included in the original lexer, but are they actually useful for LISA? *)
-| "(*"					{ comment 0 lexbuf }
+(* TODO: Ocaml comments are included in the Herd lexer, but are they actually useful for LISA? *)
+| "(*"					{ comment 0 lexbuf; program lexbuf }
 | number as value		{ INT (int_of_string value) }
 | 'P' (number as id)	{ THREAD (int_of_string id) }
 | ';'					{ SEMICOLON }
@@ -42,6 +41,7 @@ and program = parse
 | '|'					{ PIPE }
 | ':'					{ COLON }
 | '+'					{ PLUS }
+(* TODO: Remove.
 | 'b'					{ BRANCH }
 | 'r'					{ READ }
 | 'w'					{ WRITE }
@@ -52,6 +52,7 @@ and program = parse
 | "and"					{ AND }
 | "eq"					{ EQUAL }
 | "ne"					{ NOT_EQUAL }
+*)
 | '('					{ ROUNDL }
 | ')'					{ ROUNDR }
 | '['					{ SQUAREL }
@@ -60,12 +61,39 @@ and program = parse
 | '}'					{ CURLYR }
 | identifier as value	{ parse_identifier value }
 | eof					{ EOF }
-| _						{ raise (LexerError ("Unexpected " ^ Lexing.lexeme lexbuf)) }
+| _						{ raise (Error ("unexpected " ^ Lexing.lexeme lexbuf)) }
 
 (* Special lexer rules for nested Ocaml comments. *)
 and comment depth = parse
-| "(*"					{ comment depth + 1 lexbuf }
-| "*)"					{ if depth == 0 then program lexbuf else comment depth - 1 lexbuf }
-| '\n'					{ new_line lexbuf; comment depth lexbuf; }
-| eof					{ raise (LexerError "Unterminated comment") }
+| "(*"					{ comment (depth + 1) lexbuf }
+| "*)"					{ if depth > 0 then comment (depth - 1) lexbuf }
+| '\n'					{ new_line lexbuf; comment depth lexbuf }
+| eof					{ raise (Error "unterminated comment") }
 | _						{ comment depth lexbuf }
+
+(* HACK. *)
+{
+	let string_of_token token = match token with
+	| INT value -> Printf.sprintf "int %d" value
+	| THREAD id -> Printf.sprintf "thread %d" id
+	| SEMICOLON -> "semicolon"
+	| DOT -> "dot"
+	| COMMA -> "comma"
+	| PIPE -> "pipe"
+	| COLON -> "colon"
+	| PLUS -> "plus"
+	| ROUNDL -> "round left"
+	| ROUNDR -> "round right"
+	| SQUAREL -> "square left"
+	| SQUARER -> "square right"
+	| CURLYL -> "curly left"
+	| CURLYR -> "curly right"
+	| REGISTER name -> Printf.sprintf "register %d" name
+	| WORD text -> Printf.sprintf "word %s" text
+	| EOF -> "eof"
+
+	let lex lexbuf =
+		let token = lex lexbuf in
+		Printf.printf "Token: \"%s\" => %s\n" (lexeme lexbuf) (string_of_token token);
+		token
+}
