@@ -43,19 +43,6 @@ and program = parse
 | ','					{ COMMA }
 | '|'					{ PIPE }
 | ':'					{ COLON }
-| '+'					{ PLUS }
-(* TODO: Remove.
-| 'b'					{ BRANCH }
-| 'r'					{ READ }
-| 'w'					{ WRITE }
-| 'f'					{ FENCE }
-| "rmw"					{ RMW }
-| "mov"					{ MOV }
-| "add"					{ ADD }
-| "and"					{ AND }
-| "eq"					{ EQUAL }
-| "ne"					{ NOT_EQUAL }
-*)
 | '('					{ ROUNDL }
 | ')'					{ ROUNDR }
 | '['					{ SQUAREL }
@@ -84,7 +71,6 @@ and comment depth = parse
   | COMMA -> "comma"
   | PIPE -> "pipe"
   | COLON -> "colon"
-  | PLUS -> "plus"
   | ROUNDL -> "round left"
   | ROUNDR -> "round right"
   | SQUAREL -> "square left"

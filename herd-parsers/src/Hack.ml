@@ -6,6 +6,7 @@ exception Error of string
 
 (* Raise an error with the given text and position information from lexbuf. *)
 let raise_error (lexbuf : lexbuf) (text : string) : 'a =
+  (* TODO: Use lex_last_p? *)
   let at = lexbuf.lex_curr_p in
   let column = at.pos_cnum - at.pos_bol + 1 in
   raise (Error (Printf.sprintf "%s:%d:%d: %s" at.pos_fname at.pos_lnum column text))
