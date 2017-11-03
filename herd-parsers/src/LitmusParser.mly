@@ -1,21 +1,41 @@
+(* TODO: Tidy up indentation. *)
+
 %token EOF
 %token <int> INT
 %token <int> REGISTER
-%token <int> THREAD
+%token <int> PROCESS
 %token <string> WORD
+%token ASTERISK
+%token AMPERSAND
+%token COLON
 %token SEMICOLON
 %token DOT
 %token COMMA
 %token PIPE
-%token COLON
 %token ROUNDL
 %token ROUNDR
 %token SQUAREL
 %token SQUARER
 %token CURLYL
 %token CURLYR
+%token NOT
+%token AND
+%token OR
+%token EQUAL
+%token NOT_EQUAL
+%token IMPLIES
 
+%left OR
+%left AND
+%right IMPLIES
+%nonassoc NOT
 %nonassoc SEMICOLON
+
+
+
+
+
+
 
 (* HACK. *)
 %start <string> parse

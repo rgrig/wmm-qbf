@@ -37,13 +37,14 @@ and program = parse
 (* TODO: Ocaml comments are included in the Herd lexer, but are they actually useful for LISA? *)
 | "(*"					{ comment 0 lexbuf; program lexbuf }
 | number as value		{ INT (int_of_string value) }
-| 'P' (number as id)	{ THREAD (int_of_string id) }
+| 'P' (number as id)	{ PROCESS (int_of_string id) }
+| '*'					{ ASTERISK }
 | '&'					{ AMPERSAND }
+| ':'					{ COLON }
 | ';'					{ SEMICOLON }
 | '.'					{ DOT }
 | ','					{ COMMA }
 | '|'					{ PIPE }
-| ':'					{ COLON }
 | '('					{ ROUNDL }
 | ')'					{ ROUNDR }
 | '['					{ SQUAREL }
@@ -51,6 +52,14 @@ and program = parse
 | '{'					{ CURLYL }
 | '}'					{ CURLYR }
 | identifier as value	{ parse_identifier value }
+(* Used by setup/condition only. *)
+| "~" | "not"			{ NOT }
+| "/\\"					{ AND }
+| "\\/"					{ OR }
+| "=" | "=="			{ EQUAL }
+| "!=" | "<>"			{ NOT_EQUAL }
+| "=>"					{ IMPLIES }
+(* Things that aren't exactly tokens. *)
 | eof					{ EOF }
 | _						{ raise (Error ("unexpected " ^ Lexing.lexeme lexbuf)) }
 
@@ -66,12 +75,14 @@ and comment depth = parse
 {
   let string_of_token token = match token with
   | INT value -> Printf.sprintf "int %d" value
-  | THREAD id -> Printf.sprintf "thread %d" id
+  | PROCESS id -> Printf.sprintf "thread %d" id
+  | ASTERISK -> "asterisk"
+  | AMPERSAND -> "ampersand"
+  | COLON -> "colon"
   | SEMICOLON -> "semicolon"
   | DOT -> "dot"
   | COMMA -> "comma"
   | PIPE -> "pipe"
-  | COLON -> "colon"
   | ROUNDL -> "round left"
   | ROUNDR -> "round right"
   | SQUAREL -> "square left"

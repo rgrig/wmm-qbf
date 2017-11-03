@@ -34,19 +34,19 @@ titles		:= 'P' INT ';'
 // Program instructions.
 program		:= line ';'
 			|  line ';' program
-line		:= statement
-			|  statement '|' line
-statement	:= EMPTY
-			|  instruction
-			|  WORD ':' instruction
-instruction	:= 'r' tags REGISTER address
-			|  'w' tags address reg_or_int
-			|  'f' tags
-			|  'f' tags '{' labels '}' '{' labels '}'
-			|  'rmw' tags REGISTER operation address
-			|  'b' tags REGISTER WORD
-			|  'b' tags WORD
-			|  'mov' REGISTER operation
+line		:= instruction
+			|  instruction '|' line
+instruction	:= label
+			|  label 'r' tags REGISTER address
+			|  label 'w' tags address reg_or_int
+			|  label 'f' tags
+			|  label 'f' tags '{' labels '}' '{' labels '}'
+			|  label 'rmw' tags REGISTER operation address
+			|  label 'b' tags REGISTER WORD
+			|  label 'b' tags WORD
+			|  label 'mov' REGISTER operation
+label		:= EMPTY
+			|  WORD ':'
 any_value	:= INT
 			|  address
 address		:= reg_or_name
@@ -79,8 +79,7 @@ logic		:= 'true'
 			|  logic '\/' logic
 			|  logic '=>' logic
 			|  '(' logic ')'
-			|  test
-test		:= location equal value
+			|  location equal value
 			|  location not_equal value
 not			:= '~'
 			|  'not'
