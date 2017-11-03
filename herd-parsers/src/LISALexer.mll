@@ -38,6 +38,7 @@ and program = parse
 | "(*"					{ comment 0 lexbuf; program lexbuf }
 | number as value		{ INT (int_of_string value) }
 | 'P' (number as id)	{ THREAD (int_of_string id) }
+| '&'					{ AMPERSAND }
 | ';'					{ SEMICOLON }
 | '.'					{ DOT }
 | ','					{ COMMA }

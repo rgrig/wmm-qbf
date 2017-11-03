@@ -35,10 +35,16 @@ parse:
 parse:
 | CURLYL setup CURLYR thread_list instruction_sequence TODOconditions EOF	{ TODO }
 
-(* List of initial states. *)
+(* List of initial register and variable states. *)
 setup:
+| (* Empty. *)													{ [] }
+| SEMICOLON														{ [] }
+| item=setup_item												{ [i] }
+| item=setup_item SEMICOLON rest=setup							{ item::rest }
+
+(* Initialisation for a register or variable.
+setup_item:
 | TODO
-| TODO COMMA setup
 
 (* List of thread names. *)
 thread_list:
