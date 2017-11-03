@@ -1,0 +1,90 @@
+// This is the grammar I've deduced for LISA litmus tests.
+// It's somewhat more permissive than the Herd parser or the specification.
+// I've elided features I don't understand or don't think we want.
+
+// Header is checked to make sure it's the right architecture, then stripped.
+
+litmus		:= setup titles program condition
+
+// The initial state of the virtual machine as a list of variables and values.
+setup		:= '{' setup_list '}'
+setup_list	:= EMPTY
+			|  ';'
+			|  setup_value
+			|  setup_value ';' setup_list
+// Giving a variable name zeroes it, giving a value uses that value, pointers can be setup too.
+setup_value	:= location
+			|  location '=' value
+			|  '*' location
+			|  '*' location '=' pointer
+location	:= 'P' INT ':' REGISTER
+			|  'P' INT ':' WORD
+			|  INT ':' REGISTER
+			|  INT ':' WORD
+// A literal or a named value.
+value		:= INT
+			|  WORD
+pointer		:= '&' value
+			|  value
+
+// List of process names.
+titles		:= 'P' INT ';'
+			|  'P' INT '|' titles
+
+// Program instructions.
+program		:= line ';'
+			|  line ';' program
+line		:= statement
+			|  statement '|' line
+statement	:= EMPTY
+			|  instruction
+			|  WORD ':' instruction
+instruction	:= 'r' tags REGISTER address
+			|  'w' tags address reg_or_int
+			|  'f' tags
+			|  'f' tags '{' labels '}' '{' labels '}'
+			|  'rmw' tags REGISTER operation address
+			|  'b' tags REGISTER WORD
+			|  'b' tags WORD
+			|  'mov' REGISTER operation
+any_value	:= INT
+			|  address
+address		:= reg_or_name
+			|  reg_or_name '+' reg_or_int
+reg_or_name	:= REGISTER
+			|  WORD
+reg_or_int	:= REGISTER
+			|  INT
+labels		:= EMPTY
+			|  WORD
+			|  WORD ',' labels
+operation	:= any_value
+			| '(' 'add' any_value any_value ')'
+			| '(' 'xor' any_value any_value ')'
+			| '(' 'and' any_value any_value ')'
+			| '(' 'eq' any_value any_value ')'
+			| '(' 'neq' any_value any_value ')'
+			| '(' 'ne' any_value any_value ')'
+
+// Result filter.
+condition	:= EMPTY
+			|  'forall' logic
+			|  'exists' logic
+			|  'not' 'exists' logic
+			|  '(' logic ')'
+logic		:= 'true'
+			|  'false'
+			|  'not' logic
+			|  logic '/\' logic
+			|  logic '\/' logic
+			|  logic '=>' logic
+			|  '(' logic ')'
+			|  test
+test		:= location equal value
+			|  location not_equal value
+not			:= '~'
+			|  'not'
+equal		:= '='
+			|  '=='
+not_equal	:= '!='
+			|  '<>'
