@@ -4,22 +4,23 @@
 
 // Header is checked to make sure it's the right architecture, then stripped.
 
-litmus		:= setup titles program condition
+litmus		:= '{' setup '}' titles program condition
 
 // The initial state of the virtual machine as a list of variables and values.
-setup		:= '{' setup_list '}'
-setup_list	:= EMPTY
+setup	:= EMPTY
 			|  ';'
 			|  setup_value
-			|  setup_value ';' setup_list
+			|  setup_value ';' setup
 // Giving a variable name zeroes it, giving a value uses that value, pointers can be setup too.
 setup_value	:= location
 			|  location '=' value
 			|  '*' location
 			|  '*' location '=' pointer
 location	:= 'P' INT ':' REGISTER
+			// TODO: Giving a process for a variable makes no sense.
 			|  'P' INT ':' WORD
 			|  INT ':' REGISTER
+			// TODO: Giving a process for a variable makes no sense.
 			|  INT ':' WORD
 // A literal or a named value.
 value		:= INT

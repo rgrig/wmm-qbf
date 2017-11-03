@@ -51,12 +51,14 @@ and program = parse
 | ']'					{ SQUARER }
 | '{'					{ CURLYL }
 | '}'					{ CURLYR }
+| '='					{ ASSIGN }
 | identifier as value	{ parse_identifier value }
 (* Used by setup/condition only. *)
 | "~" | "not"			{ NOT }
 | "/\\"					{ AND }
 | "\\/"					{ OR }
-| "=" | "=="			{ EQUAL }
+(* Beware of ASSIGN. *)
+| "=="					{ EQUAL }
 | "!=" | "<>"			{ NOT_EQUAL }
 | "=>"					{ IMPLIES }
 (* Things that aren't exactly tokens. *)

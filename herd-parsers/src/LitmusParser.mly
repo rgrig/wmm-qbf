@@ -1,11 +1,10 @@
-(* TODO: Tidy up indentation. *)
-
 %token EOF
 %token <int> INT
 %token <int> REGISTER
 %token <int> PROCESS
 %token <string> WORD
 %token ASTERISK
+%token ASSIGN
 %token AMPERSAND
 %token COLON
 %token SEMICOLON
@@ -30,6 +29,39 @@
 %right IMPLIES
 %nonassoc NOT
 %nonassoc SEMICOLON
+
+%start <litmus> parse
+
+%%
+
+(* Parser entrypoint, expects header to have been handled first. *)
+parse:
+| CURLYL setup=setup CURLYR titles processes=program condition=condition
+  { litmus { setup; processes; condition } }
+
+(* Initial state of virtual machine. *)
+setup:
+| list=separated_list(SEMICOLON, setup_item) { list }
+
+setup_item:
+| l=setup_location                                       { l, Literal 0 }
+| l=setup_location ASSIGN value=INT                      { l, Literal value }
+| l=setup_location ASSIGN name=WORD                      { l, Variable { name=name } }
+| ASTERISK l=setup_location                              { l, Address 0 }
+| ASTERISK l=setup_location ASSIGN ASTERISK? address=INT { l, Address address }
+| ASTERISK l=setup_location ASSIGN ASTERISK? name=WORD   { l, VariableAddress { name=name } }
+
+setup_location:
+| p=PROCESS COLON r=REGISTER { Register { process=p; register=r; } }
+| p=INT COLON r=REGISTER     { Register { process=p; register=r; } }
+// TODO: Variables after fixing grammer.
+
+(* Program threads. *)
+titles:
+program:
+
+(* Required final state. *)
+condition:
 
 
 
