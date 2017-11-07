@@ -1,3 +1,10 @@
+{
+  (* Take a list of lines (which contain parallel instructions) and return a list of threads. *)
+  (* (Threads are sequences of instructions) *)
+  let lines_to_threads (lines : instruction list list) : instruction list list =
+    (* TODO. *)
+}
+
 %token EOF
 %token <int> INT
 %token <int> REGISTER
@@ -36,12 +43,12 @@
 
 (* Parser entrypoint, expects header to have been handled first. *)
 parse:
-| CURLYL setup=setup CURLYR titles processes=program condition=condition
-  { litmus { setup; processes; condition } }
+| CURLYL setup=setup CURLYR titles=titles lines=program condition=condition
+  { litmus { setup; titles; processes=lines_to_threads lines; condition } }
 
 (* Initial state of virtual machine. *)
 setup:
-| list=separated_list(SEMICOLON, setup_item) { list }
+| list=separated_list(SEMICOLON, setup_item) SEMICOLON? { list }
 
 setup_item:
 | l=setup_location                                       { l, Literal 0 }
@@ -54,11 +61,20 @@ setup_item:
 setup_location:
 | p=PROCESS COLON r=REGISTER { Register { process=p; register=r; } }
 | p=INT COLON r=REGISTER     { Register { process=p; register=r; } }
-// TODO: Variables after fixing grammer.
+| name=WORD                  { Variable { name=name; } }
 
 (* Program threads. *)
 titles:
+| list=separated_list(PIPE, PROCESS) SEMICOLON { list }
+
 program:
+| list=separated_list(SEMICOLON, line) SEMICOLON { list }
+
+line:
+| list=separated_list(PIPE, instruction) { list }
+
+instruction:
+| label 
 
 (* Required final state. *)
 condition:

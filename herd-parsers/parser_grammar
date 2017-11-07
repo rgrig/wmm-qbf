@@ -17,11 +17,8 @@ setup_value	:= location
 			|  '*' location
 			|  '*' location '=' pointer
 location	:= 'P' INT ':' REGISTER
-			// TODO: Giving a process for a variable makes no sense.
-			|  'P' INT ':' WORD
 			|  INT ':' REGISTER
-			// TODO: Giving a process for a variable makes no sense.
-			|  INT ':' WORD
+			|  WORD
 // A literal or a named value.
 value		:= INT
 			|  WORD
@@ -45,7 +42,7 @@ instruction	:= label
 			|  label 'rmw' tags REGISTER operation address
 			|  label 'b' tags REGISTER WORD
 			|  label 'b' tags WORD
-			|  label 'mov' REGISTER operation
+			|  label 'mov' tags REGISTER operation
 label		:= EMPTY
 			|  WORD ':'
 any_value	:= INT

@@ -1,8 +1,10 @@
 type litmus = {
   (* Initial state of the virtual machine. *)
   setup : setup_location * setup_value list;
+  (* ID of each process. *)
+  titles : int list;
   (* Parallel threads of program. *)
-  processes : instruction list list;
+  processes : (label * instruction) list list;
   (* Logic to check final state. *)
   condition : logic;
 }
@@ -18,9 +20,9 @@ type setup_value =
 (* TODO: What these last three mean is still open to interpretation. *)
 (* Set to value of global variable? Assume zero if not set yet? *)
 | Variable of variable
-(* Literal address or address of constant? *)
+(* TODO: Literal address or address of constant? *)
 | Address of int
-(* Address of global variable, presumably? *)
+(* TODO: Address of global variable, presumably? *)
 | VariableAddress of variable
 
 (* One line in one program process. *)
@@ -30,10 +32,13 @@ type statement = {
   tags: string list;
 }
 
-type instruction = {
-| Branch of {condition : register option; label : string}
+type label = string option
+
+type instruction = 
+| Branch of {condition : register option; jump_to : string}
 | Fence of (string list) * (string list) option
 | Mov of {destination : register; value : operation}
+| Nop
 | Read of {destination : register; source : address}
 | RMW of {destination : register; value : operation; address : address}
 | WriteRegister of {destination : address; source : register; }
@@ -59,7 +64,7 @@ type address_add =
 | Literal of int
 | Register of register
 
-(* Condition for test. *)
+(* Condition for litmus test. *)
 type logic =
 (* True. *)
 | Always
@@ -77,12 +82,12 @@ type logic_tree =
 | Implies of logic_tree * logic_tree
 | Equality of condition_location * condition_value
 
-(* Source of data for test in condition. *)
+(* Left hand side of equality. *)
 type condition_location =
 | Register of register
 | Variable of variable
 
-(* Source of value to test against in condition. *)
+(* Right hand side of equality. *)
 type condition_value =
 | Literal of int
 | Variable of variable

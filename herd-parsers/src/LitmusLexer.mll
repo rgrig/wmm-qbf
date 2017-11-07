@@ -20,7 +20,7 @@ let identifier = alpha (alpha | digit | '_' | '/' | '-')*
 (* TODO: `digit` doesn't include 'a'-'f', so the 0x prefix is useless. Remove, fix, or issue warnings. *)
 let number = '-'? "0x"? digit+
 
-(* Entrypoint for scanning the header section, reutrns architecture name (which should be "LISA"). *)
+(* Entrypoint for scanning the header section, returns architecture name (only "LISA" is supported). *)
 rule header = parse
 | identifier as name	{ header_ignored lexbuf; name}
 
@@ -34,7 +34,6 @@ and header_ignored = parse
 and program = parse
 | whitespace			{ program lexbuf }
 | '\n'					{ new_line lexbuf; program lexbuf }
-(* TODO: Ocaml comments are included in the Herd lexer, but are they actually useful for LISA? *)
 | "(*"					{ comment 0 lexbuf; program lexbuf }
 | number as value		{ INT (int_of_string value) }
 | 'P' (number as id)	{ PROCESS (int_of_string id) }
