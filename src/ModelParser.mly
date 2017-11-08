@@ -2,11 +2,14 @@
 
 open ModelAst
 
-let do_op _ =
-  failwith "todo"
+let as_op op = function
+  | Op (op0,es) when op0 = op -> es
+  | e -> [e]
 
-let pp _ =
-  failwith "letoj"
+let do_op op e1 e2 =
+  let es1 = as_op op e1
+  and es2 = as_op op e2 in
+  Op (op,es1@es2)
 
 %}
 
@@ -44,7 +47,9 @@ let pp _ =
 %%
 
 main:
-| identity options topins_list EOF { () }
+| identity options topins_list EOF {
+  Format.printf "@[%a@]" ModelAst.pp ($2, $1, $3)
+}
 
 identity:
 | VAR { $1 }
@@ -141,7 +146,7 @@ deftest:
 
 
 app_test:
-| test exp optional_name { (pp (),$1,$2,$3) }
+| test exp optional_name { ($1,$2,$3) }
 
 test_type:
 |          { Check }
@@ -237,7 +242,7 @@ simple:
 | LPAR exp RPAR { $2 }
 | BEGIN exp END { $2 }
 | LBRAC exp RBRAC { Op1 (ToId,$2) }
- 
+
 tupleargs:
 | exp COMMA tupleend { $1 :: $3 }
 

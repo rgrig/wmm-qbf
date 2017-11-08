@@ -10,7 +10,7 @@ let pp_opt tag default b =
   else
     sprintf "%s%s" (if b then "with" else "without") tag
 
-let pp { co; init; sc; } =
+let show { co; init; sc; } =
   let pp =
     [pp_opt "co" default.co co;
      pp_opt "init" default.init init;
@@ -24,6 +24,7 @@ let pp { co; init; sc; } =
   | _::_ ->
       sprintf "[%s]" (String.concat "," pp)
 
+let pp f x = Format.fprintf f "%s" (show x)
 
 let set_enumco b t =
   if not b then { t with co=false; init=true; }

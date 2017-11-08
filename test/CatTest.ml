@@ -3,9 +3,9 @@ module T = ModelParser
 module L = ModelLexer.Make(LexUtils.Default)
 
 exception Parsing_failed of string
-             
+
 let use_stdin = ref false
-            
+
 let parse filename f =
   let lexbuf = Lexing.from_channel f in
   try
