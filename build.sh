@@ -1,4 +1,4 @@
-MAINS="Pride Test ResultsBin CatTest"
+MAINS="Pride Test ResultsBin CatTest SoTest"
 if [ -n "$1" ]; then TYPE=$1
 else TYPE="native"
 fi

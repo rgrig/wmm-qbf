@@ -1,4 +1,3 @@
-open BatList
 type event = int
 type set = event list
 type relation = (event * event) list
