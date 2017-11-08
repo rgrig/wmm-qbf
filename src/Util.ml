@@ -1,5 +1,7 @@
 open Printf
 module B = BatList
+module StringSet = Set.Make (String)
+
 
 exception Parsing_failed of string
 exception Runtime_error of string
