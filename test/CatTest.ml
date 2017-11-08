@@ -4,6 +4,7 @@ module T = ModelParser
 module L = ModelLexer.Make(LexUtils.Default)
              
 let use_stdin = ref false
+
 let run filename =
   let file_chan = match !use_stdin with
       true -> stdin

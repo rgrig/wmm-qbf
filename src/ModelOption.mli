@@ -1,6 +1,7 @@
 type t = { co : bool ; init : bool ; sc : bool } 
 
-val pp : t -> string
+val show : t -> string
+val pp : Format.formatter -> t -> unit
 val default : t
 val compat : t
 
