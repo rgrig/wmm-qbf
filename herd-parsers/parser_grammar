@@ -43,6 +43,8 @@ instruction	:= label
 			|  label 'b' tags REGISTER WORD
 			|  label 'b' tags WORD
 			|  label 'mov' tags REGISTER operation
+tags		:= EMPTY
+			|  '[' labels ']'
 label		:= EMPTY
 			|  WORD ':'
 any_value	:= INT

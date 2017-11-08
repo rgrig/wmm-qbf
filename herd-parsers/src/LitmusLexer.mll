@@ -51,6 +51,12 @@ and program = parse
 | '{'					{ CURLYL }
 | '}'					{ CURLYR }
 | '='					{ ASSIGN }
+| "b"					{ BRANCH }
+| "f"					{ FENCE }
+| "mov"					{ MOV }
+| "r"					{ READ }
+| "rmw"					{ RMW }
+| "w"					{ WRITE }
 | identifier as value	{ parse_identifier value }
 (* Used by setup/condition only. *)
 | "~" | "not"			{ NOT }

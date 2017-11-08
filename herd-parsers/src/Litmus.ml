@@ -4,7 +4,7 @@ type litmus = {
   (* ID of each process. *)
   titles : int list;
   (* Parallel threads of program. *)
-  processes : (label * instruction) list list;
+  processes : statement list list;
   (* Logic to check final state. *)
   condition : logic;
 }
@@ -36,13 +36,15 @@ type label = string option
 
 type instruction = 
 | Branch of {condition : register option; jump_to : string}
-| Fence of (string list) * (string list) option
+| Fence of {range : (string list) * (string list) option}
 | Mov of {destination : register; value : operation}
 | Nop
 | Read of {destination : register; source : address}
 | RMW of {destination : register; value : operation; address : address}
 | WriteRegister of {destination : address; source : register; }
 | WriteImmediate of {destination : address; value : int; }
+
+type operation =
 
 (* Identifier for a register local to a process. *)
 type register = {
