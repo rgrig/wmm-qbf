@@ -1,4 +1,0 @@
-PKG batteries oUnit extlib ocamlgraph
-B ../_build/**
-B ../_build/
-S ./ModelFragments/
