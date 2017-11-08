@@ -9,6 +9,7 @@
       ; "events", EVENTS
       ; "execution", EXECUTION
       ; "justifies", JUSTIFIES
+	  ; "labels", LABELS
       ; "order", ORDER
       ; "reads", READS ];
     try Hashtbl.find table x
@@ -18,12 +19,14 @@
 let id = ['a'-'z' 'A'-'Z'] ['a'-'z' 'A'-'Z' '0'-'9']*
 let ws = [' ' '\t' '\r']+
 let num = ['0'-'9']+
+let quoted_string = '"'[^'"']*'"'
 
 rule token = parse
   | ws { token lexbuf }
   | "//" [^ '\n']* { token lexbuf }
   | '\n' { Lexing.new_line lexbuf; NL }
   | num as x { INT (sscanf x "%d" (fun x->x)) }
+  | quoted_string { QUOTED_STRING }
   | id as x { keyword x }
   | eof { EOF }
   | _ { raise Error }

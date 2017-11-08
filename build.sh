@@ -1,5 +1,7 @@
 MAINS="Pride Test ResultsBin"
-TYPE="byte"
+if [ -n "$1" ]; then TYPE=$1
+else TYPE="native"
+fi
 
 T=""
 for i in $MAINS; do
