@@ -1,0 +1,6 @@
+<src/**>: include
+<src/**>: package(ppx_deriving.std)
+<src/*.mly>: explain, infer
+true: use_menhir
+true: debug
+true: annot

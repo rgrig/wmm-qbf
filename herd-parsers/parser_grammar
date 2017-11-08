@@ -1,0 +1,108 @@
+// This is the grammar I've deduced for LISA litmus tests.
+// It's somewhat more permissive than the Herd parser or the specification.
+// I've elided features I don't understand or don't think we need.
+
+// The header should be checked to make sure it's the right architecture.
+// It should otherwise be skipped before starting the parser.
+
+// The whole litmus test.
+// `setup` gives the initial state of the virtual machine.
+// `titles` gives the names of the processes.
+// `program` gives the program instructions.
+// `condition` gives an accept condition for the test.
+litmus		:= '{' setup '}' titles program condition EOF
+
+//////// Setup stuff. ////////
+setup			:= EMPTY
+				|  ';'
+				|  setup_value
+				|  setup_value ';' setup
+
+setup_value		:= location // Zero a register or variable.
+				|  location '=' INT // Set a register or variable to an integer.
+				|  location '=' WORD // Set a register or variable to the address of a variable.
+
+// The name of a register or a variable.
+location		:= 'P' INT ':' REGISTER
+				|  INT ':' REGISTER
+				|  WORD
+
+//////// Titles/program stuff. ////////
+// List of process names.
+titles		:= 'P' INT ';'
+			|  'P' INT '|' titles
+
+// Program instructions.
+program		:= line ';'
+			|  line ';' program
+line		:= instruction
+			|  instruction '|' line
+instruction	:= label // No operation.
+			// Copy value from second register to first register.
+			// First register isn't de-referenced.
+			// If second register is a value then copy it.
+			// If second register is a pointer then dereference it?
+			|  label 'r' tags REGISTER REGISTER
+			// Copy value from variable to register.
+			|  label 'r' tags REGISTER WORD
+			// TODO: Partial rewrite stopped here, finished with read, start with checking write (pointers).
+
+
+			|  label 'r' tags REGISTER address
+			|  label 'w' tags address reg_or_int
+			|  label 'f' tags
+			|  label 'f' tags '{' labels '}' '{' labels '}'
+			|  label 'rmw' tags REGISTER operation address
+			|  label 'b' tags REGISTER WORD
+			|  label 'b' tags WORD
+			|  label 'mov' tags REGISTER operation
+tags		:= EMPTY
+			|  '[' labels ']'
+label		:= EMPTY
+			|  WORD ':'
+any_value	:= INT
+			|  address
+address		:= reg_or_name
+			|  reg_or_name '+' reg_or_int
+reg_or_name	:= REGISTER
+			|  WORD
+reg_or_int	:= REGISTER
+			|  INT
+labels		:= EMPTY
+			|  WORD
+			|  WORD ',' labels
+operation	:= any_value
+			| '(' 'add' any_value any_value ')'
+			| '(' 'xor' any_value any_value ')'
+			| '(' 'and' any_value any_value ')'
+			| '(' 'eq' any_value any_value ')'
+			| '(' 'neq' any_value any_value ')'
+			| '(' 'ne' any_value any_value ')'
+
+//////// Condition stuff. ////////
+// Result filter.
+condition	:= EMPTY
+			|  'forall' logic
+			|  'exists' logic
+			|  'not' 'exists' logic
+			|  '(' logic ')'
+			// TODO: Observed.
+logic		:= 'true'
+			|  'false'
+			|  'not' logic
+			|  logic '/\' logic
+			|  logic '\/' logic
+			|  logic '=>' logic
+			|  '(' logic ')'
+			// Compare register or variable with integer.
+			|  location equal INT
+			|  location not_equal INT
+			// Compare register of variable with address of variable.
+			|  location equal WORD
+			|  location not_equal WORD
+not			:= '~'
+			|  'not'
+equal		:= '='
+			|  '=='
+not_equal	:= '!='
+			|  '<>'
