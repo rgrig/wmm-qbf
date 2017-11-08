@@ -42,7 +42,7 @@ let run filename =
       true -> stdin
     | false -> open_in filename
   in
-  let es, target = U.parse filename file_chan in
+  let es, target = U.parse filename file_chan EsParser.top EsLexer.token EsParser.Error in
   let fn = Filename.remove_extension filename in
   if !enum_mode
   then (pick_model !model_name enums) fn es target !dump_query
