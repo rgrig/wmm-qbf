@@ -24,14 +24,18 @@ let string_of_labels a = Label.Set.pp_str "," Misc.identity a
 let arch = Archs.lisa
 
 type gpr_reg = int
+[@@ deriving show]
 
 type reg =
   | GPRreg of gpr_reg
   | Symbolic_reg of string
+[@@ deriving show]
 
-let pp_reg r = match r with
+(*
+let show_reg r = match r with
 | GPRreg ir -> sprintf "r%i" ir
 | Symbolic_reg s -> sprintf "%%%s" s
+ *)
 
 let reg_compare = Pervasives.compare
 
@@ -89,17 +93,26 @@ let pp_fence_ins = function
 (****************)
 
 type lbl = Label.t
+[@@ deriving show]
+
 
 type 'k reg_or_imm =
 | Regi of reg
 | Imm of 'k
+(* [@@ deriving show] *)
+(*val pp_reg_or_imm : (Format.formatter -> 'k -> Ppx_deriving_runtime.unit) -> Format.formatter -> ('k reg_or_imm) -> Ppx_deriving_runtime.unit*)
+(*let pp_reg_or_imm f x = Format.fprintf f "TODO:DUMMY"*)
+
+let pp_reg_or_imm k f = function
+ Regi reg -> Format.fprintf f "%s" (show_reg reg)
+| Imm i ->Format.fprintf f "%a" k i
 
 let reg_or_imm_tr f = function
   | Imm k -> Imm (f k)
   | Regi _ as keep -> keep
 
 let string_of_reg_or_imm r = match r with
-  | Regi r -> pp_reg r
+  | Regi r -> show_reg r
   | Imm r -> sprintf "%d" r
 
 open Constant
@@ -107,18 +120,20 @@ open Constant
 type reg_or_addr =
   | Rega of reg  (* address given in register *)
   | Abs of SymbConstant.v (* address given as a constant *)
+[@@ deriving show]
 
 let pp_abs = function
   | Symbolic s -> s
   | Concrete i -> string_of_int i
 
 let string_of_reg_or_addr r = match r with
-  | Rega r -> pp_reg r
+  | Rega r -> show_reg r
   | Abs r -> pp_abs r
 
 type 'k imm_or_addr_or_reg =
   | IAR_roa of reg_or_addr
   | IAR_imm of 'k
+[@@ deriving show]
 
 let imm_or_addr_or_reg_tr f = function
   | IAR_roa _ as keep -> keep
@@ -143,10 +158,14 @@ let pp_addr_op a = match a with
 
 type op_t =
   | Add | Xor | And | Eq | Neq
+[@@ deriving show]
 
 type 'k op =
   | RAI of 'k imm_or_addr_or_reg
   | OP of op_t * 'k imm_or_addr_or_reg * 'k imm_or_addr_or_reg
+(*[@@ deriving show]*)
+
+let show_op _ = failwith "TODO"
 
 let r_in_op =
   let in_addr r = function
@@ -164,6 +183,7 @@ let op_tr f = function
   | OP (op,iar1,iar2) ->
       OP (op,imm_or_addr_or_reg_tr f iar1,imm_or_addr_or_reg_tr f iar2)
 
+(*
 let pp_op = function
   | RAI(iar) -> sprintf "%s" (pp_iar iar)
   | OP(Add,x,i) -> sprintf "(add %s %s)" (pp_iar x) (pp_iar i)
@@ -171,6 +191,7 @@ let pp_op = function
   | OP(And,x,i) -> sprintf "(and %s %s)" (pp_iar x) (pp_iar i)
   | OP(Eq,x,y) -> sprintf "(eq %s %s)" (pp_iar x) (pp_iar y)
   | OP(Neq,x,y) -> sprintf "(neq %s %s)" (pp_iar x) (pp_iar y)
+ *)
 
 type 'k kinstruction =
 | Pld of reg * 'k addr_op * string list
@@ -180,7 +201,9 @@ type 'k kinstruction =
 | Prmw of reg * 'k op * 'k addr_op * string list
 | Pbranch of reg option * lbl * string list
 | Pmov of reg * 'k op
+(*[@@ deriving show]*)
 
+let pp_kinstruction _ = failwith "TODO"
 
 let instruction_tr f = function
   | Pld (r,x,s) -> Pld (r,addr_op_tr f x,s)
@@ -191,6 +214,8 @@ let instruction_tr f = function
   | Pmov (r,op) -> Pmov (r,op_tr f op)
 
 type instruction = int kinstruction
+[@@ deriving show]
+
 type parsedInstruction = MetaConst.k kinstruction
 
 (* from GPU_PTXBase *)
@@ -198,8 +223,11 @@ type parsedInstruction = MetaConst.k kinstruction
 include Pseudo.Make
     (struct
       type ins = instruction
+
       type pins = parsedInstruction
       type reg_arg = reg
+
+      let pp_reg_arg f x = Format.fprintf f "%s" (show_reg x)
 
       let parsed_tr i = instruction_tr MetaConst.as_int i
 
@@ -222,7 +250,7 @@ include Pseudo.Make
 let dump_instruction i = match i with
 | Pld(r, addr_op, s) -> sprintf "r[%s] %s %s"
       (string_of_annot_list s)
-      (pp_reg r)
+      (show_reg r)
       (pp_addr_op addr_op)
 
 | Pst(addr_op,roi,s) -> sprintf "w[%s] %s %s"
@@ -232,8 +260,8 @@ let dump_instruction i = match i with
 
 | Prmw(r,op,x,s) -> sprintf "rmw[%s] %s %s %s"
       (string_of_annot_list s)
-      (pp_reg r)
-      (pp_op op)
+      (show_reg r)
+      (show_op op)
       (pp_addr_op x)
 
 | Pfence f -> pp_fence_ins f
@@ -242,7 +270,7 @@ let dump_instruction i = match i with
 
 | Pbranch(Some r,l,s) -> sprintf "b[%s] %s %s"
       (string_of_annot_list s)
-      (pp_reg r)
+      (show_reg r)
       l
 
 | Pbranch(None,l,s) -> sprintf "b[%s] %s"
@@ -250,8 +278,8 @@ let dump_instruction i = match i with
       l
 
 | Pmov(r,op) -> sprintf "mov %s %s"
-      (pp_reg r)
-      (pp_op op)
+      (show_reg r)
+      (show_op op)
 
 let fold_regs (f_reg,f_sreg) =
   let fold_reg reg (y_reg,y_sreg) = match reg with

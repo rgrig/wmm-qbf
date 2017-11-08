@@ -14,18 +14,14 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-(** Labels in code *)
+type param = { param_ty : CType.t; param_name : string }
 
-type t = string
-val reset : unit -> unit
-val next_label : string -> t
+type 'body test =
+  { proc : int
+  ; params : param list
+  ; body : 'body
+  }
 
-val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
-
-val fail : int -> t
-val exit : int -> t
-
-type next = Next | To of t
-
-module Set : MySet.S with type elt = string
-module Map : MyMap.S with type key = string
+type 'body t =
+  | Global of string
+  | Test of 'body test

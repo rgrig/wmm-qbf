@@ -14,18 +14,22 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-(** Labels in code *)
+(** Constants in code *)
 
-type t = string
-val reset : unit -> unit
-val next_label : string -> t
+type v =
+  | Concrete of int
+  | Symbolic of string
+[@@ deriving show]
 
-val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
+module type S =
+  sig
+    val pp : bool -> v -> string (* true -> hexa *)
 
-val fail : int -> t
-val exit : int -> t
+    val pp_v  : Format.formatter -> v -> Ppx_deriving_runtime.unit
+    val show_v  : v -> string
 
-type next = Next | To of t
+    val compare : v -> v -> int
 
-module Set : MySet.S with type elt = string
-module Map : MyMap.S with type key = string
+    val intToV  : int -> v 
+    val nameToV  : string -> v
+  end

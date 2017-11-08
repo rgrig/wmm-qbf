@@ -4,7 +4,7 @@
 (* Jade Alglave, University College London, UK.                             *)
 (* Luc Maranget, INRIA Paris-Rocquencourt, France.                          *)
 (*                                                                          *)
-(* Copyright 2010-present Institut National de Recherche en Informatique et *)
+(* Copyright 2014-present Institut National de Recherche en Informatique et *)
 (* en Automatique and the authors. All rights reserved.                     *)
 (*                                                                          *)
 (* This software is governed by the CeCILL-B license under French law and   *)
@@ -14,18 +14,34 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-(** Labels in code *)
+(* The subset of C types that we use *)
 
-type t = string
-val reset : unit -> unit
-val next_label : string -> t
+type base = string
 
-val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
+type t =
+  | Base of base
+  | Volatile of t
+  | Atomic of t
+  | Pointer of t
+(** limited arrays *)
+  | Array of base * int
 
-val fail : int -> t
-val exit : int -> t
+val voidstar : t
+val word : t
+val quad : t
 
-type next = Next | To of t
+val dump : t -> string
+val debug : t -> string
 
-module Set : MySet.S with type elt = string
-module Map : MyMap.S with type key = string
+type fmt = Direct of string | Macro of string
+
+val get_fmt : bool (* hexa *) -> base -> fmt option
+
+val is_ptr : t -> bool
+val is_array : t -> bool
+val is_atomic : t -> bool
+val strip_atomic : t -> t
+val strip_volatile : t -> t
+val strip_attributes : t -> t
+
+val is_ptr_to_atomic : t -> bool

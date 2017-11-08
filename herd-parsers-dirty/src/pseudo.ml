@@ -28,7 +28,7 @@ module type S = sig
     | Instruction of 'ins
     | Macro of string * reg_arg list
     | Symbolic of string
-  val pp_kpseudo : Format.formatter -> 'ins kpseudo -> unit
+  val pp_kpseudo : (Format.formatter -> 'ins -> Ppx_deriving_runtime.unit) -> Format.formatter -> ('ins kpseudo) -> Ppx_deriving_runtime.unit
 
   type pseudo = ins kpseudo
   type parsedPseudo = pins kpseudo
@@ -62,6 +62,8 @@ module type I = sig
 (* translate from parsed *)
   val parsed_tr : pins -> ins
 
+  val pp_reg_arg : Format.formatter -> reg_arg -> unit
+
 (* Number of memory access per instruction *)
   val get_naccesses : ins -> int
 (* fold/map over labels in instructions,
@@ -81,6 +83,8 @@ struct
   type ins = I.ins
   type pins = I.pins
   type reg_arg = I.reg_arg
+   [@@ deriving show]
+
 (* Parsed instructions, ie instructions enriched with labels *)
   type 'ins kpseudo =
     | Nop

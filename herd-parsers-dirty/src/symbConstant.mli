@@ -14,18 +14,9 @@
 (* "http://www.cecill.info". We also give a copy in LICENSE.txt.            *)
 (****************************************************************************)
 
-(** Labels in code *)
+(** Symbolic constants *)
 
-type t = string
-val reset : unit -> unit
-val next_label : string -> t
-
-val pp : Format.formatter -> t -> Ppx_deriving_runtime.unit
-
-val fail : int -> t
-val exit : int -> t
-
-type next = Next | To of t
-
-module Set : MySet.S with type elt = string
-module Map : MyMap.S with type key = string
+type v = Constant.v
+include Constant.S
+val eq : v -> v -> bool
+val vToName : v -> string
