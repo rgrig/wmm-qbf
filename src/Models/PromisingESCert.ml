@@ -120,13 +120,13 @@ let thread_step es co evt (c,q,rf) (c',q',rf') =
   ; read    es co evt (c,q,rf) (c',q',rf')
   ; fulfil es co evt (c,q,rf) (c',q',rf')
   ]
-                
+
 let promise_step es co (c,q,rf) (c',q',rf') =
   debug @@ (fun () -> printf "entering thread_step");
   let rec step es co (c,q,rf) (c',q',rf') =
     Qbf.mk_or @@ List.map (fun evt -> Qbf.mk_and [
         follows_config es c evt
-      ; consistent es (c',q',rf') 0
+      ; consistent es (c',q',rf') 2
       ; thread_step es co evt (c,q,rf) (c',q',rf')
       ]) (EventStructure.events es)
   and do_step (c,q,rf) (c', q', rf') n =
