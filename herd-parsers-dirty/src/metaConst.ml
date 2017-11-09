@@ -20,11 +20,14 @@ open Printf
 
 type k = Int of int | Meta of string
 
+
 let zero = Int 0
 
 let pp = function
   | Int i -> sprintf "%i" i
   | Meta v -> sprintf "&%s" v
+
+let pp_k f k = Format.fprintf f "%s" (pp k)
 
 let fatal_meta v =
   Warn.fatal "Unexpected meta variable %s" (pp v)

@@ -28,12 +28,14 @@ module type S = sig
     | Instruction of 'ins
     | Macro of string * reg_arg list
     | Symbolic of string
-  val pp_kpseudo : (Format.formatter -> 'ins -> Ppx_deriving_runtime.unit) -> Format.formatter -> ('ins kpseudo) -> Ppx_deriving_runtime.unit
 
   type pseudo = ins kpseudo
   type parsedPseudo = pins kpseudo
 
-
+  (* pretty printing *)
+  val pp_parsedPseudo : Format.formatter -> parsedPseudo -> unit
+  val pp_pseudo : Format.formatter -> pseudo -> unit
+                    
 (* Lifting of fold/map *)
   val pseudo_map : ('a -> 'b) -> 'a kpseudo -> 'b kpseudo
   val pseudo_fold : ('a -> 'b -> 'a) -> 'a -> 'b kpseudo -> 'a
@@ -59,7 +61,12 @@ module type I = sig
   type ins
   type pins
   type reg_arg
-(* translate from parsed *)
+  (* translate from parsed *)
+
+ 
+  val pp_ins : Format.formatter -> ins -> unit
+  val pp_pins : Format.formatter -> pins -> unit
+     
   val parsed_tr : pins -> ins
 
   val pp_reg_arg : Format.formatter -> reg_arg -> unit
@@ -81,11 +88,13 @@ with type ins = I.ins and type pins = I.pins and type reg_arg = I.reg_arg
 =
 struct
   type ins = I.ins
+               [@@deriving show]
   type pins = I.pins
+                [@@deriving show]
   type reg_arg = I.reg_arg
    [@@ deriving show]
 
-(* Parsed instructions, ie instructions enriched with labels *)
+  (* Parsed instructions, ie instructions enriched with labels *)
   type 'ins kpseudo =
     | Nop
     | Label of string * 'ins kpseudo
@@ -97,6 +106,19 @@ struct
   type pseudo = ins kpseudo
   type parsedPseudo = pins kpseudo
 
+  (* generalised printing of pseudo instructions, takes instruction printer *)
+  let rec pp_kpseudo pp_inst f k =
+    match k with
+      Nop -> Format.fprintf f "NOP"
+    | Label (s, i) -> Format.fprintf f "'%s' [%a]" s (pp_kpseudo pp_inst) i
+    | Instruction i -> Format.fprintf f "%a" pp_inst i
+    | Macro (s, rs) -> Format.fprintf f "%s [%s]" s (String.concat ", " (List.map show_reg_arg rs))
+    | Symbolic s -> Format.fprintf f "%%%s" s
+
+  (* pretty printing currying the above function with the relevant concrete instruction printer *)
+  let pp_pseudo = pp_kpseudo pp_ins
+  let pp_parsedPseudo = pp_kpseudo pp_pins
+                          
 (* Fold/Map lifting *)
   let rec pseudo_map f ins = match ins with
     | Nop -> Nop

@@ -24,12 +24,12 @@ let string_of_labels a = Label.Set.pp_str "," Misc.identity a
 let arch = Archs.lisa
 
 type gpr_reg = int
-[@@ deriving show]
+[@@deriving show]
 
 type reg =
   | GPRreg of gpr_reg
   | Symbolic_reg of string
-[@@ deriving show]
+[@@deriving show]
 
 (*
 let show_reg r = match r with
@@ -65,7 +65,7 @@ type barrier =
 (* jade: i'm guessing this is to give one possible example fence? picking this one *)
 let all_kinds_of_barriers =  [ Fence ([], None);]
 
-let pp_barrier b = match b with
+let show_barrier b = match b with
   | Fence(s, None) ->
       sprintf "Fence(%s)" (string_of_annot_list s)
   | Fence(s, Some(s1,s2)) ->
@@ -74,6 +74,7 @@ let pp_barrier b = match b with
         (string_of_labels s1)
         (string_of_labels s2)
 
+let pp_barrier f b = Format.fprintf f "%s" (show_barrier b)
 
 let barrier_compare = Pervasives.compare
 
@@ -93,19 +94,13 @@ let pp_fence_ins = function
 (****************)
 
 type lbl = Label.t
-[@@ deriving show]
+[@@deriving show]
 
 
 type 'k reg_or_imm =
 | Regi of reg
 | Imm of 'k
-(* [@@ deriving show] *)
-(*val pp_reg_or_imm : (Format.formatter -> 'k -> Ppx_deriving_runtime.unit) -> Format.formatter -> ('k reg_or_imm) -> Ppx_deriving_runtime.unit*)
-(*let pp_reg_or_imm f x = Format.fprintf f "TODO:DUMMY"*)
-
-let pp_reg_or_imm k f = function
- Regi reg -> Format.fprintf f "%s" (show_reg reg)
-| Imm i ->Format.fprintf f "%a" k i
+[@@deriving show]
 
 let reg_or_imm_tr f = function
   | Imm k -> Imm (f k)
@@ -120,7 +115,7 @@ open Constant
 type reg_or_addr =
   | Rega of reg  (* address given in register *)
   | Abs of SymbConstant.v (* address given as a constant *)
-[@@ deriving show]
+[@@deriving show]
 
 let pp_abs = function
   | Symbolic s -> s
@@ -133,39 +128,42 @@ let string_of_reg_or_addr r = match r with
 type 'k imm_or_addr_or_reg =
   | IAR_roa of reg_or_addr
   | IAR_imm of 'k
-[@@ deriving show]
+[@@deriving show]
 
 let imm_or_addr_or_reg_tr f = function
   | IAR_roa _ as keep -> keep
   | IAR_imm k -> IAR_imm (f k)
 
-let pp_iar iar = match iar with
+let show_iar iar = match iar with
   | IAR_roa roa -> string_of_reg_or_addr roa
   | IAR_imm i -> sprintf "%d" i
 
+let pp_iar f i = Format.fprintf f "%s" (show_iar i)
+               
 type 'k addr_op =
 | Addr_op_atom of reg_or_addr
 | Addr_op_add of reg_or_addr * 'k reg_or_imm
-
+                                  [@@deriving show]
+               
 let addr_op_tr f = function
   | Addr_op_add (r,k) -> Addr_op_add (r,reg_or_imm_tr f k)
   | Addr_op_atom _ as keep -> keep
 
-let pp_addr_op a = match a with
+let show_addr_op a = match a with
   | Addr_op_atom roa -> string_of_reg_or_addr roa
   | Addr_op_add(roa,roi) -> sprintf "%s+%s" (string_of_reg_or_addr roa)
     (string_of_reg_or_imm roi)
-
+                          
 type op_t =
   | Add | Xor | And | Eq | Neq
-[@@ deriving show]
+[@@deriving show]
 
 type 'k op =
   | RAI of 'k imm_or_addr_or_reg
   | OP of op_t * 'k imm_or_addr_or_reg * 'k imm_or_addr_or_reg
-(*[@@ deriving show]*)
+[@@deriving show]
 
-let show_op _ = failwith "TODO"
+(* let show_op _ = failwith "TODO" *)
 
 let r_in_op =
   let in_addr r = function
@@ -183,15 +181,14 @@ let op_tr f = function
   | OP (op,iar1,iar2) ->
       OP (op,imm_or_addr_or_reg_tr f iar1,imm_or_addr_or_reg_tr f iar2)
 
-(*
-let pp_op = function
-  | RAI(iar) -> sprintf "%s" (pp_iar iar)
-  | OP(Add,x,i) -> sprintf "(add %s %s)" (pp_iar x) (pp_iar i)
-  | OP(Xor,x,i) -> sprintf "(xor %s %s)" (pp_iar x) (pp_iar i)
-  | OP(And,x,i) -> sprintf "(and %s %s)" (pp_iar x) (pp_iar i)
-  | OP(Eq,x,y) -> sprintf "(eq %s %s)" (pp_iar x) (pp_iar y)
-  | OP(Neq,x,y) -> sprintf "(neq %s %s)" (pp_iar x) (pp_iar y)
- *)
+
+let show_op = function
+  | RAI(iar) -> sprintf "%s" (show_iar iar)
+  | OP(Add,x,i) -> sprintf "(add %s %s)" (show_iar x) (show_iar i)
+  | OP(Xor,x,i) -> sprintf "(xor %s %s)" (show_iar x) (show_iar i)
+  | OP(And,x,i) -> sprintf "(and %s %s)" (show_iar x) (show_iar i)
+  | OP(Eq,x,y) -> sprintf "(eq %s %s)" (show_iar x) (show_iar y)
+  | OP(Neq,x,y) -> sprintf "(neq %s %s)" (show_iar x) (show_iar y)
 
 type 'k kinstruction =
 | Pld of reg * 'k addr_op * string list
@@ -201,10 +198,21 @@ type 'k kinstruction =
 | Prmw of reg * 'k op * 'k addr_op * string list
 | Pbranch of reg option * lbl * string list
 | Pmov of reg * 'k op
-(*[@@ deriving show]*)
-
-let pp_kinstruction _ = failwith "TODO"
-
+                   [@@deriving show]
+(*
+let pp_kinstruction pp_k f k =
+  match k with
+    Pld (r, addr, ss) -> Format.fprintf f "%a %a [%s]"
+                                        pp_reg r
+                                        (pp_addr_op pp_k) addr
+                                        (String.concat ", " ss)
+  | Pst (addr, ri, ss) -> Format.fprintf f "%a %a [%s]"
+                                          (pp_addr_op pp_k) addr
+                                          (pp_reg_or_imm pp_k) ri
+                                          (String.concat ", " ss)
+  | _ -> failwith "does it compile yet?"
+ *)
+        
 let instruction_tr f = function
   | Pld (r,x,s) -> Pld (r,addr_op_tr f x,s)
   | Pst (x,ri,s) -> Pst (addr_op_tr f x,reg_or_imm_tr f ri,s)
@@ -214,19 +222,23 @@ let instruction_tr f = function
   | Pmov (r,op) -> Pmov (r,op_tr f op)
 
 type instruction = int kinstruction
-[@@ deriving show]
-
 type parsedInstruction = MetaConst.k kinstruction
 
+let pp_instruction f k = pp_kinstruction (fun f d -> Format.fprintf f "%d" d) f k
+let pp_parsedInstruction f k = pp_kinstruction MetaConst.pp_k f k
+                       
 (* from GPU_PTXBase *)
 
 include Pseudo.Make
     (struct
-      type ins = instruction
+      type ins = instruction [@@deriving show]
+      type pins = parsedInstruction [@@deriving show]
+      type reg_arg = reg [@@deriving show]
 
-      type pins = parsedInstruction
-      type reg_arg = reg
+      let pp_kpseudo f k = Format.fprintf f "instruction of some type DUMMY ewf324fc"
+      let pp_parsedPseudo f k = Format.fprintf f "instruction of some type DUMMY ewf324fc"
 
+                   
       let pp_reg_arg f x = Format.fprintf f "%s" (show_reg x)
 
       let parsed_tr i = instruction_tr MetaConst.as_int i
@@ -251,18 +263,18 @@ let dump_instruction i = match i with
 | Pld(r, addr_op, s) -> sprintf "r[%s] %s %s"
       (string_of_annot_list s)
       (show_reg r)
-      (pp_addr_op addr_op)
+      (show_addr_op addr_op)
 
 | Pst(addr_op,roi,s) -> sprintf "w[%s] %s %s"
       (string_of_annot_list s)
-      (pp_addr_op addr_op)
+      (show_addr_op addr_op)
       (string_of_reg_or_imm roi)
 
 | Prmw(r,op,x,s) -> sprintf "rmw[%s] %s %s %s"
       (string_of_annot_list s)
       (show_reg r)
       (show_op op)
-      (pp_addr_op x)
+      (show_addr_op x)
 
 | Pfence f -> pp_fence_ins f
 

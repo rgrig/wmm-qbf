@@ -33,8 +33,8 @@ let pp hexa = function
 
 
 (*let pp_v = pp false*)
- let pp_v _ = failwith "TODO"
- let show_v _ = failwith "TODO"
+let pp_v = Constant.pp_v
+let show_v = Constant.show_v
 
 let eq c1 c2 =  match c1,c2 with
 | Concrete i1, Concrete i2 -> i1 = i2
