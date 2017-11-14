@@ -19,9 +19,6 @@ type t =
   | Forall of variable list * t * qid
   [@@deriving show] (* DBG *)
 
-(* No idea why PPX isn't doing the lifting for me. Probably because
-   I've messed up the compile options *)
-let show_variable v = v
 let rec show_t t =
   match t with
     Var v -> v
