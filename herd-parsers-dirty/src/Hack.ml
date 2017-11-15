@@ -1,5 +1,10 @@
 open Lexing
 
+module S = Splitter.Make(Splitter.Default)
+let result = S.split "TODO: Name?" (open_in "test.litmus")
+let _ = assert result.is_lisa
+(* TODO: Work out how to set the lebuf's start position from the splitter result. *)
+
 module L = BellLexer.Make(LexUtils.Default)
 (* TODO: Currently parsing only the LISA part of the file, add splitting a state parsing. *)
 let lexbuf = from_channel (open_in "test.litmus")
