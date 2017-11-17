@@ -34,6 +34,13 @@ let rec show_t t =
 let last_qid = ref 0
 let fresh_qid () = incr last_qid; !last_qid
 
+let fresh_var = 
+  let n = ref 0 in
+  fun ?(prefix = "C") a ->
+    incr n;
+    sprintf "%s_%d" prefix !n
+
+                   
 (* TODO: add small simplifications in these constructors *)
 (* Do we need these functions? Is it really better than having the
    constructors? *)

@@ -1,3 +1,5 @@
+open Printf
+module U = Util
 module ArityMap = Map.Make(String)
 
 let rels xs =
@@ -71,5 +73,39 @@ let check_inv s f =
 let model_check s f =
   failwith "exjfn"
 
-let so_to_qbf s f =
-  Qbf.mk_false ()
+let term_to_var s = function
+  | SO.Var f -> SO.RelMap.find (fst f) s.SO.relations
+  | SO.Const e -> [[e]]
+
+let terms_to_vars s ts =
+  List.map (term_to_var s) ts
+                
+let rec so_to_qbf s f =
+  (* TODO: should check that no names are repeated or transform to
+  remove repeated names. *)
+  match f with
+  | SO.CRel (r,ts) ->
+     begin
+       try
+         (* dubious *)
+         let r' = SO.RelMap.find (fst r) s.SO.relations in
+         if List.mem r' (terms_to_vars s ts) then Qbf.mk_true ()
+         else Qbf.mk_false ()
+       with _ ->
+         Qbf.mk_false ()
+     end
+  | SO.QRel (s,ts) ->
+     if List.length ts > 0
+     then Qbf.mk_var (sprintf "%s_%s" (fst s) (U.map_concat "_" SO.show_term ts))
+     else  Qbf.mk_var (fst s)
+  | SO.FoAll (v, f) | SO.SoAll (v, f) ->
+     Qbf.mk_forall [(fst v)] (so_to_qbf s f)
+  | SO.FoAny (v, f) | SO.SoAny (v, f) ->
+     Qbf.mk_exists [(fst v)] (so_to_qbf s f)
+  | SO.And fs ->
+     Qbf.mk_and (List.map (so_to_qbf s) fs)
+  | SO.Or fs ->
+     Qbf.mk_or (List.map (so_to_qbf s) fs)
+  | SO.Not f ->
+     Qbf.mk_not (so_to_qbf s f)
+ 
