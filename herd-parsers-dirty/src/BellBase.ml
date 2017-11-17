@@ -31,12 +31,6 @@ type reg =
   | Symbolic_reg of string
 [@@deriving show]
 
-(*
-let show_reg r = match r with
-| GPRreg ir -> sprintf "r%i" ir
-| Symbolic_reg s -> sprintf "%%%s" s
- *)
-
 let reg_compare = Pervasives.compare
 
 let symb_reg_name = function
@@ -163,8 +157,6 @@ type 'k op =
   | OP of op_t * 'k imm_or_addr_or_reg * 'k imm_or_addr_or_reg
 [@@deriving show]
 
-(* let show_op _ = failwith "TODO" *)
-
 let r_in_op =
   let in_addr r = function
     | IAR_roa (Rega ra) -> reg_compare r ra = 0
@@ -199,20 +191,7 @@ type 'k kinstruction =
 | Pbranch of reg option * lbl * string list
 | Pmov of reg * 'k op
                    [@@deriving show]
-(*
-let pp_kinstruction pp_k f k =
-  match k with
-    Pld (r, addr, ss) -> Format.fprintf f "%a %a [%s]"
-                                        pp_reg r
-                                        (pp_addr_op pp_k) addr
-                                        (String.concat ", " ss)
-  | Pst (addr, ri, ss) -> Format.fprintf f "%a %a [%s]"
-                                          (pp_addr_op pp_k) addr
-                                          (pp_reg_or_imm pp_k) ri
-                                          (String.concat ", " ss)
-  | _ -> failwith "does it compile yet?"
- *)
-        
+
 let instruction_tr f = function
   | Pld (r,x,s) -> Pld (r,addr_op_tr f x,s)
   | Pst (x,ri,s) -> Pst (addr_op_tr f x,reg_or_imm_tr f ri,s)
@@ -234,12 +213,6 @@ include Pseudo.Make
       type ins = instruction [@@deriving show]
       type pins = parsedInstruction [@@deriving show]
       type reg_arg = reg [@@deriving show]
-
-      let pp_kpseudo f k = Format.fprintf f "instruction of some type DUMMY ewf324fc"
-      let pp_parsedPseudo f k = Format.fprintf f "instruction of some type DUMMY ewf324fc"
-
-                   
-      let pp_reg_arg f x = Format.fprintf f "%s" (show_reg x)
 
       let parsed_tr i = instruction_tr MetaConst.as_int i
 
