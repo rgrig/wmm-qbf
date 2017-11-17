@@ -3,12 +3,14 @@ open OUnit
 
 let verbose = ref false
 
-(* Check the invarients of an SO structure with a simple and well
+(* TODO
+
+(* Check the invariants of an SO structure with a simple and well
 formed relation `foo' *)
 let t1 = "check_arity_pass" >:: (fun () ->
   let s =
     { SO.size = 3
-    ; relations = SoOps.rels [(("foo", 1), [[1];[2]])] } in
+    ; relations = SoOps.rels [("foo", [[1];[2]])] } in
   let f = SO.CRel (("foo", 1), [SO.Const 1]) in
   SoOps.check_inv s f
 )
@@ -65,3 +67,4 @@ let () =
                )
               )
     )
+*)

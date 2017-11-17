@@ -51,8 +51,11 @@ let check_arities s f =
             failwith (Printf.sprintf "symbol %s applied with inconsistent arity" (SO.show_rel_sym s))
        end
 
+    | SO.FoAny (_, f) | SO.FoAll (_, f) ->
+       check_formula f arr_map
+
     (* When a variable is quantified: shadow it's previous definition in the arity map *)
-    | SO.FoAny ((s, a), f) | SO.FoAll ((s, a), f) | SO.SoAny ((s, a), f) | SO.SoAll ((s, a), f) ->
+    | SO.SoAny ((s, a), f) | SO.SoAll ((s, a), f) ->
        check_formula f (ArityMap.add s a arr_map)
 
     | SO.And fs | SO.Or fs ->
@@ -61,7 +64,7 @@ let check_arities s f =
        check_formula f arr_map
   in
   ignore @@ SO.RelMap.fold check_structure s.SO.relations ArityMap.empty;
-  
+
   (* Collect the arities of all of the constant relation symbols *)
   let collect_arities = SO.RelMap.fold (fun k v a -> ArityMap.add k (get_arity k v) a) in
   ignore @@ check_formula f (collect_arities s.SO.relations ArityMap.empty)
@@ -69,31 +72,45 @@ let check_arities s f =
 let check_inv s f =
   check_arities s f (*
   check_elem_bounds s f*)
-  
+
 let model_check s f =
   failwith "exjfn"
 
 let term_to_var s = function
-  | SO.Var f -> SO.RelMap.find (fst f) s.SO.relations
+  | SO.Var v -> SO.RelMap.find v s.SO.relations
   | SO.Const e -> [[e]]
 
 let terms_to_vars s ts =
   List.map (term_to_var s) ts
-                
-let rec so_to_qbf s f =
-  (* TODO: should check that no names are repeated or transform to
-  remove repeated names. *)
-  match f with
-  | SO.CRel (r,ts) ->
-     begin
-       try
-         (* dubious *)
-         let r' = SO.RelMap.find (fst r) s.SO.relations in
-         if List.mem r' (terms_to_vars s ts) then Qbf.mk_true ()
-         else Qbf.mk_false ()
-       with _ ->
-         Qbf.mk_false ()
-     end
+
+  (*
+let qbf_names_for x =
+  let n = size_of x in
+  let rec lists xs i = match i with
+    | 0 -> []
+    | n -> xs :: lists xs (i - 1)
+  in
+  let names = U.n_cartesian_product (lists (U.range 1 n) (x.arity)) in
+  List.map (name x) names
+*)
+
+let so_to_qbf s f =
+  let module So2Qbf = Map.Make (struct
+    type t = SO.so_var
+    let compare = compare
+  end) in
+  let rec go m = function
+    | SO.CRel (r,ts) ->
+       begin
+         try
+           (* dubious *)
+           let r' = SO.RelMap.find (fst r) s.SO.relations in
+           if List.mem r' (terms_to_vars s ts) then Qbf.mk_true ()
+           else Qbf.mk_false ()
+         with _ ->
+           Qbf.mk_false ()
+       end
+(*
   | SO.QRel (s,ts) ->
      if List.length ts > 0
      then Qbf.mk_var (sprintf "%s_%s" (fst s) (U.map_concat "_" SO.show_term ts))
@@ -108,4 +125,5 @@ let rec so_to_qbf s f =
      Qbf.mk_or (List.map (so_to_qbf s) fs)
   | SO.Not f ->
      Qbf.mk_not (so_to_qbf s f)
- 
+*)
+  go So2QbfMap.empty f
