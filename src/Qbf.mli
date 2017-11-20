@@ -3,6 +3,8 @@ type model = variable list
 
 type t
 
+val fresh_var : ?prefix:string -> int -> variable
+  
 val mk_var : variable -> t
 val mk_implies : t list -> t -> t
 val mk_true : unit -> t

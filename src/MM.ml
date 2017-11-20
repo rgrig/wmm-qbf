@@ -47,6 +47,7 @@ let var x is =
 let _in is x =
   var x is
 
+(* TODO: Should be deprecated, together with [MM.so_var]. *)
 (* Builds all the names for a given SO variable, e.g. C01R1_1,
    C01R1_2, ... *)
 let allnames x =

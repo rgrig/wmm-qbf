@@ -1,37 +1,129 @@
+open Printf
+module U = Util
+module ArityMap = Map.Make(String)
+
 let rels xs =
   let f acc (n, r) =
-    if SO.RelMap.mem n acc then failwith "repeated relation symbol (voxdy)";
-    SO.RelMap.add n r acc in
+    let k = fst n in
+    if SO.RelMap.mem k acc then failwith "repeated relation symbol (voxdy)";
+    SO.RelMap.add k r acc in
   List.fold_left f SO.RelMap.empty xs
-(*
+
+let get_arity s r =
+  let arity = List.length (List.nth r 0) in
+  if not (List.for_all (fun e -> List.length e = arity) r) then
+    failwith (Printf.sprintf "inconsistent arity of symbol %s" s);
+  arity
+
 let check_arities s f =
-  let h = Hashtbl.create 1 in
-  let chk n xs =
-    let a = List.length xs in
-    let o = try Hashtbl.find h n with Not_found -> a in
-    if o <> a then failwith (Printf.sprintf "(aeprr) bad arity for %s" n);
-    Hashtbl.replace h n a in
-  let iter_chk n ls = List.iter (chk n) ls in
-  SO.RelMap.iter iter_chk s.SO.relations;
-  let rec chk_formula = function
-    | FoAny (_, f)
-    | FoAll (_, f)
-    | SoAny (_, f)
-    | SoAll (_, f)
-    | Not f
-      -> chk_formula f
-    | And (f1, f2)
-    | Or (f1, f2)
-      -> chk_formula f1; chk_formula f2
-    | CRel
+  let check_structure sym l arr_map =
+    let a = get_arity sym l in
+    if ArityMap.mem sym arr_map
+    then failwith "relation defined multiple times in SO structure";
+    ArityMap.add sym a arr_map
   in
-*)
+  let rec check_formula fml arr_map =
+    match fml with
+    | SO.CRel (s, ts) ->
+       let a = List.length ts in
+       begin
+       try
+         let a' = ArityMap.find (fst s) arr_map in
+         assert (a = a')
+       with
+         Not_found ->
+         failwith (Printf.sprintf "symbol %s not defined in SO structure" (SO.show_rel_sym s))
+       | Assert_failure _ ->
+          failwith (Printf.sprintf "symbol %s applied with inconsistent arity" (SO.show_rel_sym s))
+       end;
+       arr_map
+    | SO.QRel (s, ts) ->
+       let a = List.length ts in
+       begin
+         try
+           let a' = ArityMap.find (fst s) arr_map in
+           assert (a = a');
+           arr_map
+         with
+           Not_found ->
+           ArityMap.add (fst s) a arr_map
+         | Assert_failure _ ->
+            failwith (Printf.sprintf "symbol %s applied with inconsistent arity" (SO.show_rel_sym s))
+       end
+
+    | SO.FoAny (_, f) | SO.FoAll (_, f) ->
+       check_formula f arr_map
+
+    (* When a variable is quantified: shadow it's previous definition in the arity map *)
+    | SO.SoAny ((s, a), f) | SO.SoAll ((s, a), f) ->
+       check_formula f (ArityMap.add s a arr_map)
+
+    | SO.And fs | SO.Or fs ->
+       List.fold_right check_formula fs arr_map
+    | SO.Not f ->
+       check_formula f arr_map
+  in
+  ignore @@ SO.RelMap.fold check_structure s.SO.relations ArityMap.empty;
+
+  (* Collect the arities of all of the constant relation symbols *)
+  let collect_arities = SO.RelMap.fold (fun k v a -> ArityMap.add k (get_arity k v) a) in
+  ignore @@ check_formula f (collect_arities s.SO.relations ArityMap.empty)
 
 let check_inv s f =
-  failwith "eynkb"
-  (*
-  check_arities s f;
-  check_elem_bounds s f
-*)
+  check_arities s f (*
+  check_elem_bounds s f*)
+
 let model_check s f =
   failwith "exjfn"
+
+let term_to_var s = function
+  | SO.Var v -> SO.RelMap.find v s.SO.relations
+  | SO.Const e -> [[e]]
+
+let terms_to_vars s ts =
+  List.map (term_to_var s) ts
+
+  (*
+let qbf_names_for x =
+  let n = size_of x in
+  let rec lists xs i = match i with
+    | 0 -> []
+    | n -> xs :: lists xs (i - 1)
+  in
+  let names = U.n_cartesian_product (lists (U.range 1 n) (x.arity)) in
+  List.map (name x) names
+*)
+
+let so_to_qbf s f =
+  let module So2Qbf = Map.Make (struct
+    type t = SO.so_var
+    let compare = compare
+  end) in
+  let rec go m = function
+    | SO.CRel (r,ts) ->
+       begin
+         try
+           (* dubious *)
+           let r' = SO.RelMap.find (fst r) s.SO.relations in
+           if List.mem r' (terms_to_vars s ts) then Qbf.mk_true ()
+           else Qbf.mk_false ()
+         with _ ->
+           Qbf.mk_false ()
+       end
+(*
+  | SO.QRel (s,ts) ->
+     if List.length ts > 0
+     then Qbf.mk_var (sprintf "%s_%s" (fst s) (U.map_concat "_" SO.show_term ts))
+     else  Qbf.mk_var (fst s)
+  | SO.FoAll (v, f) | SO.SoAll (v, f) ->
+     Qbf.mk_forall [(fst v)] (so_to_qbf s f)
+  | SO.FoAny (v, f) | SO.SoAny (v, f) ->
+     Qbf.mk_exists [(fst v)] (so_to_qbf s f)
+  | SO.And fs ->
+     Qbf.mk_and (List.map (so_to_qbf s) fs)
+  | SO.Or fs ->
+     Qbf.mk_or (List.map (so_to_qbf s) fs)
+  | SO.Not f ->
+     Qbf.mk_not (so_to_qbf s f)
+*)
+  go So2QbfMap.empty f

@@ -19,9 +19,6 @@ type t =
   | Forall of variable list * t * qid
   [@@deriving show] (* DBG *)
 
-(* No idea why PPX isn't doing the lifting for me. Probably because
-   I've messed up the compile options *)
-let show_variable v = v
 let rec show_t t =
   match t with
     Var v -> v
@@ -37,6 +34,13 @@ let rec show_t t =
 let last_qid = ref 0
 let fresh_qid () = incr last_qid; !last_qid
 
+let fresh_var = 
+  let n = ref 0 in
+  fun ?(prefix = "C") a ->
+    incr n;
+    sprintf "%s_%d" prefix !n
+
+                   
 (* TODO: add small simplifications in these constructors *)
 (* Do we need these functions? Is it really better than having the
    constructors? *)
