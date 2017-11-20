@@ -32,7 +32,6 @@ let titles, instructions, misc = LISAParser.main LISA_LEXER.token lexbuf
 let _ = print_range condition_range
 let lexbuf = U.from_section condition_range (open_in filename)
 let condition = StateParser.constraints STATE_LEXER.token lexbuf
-(* TODO: Print. *)
 
 (* TODO
 (*
@@ -59,3 +58,25 @@ let _ = List.iteri (fun line instructions ->
     Format.printf "Process %d: %a\n" process BellBase.pp_parsedPseudo instruction
   ) by_process
 ) instructions
+
+(* Print condition. *)
+let pp_locations (f : Format.formatter) (locations : (MiscParser.location * MiscParser.run_type) list) : unit =
+  List.iter (fun (location, run_type) ->
+    Format.fprintf f "%s %a" (MiscParser.dump_location location) MiscParser.pp_run_type run_type)
+	locations
+let show_atom (atom : (MiscParser.location, MiscParser.maybev) ConstrGen.atom) : string =
+  match atom with
+  | LL (a, b) -> Format.sprintf "LL %s, %s" (MiscParser.dump_location a) (MiscParser.dump_location b)
+  | LV (location, value) -> Format.sprintf "LV %s, %s" (MiscParser.dump_location location) (SymbConstant.show_v value)
+let pp_prop_option (f : Format.formatter) (value : MiscParser.prop option) : unit =
+  match value with
+  | Some prop -> Format.fprintf f "Some(%s)" (ConstrGen.prop_to_string show_atom prop)
+  | None -> Format.fprintf f "None"
+let pp_kinds (f : Format.formatter) (value : (string * MiscParser.quantifier) list) : unit =
+  List.iter (fun (name, quantifier) -> Format.fprintf f "name,%s;" (ConstrGen.pp_kind quantifier)) value
+let (locations, filter, final, kinds) = condition
+let _ = Format.printf "Condition: location = %a, filter = %a, final = %s, kinds = %a\n"
+  pp_locations locations
+  pp_prop_option filter
+  (ConstrGen.constraints_to_string show_atom final)
+  pp_kinds kinds

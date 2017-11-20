@@ -105,13 +105,13 @@ type run_type =
   | TyArray of string * int
   | Atomic of string
 
-let pp_run_type = function
-  | TyDef -> "TyDef"
-  | TyDefPointer -> "TyDefPointer"
-  | Ty s -> sprintf "Ty<%s>" s
-  | Atomic s -> sprintf "Atomic<%s>" s
-  | Pointer s -> sprintf "Pointer<%s>" s
-  | TyArray (s,sz) -> sprintf "TyArray<%s,%i>" s sz
+let pp_run_type f = function
+  | TyDef -> Format.fprintf f "TyDef"
+  | TyDefPointer -> Format.fprintf f "TyDefPointer"
+  | Ty s -> Format.fprintf f "Ty<%s>" s
+  | Atomic s -> Format.fprintf f "Atomic<%s>" s
+  | Pointer s -> Format.fprintf f "Pointer<%s>" s
+  | TyArray (s,sz) -> Format.fprintf f "TyArray<%s,%i>" s sz
 
 type state = (location * (run_type * maybev)) list
 

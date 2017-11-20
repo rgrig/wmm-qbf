@@ -52,7 +52,7 @@ type run_type =
   | TyArray of string * int
   | Atomic of string
 
-val pp_run_type : run_type -> string
+val pp_run_type : Format.formatter -> run_type -> unit
 
 type state = (location * (run_type * maybev)) list
 
