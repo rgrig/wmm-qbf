@@ -31,8 +31,6 @@ let pp hexa = function
   | Concrete i -> if hexa then sprintf "0x%x" i else sprintf "%i" i
   | Symbolic s -> s
 
-
-(*let pp_v = pp false*)
 let pp_v = Constant.pp_v
 let show_v = Constant.show_v
 

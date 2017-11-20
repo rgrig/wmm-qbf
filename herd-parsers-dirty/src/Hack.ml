@@ -21,7 +21,6 @@ let _ = print_range init_range
 module STATE_LEXER = StateLexer.Make(LexUtils.Default)
 let lexbuf = U.from_section init_range (open_in filename)
 let init = StateParser.init STATE_LEXER.token lexbuf
-(* TODO: Print. *)
 
 (* Parse the LISA program section of the input. *)
 let _ = print_range program_range
@@ -49,6 +48,9 @@ let condition = StateParser.constraints STATE_LEXER.token lexbuf
       |  Misc.TransposeFailure | Invalid_argument _ ->
 	  Warn.fatal "mismatch in instruction lines"
 *)
+
+(* Print inital state. *)
+let _ = Format.printf "Init: %a\n" MiscParser.pp_state init
 
 (* Print the program AST. *)
 let _ = List.iteri (fun line instructions ->

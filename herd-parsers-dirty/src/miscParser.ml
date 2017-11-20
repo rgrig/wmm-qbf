@@ -130,6 +130,9 @@ let dump_state_atom dump_loc dump_val (loc,(t,v)) = match t with
 | TyArray (t,sz) ->
     sprintf "%s %s[%i]" t (dump_loc loc) sz
 
+let pp_state f state =
+  List.iter (fun atom -> Format.fprintf f "%s;" (dump_state_atom dump_location SymbConstant.show_v atom)) state
+
 (* Packed result *)
 type info = (string * string) list
 

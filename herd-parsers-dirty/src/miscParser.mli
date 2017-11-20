@@ -58,6 +58,7 @@ type state = (location * (run_type * maybev)) list
 
 val dump_state_atom :
   ('loc -> string) -> ('v -> string) -> ('loc * (run_type * 'v)) -> string
+val pp_state : Format.formatter -> state -> unit
 
 (* Packed result *)
 type info = (string * string) list
