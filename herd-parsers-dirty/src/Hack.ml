@@ -14,14 +14,26 @@ let split_result = S.split "TODO: Name?" (open_in filename)
 let _ = assert split_result.is_lisa
 let (init_range, program_range, condition_range, _) = split_result.locs
 
+module U = LexUtils.Make(LexUtils.Default)
+
+(* Parse init. *)
+let _ = print_range init_range
+module STATE_LEXER = StateLexer.Make(LexUtils.Default)
+let lexbuf = U.from_section init_range (open_in filename)
+let init = StateParser.init STATE_LEXER.token lexbuf
+(* TODO: Print. *)
+
 (* Parse the LISA program section of the input. *)
 let _ = print_range program_range
-module L = BellLexer.Make(LexUtils.Default)
-module U = LexUtils.Make(LexUtils.Default)
+module LISA_LEXER = BellLexer.Make(LexUtils.Default)
 let lexbuf = U.from_section program_range (open_in filename)
-let titles, instructions, misc = LISAParser.main L.token lexbuf
-(* TODO: Parse init. *)
-(* TODO: Parse condition. *)
+let titles, instructions, misc = LISAParser.main LISA_LEXER.token lexbuf
+
+(* Parse condition. *)
+let _ = print_range condition_range
+let lexbuf = U.from_section condition_range (open_in filename)
+let condition = StateParser.constraints STATE_LEXER.token lexbuf
+(* TODO: Print. *)
 
 (* TODO
 (*
