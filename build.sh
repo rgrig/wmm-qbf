@@ -9,7 +9,7 @@ for i in $MAINS; do
 done
 
 eval $(opam config env)
-ocamlbuild -use-ocamlfind $T
+ocamlbuild -use-ocamlfind $T -menhir "menhir --unused-tokens"
 mkdir -p bin
 for f in $MAINS; do
   cp $(readlink -e $f.$TYPE) bin/$f

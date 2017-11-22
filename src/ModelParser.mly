@@ -35,14 +35,12 @@ let do_op op e1 e2 =
 %start main
 
 /* Precedences */
-%right COMMA
-%left prec_app
 %right UNION
 %right PLUSPLUS
 %right SEMI
 %left DIFF
 %right INTER
-%nonassoc STAR PLUS OPT INV COMP
+%nonassoc STAR PLUS OPT COMP
 %nonassoc HAT
 %%
 
@@ -297,7 +295,7 @@ clause_list:
 
 exp0:
 | VAR                 { Var ($1) }
-| exp0  arg %prec prec_app   { App ($1,$2) }
+| exp0  arg 	      { App ($1,$2) }
 
 arg:
 | VAR { Var ($1) }
