@@ -1,5 +1,0 @@
-<src/**>: include
-<src/*.mly>: explain, infer
-true: use_menhir
-true: debug
-true: annot
