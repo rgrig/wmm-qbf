@@ -1,0 +1,7 @@
+LISA JCTC7
+TODO Check
+P0              | P1              ;
+r[] r1 z        | r[] r3 y        ;
+r[] r2 x        | w[] z r3        ;
+w[] y r2        | w[] x 1         ;
+exists P0:r1 = P0:r2 /\ P0:r2 = P1:r3 /\ P1:r3 = 1
