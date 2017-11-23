@@ -1,0 +1,14 @@
+LISA JCTC14
+TODO Check
+(* TODO: "a is volatile", what does that mean? *)
+{ a = 0; b = 0; y = 0; }
+P0                      | P1                      ;
+r[] r1 a                | DO:                     ;
+mov r4 (eq r1 0)        | r[] r2 y                ;
+b[] r4 THEN             | r[] r3 b                ;
+w[] b 1                 | mov r5 (add r2 r3)      ;
+b[] ENDIF               | mov r5 (eq r5 0)        ;
+THEN:                   | b[] r5 DO               ;
+w[] y 1                 | w[] a 1                 ;
+ENDIF:                  |                         ;
+not exists P0:r1 = 1 /\ P1:r3 = 1 /\ P1:r2 = 0

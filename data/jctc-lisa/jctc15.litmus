@@ -1,0 +1,20 @@
+LISA JCTC15
+TODO Check
+{ a = 0; b = 0; x = 0; y = 0; }
+P0                      | P1                      | P2                      ;
+r[] r0 x                | DO:                     | w[] x 1                 ;
+mov r4 (eq r0 1)        | r[] r2 y                |                         ;
+b[] r4 THEN0            | r[] r3 b                |                         ;
+w[] r1 0                | mov r5 (add r2 r3)      |                         ;
+b[] ENDIF0              | mov r5 (eq r5 0)        |                         ;
+THEN0:                  | b[] r5 DO               |                         ;
+r[] r1 a                | w[] a 1                 |                         ;
+ENDIF0:                 |                         |                         ;
+mov r4 (eq r1 0)        |                         |                         ;
+b[] r4 THEN1            |                         |                         ;
+w[] b 1                 |                         |                         ;
+b[] ENDIF1              |                         |                         ;
+THEN1:                  |                         |                         ;
+w[] y 1                 |                         |                         ;
+ENDIF1:                 |                         |                         ;
+not exists P0:r0 = 1 /\ P0:r1 = 1 /\ P1:r3 = 1 /\ P1:r2 = 0
