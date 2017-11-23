@@ -1,12 +1,11 @@
 LISA JCTC3
 TODO Check
 { x = 0; y = 0; }
-P0              | P1              | P2              ;
-r[] r1 x        | r[] r3 y        | w[] x 2         ;
-r[] r2 x        | w[] x r3        |                 ;
-mov r4 (= r1 r2)|                 |                 ;
-b[] THEN r4     |                 |                 ;
-b[] ENDIF       |                 |                 ;
-THEN: w[] y 1   |                 |                 ;
-ENDIF:          |                 |                 ;
-exists P0:r1 = P0:r2 /\ P0:r2 = P1:r3 /\ P1:r3 = 1
+P0                      | P1                      | P2                      ;
+r[] r1 x                | r[] r3 y                | w[] x 2                 ;
+r[] r2 x                | w[] x r3                |                         ;
+mov r4 (ne r1 r2)       |                         |                         ;
+b[] r4 ENDIF            |                         |                         ;
+w[] y 1                 |                         |                         ;
+ENDIF:                  |                         |                         ;
+exists P0:r1 = 1 /\ P0:r2 = 1 /\ P1:r3 = 1

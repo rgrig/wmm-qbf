@@ -1,10 +1,12 @@
 LISA JCTC1
 TODO Check
 { x = 0; y = 0; }
-P0              | P1              ;
-r[] r1 x        | r[] r2 y        ;
-b[] r1 THEN     | w[] x r2        ;
-b[] ENDIF       |                 ;
-THEN: w[] y 1   |                 ;
-ENDIF:          |                 ;
-exists P0:r1 = P1:r2 /\ P1:r2 = 1
+P0                      | P1                      ;
+r[] r1 x                | r[] r2 y                ;
+mov r3 (ne r1 0)        | w[] x r2                ;
+mov r4 (ne r1 1)        |                         ;
+mov r3 (and r3 r4)      |                         ;
+b[] r3 ENDIF            |                         ;
+w[] y 1                 |                         ;
+ENDIF:                  |                         ;
+exists P0:r1 = 1 /\ P1:r2 = 1
