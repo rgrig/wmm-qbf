@@ -4,11 +4,11 @@ TODO Check
 P0                      | P1                      ;
 r[] r1 A                | r[] r2 B                ;
 mov r3 (ne r1 1)        | mov r4 (ne r2 1)        ;
-b[] r3 ENDIF            | b[] r4 ENDIF            ;
+b[] r3 ENDIF            | b[] r4 ENDIF0           ;
 w[] B 1                 | w[] A 1                 ;
-ENDIF:                  | ENDIF:                  ;
+ENDIF:                  | ENDIF0:                 ;
                         | mov r4 (ne r2 0)        ;
-				        | b[] r4 ENDIF            ;
+				        | b[] r4 ENDIF1           ;
 				        | w[] A 1                 ;
-				        | ENDIF:                  ;
+				        | ENDIF1:                 ;
 exists P0:r1 = 1 /\ P1:r2 = 1
