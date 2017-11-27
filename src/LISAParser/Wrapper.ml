@@ -1,4 +1,5 @@
 open Splitter
+open ConstrGen
 
 (* The types below wrap the parser's return types so the caller only has to worry about one parser module. *)
 (* Initial state of the virtual machine. *)

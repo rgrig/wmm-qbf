@@ -1,0 +1,9 @@
+LISA JCTC9
+{ x = 0; y = 0; }
+P0                      | P1                      | P2                      ;
+r[] r1 x                | r[] r3 y                | w[] x 2                 ;
+(* TODO: This doesn't behave the same way as 1 + r1*r1 - r1 for values > 1 *)
+mov r2 (xor r1 1)       | w[] x r3                |                         ;
+mov r2 (ne r2 r1)       |                         |                         ;
+w[] y r2                |                         |                         ;
+exists P0:r1 = 1 /\ P0:r2 = 1

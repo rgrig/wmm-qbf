@@ -1,0 +1,10 @@
+LISA JCTC10
+TODO Check
+{ x = 0; y = 0; z = 0; }
+P0                      | P1                      | P2                      | P3                      ;
+r[] r1 x                | r[] r2 y                | w[] z 1                 | r[] r3 z                ;
+mov r4 (ne r1 1)        | mov r5 (ne r2 1)        |                         | mov r6 (ne r3 1)        ;
+b[] r4 ENDIF            | b[] r5 ENDIF            |                         | b[] r6 ENDIF            ;
+w[] y 1                 | w[] x 1                 |                         | w[] x 1                 ;
+ENDIF:                  | ENDIF:                  |                         | ENDIF:                  ;
+~exists P0:r1 = 1 /\ P1:r2 = 1 /\ P3:r3 = 0

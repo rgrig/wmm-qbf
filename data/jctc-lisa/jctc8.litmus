@@ -1,0 +1,9 @@
+LISA JCTC8
+TODO Check
+{ x = 0; y = 0; }
+P0                      | P1                      ;
+r[] r1 x                | r[] r3 y                ;
+mov r2 (xor r1 1)       | w[] x r3                ;
+mov r2 (ne r2 r1)       |                         ;
+w[] y r2                |                         ;
+exists P0:r1 = 1 /\ P0:r2 = 1

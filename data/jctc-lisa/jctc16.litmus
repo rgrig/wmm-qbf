@@ -1,0 +1,7 @@
+LISA JCTC16
+TODO Check
+{ x = 0; }
+P0                      | P1                      ;
+r[] r1 x                | r[] r2 x                ;
+w[] x 1                 | w[] x 2                 ;
+exists P0:r1 = 2 /\ P1:r2 = 1
