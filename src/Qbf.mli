@@ -1,7 +1,14 @@
 type variable = string
 type model = variable list
+type qid = int (* quantifier id *)
 
-type t
+type t =
+  | Var of variable
+  | Not of t
+  | And of t list
+  | Or of t list
+  | Exists of variable list * t * qid
+  | Forall of variable list * t * qid
 
 val fresh_var : ?prefix:string -> int -> variable
   

@@ -24,8 +24,10 @@ let use_stdin = ref false
 let default_model = List.hd decides
 let model_name = ref (fst default_model)
 let dump_query = ref false
+let dump_lisa = ref false
 let use_solver = ref true
-
+let use_lisa = ref false
+    
 let pick_model m models =
   let rec p ms =
     match ms with
@@ -42,14 +44,24 @@ let run filename =
       true -> stdin
     | false -> open_in filename
   in
-  let es, target = U.parse filename file_chan EsParser.top EsLexer.token EsParser.Error in
-  let fn = Filename.remove_extension filename in
-  if !enum_mode
-  then (pick_model !model_name enums) fn es target !dump_query
-  else (match target with
-      | None -> eprintf "W: skipping %s: no target execution\n" fn
-      | Some target -> (pick_model !model_name decides) es target (!dump_query, !use_solver)
-    )
+  match !use_lisa with
+  (* No LISA file was passed so we shall parse an ES file instead *)
+    false ->
+    begin
+      let es, target = U.parse filename file_chan EsParser.top EsLexer.token EsParser.Error in
+      let fn = Filename.remove_extension filename in
+      if !enum_mode
+      then (pick_model !model_name enums) fn es target !dump_query
+      else (match target with
+          | None -> eprintf "W: skipping %s: no target execution\n" fn
+          | Some target -> (pick_model !model_name decides) es target (!dump_query, !use_solver)
+        )
+    end
+  | true ->
+    let ast = Wrapper.load_litmus filename in
+    if !dump_lisa then
+      Wrapper.print_litmus ast;
+    ()
 
 let print_models ms () =
   ignore @@ List.map (fun x -> Printf.eprintf "%s\n" (fst x)) ms;
@@ -58,8 +70,10 @@ let print_models ms () =
 let cmd_spec =
   Arg.align [
     "-e", Arg.Set enum_mode, "  enumerate all executions"
-  ;"--dump-query", Arg.Set dump_query, "  print QBF query before executing"
-  ;"--model", Arg.Set_string model_name, (Format.sprintf "  pick a model. Default is %s" !model_name)
+  ; "--use-lisa", Arg.Set use_lisa, "  use LISA as input language for test"
+  ; "--dump-lisa", Arg.Set dump_lisa, "  print the LISA AST"
+  ; "--dump-query", Arg.Set dump_query, "  print QBF query before executing"
+  ; "--model", Arg.Set_string model_name, (Format.sprintf "  pick a model. Default is %s" !model_name)
   ; "--list-models", Arg.Unit (print_models decides), "  print list of models"
   ; "--list-enum-models", Arg.Unit (print_models enums), "  print list of models which support enumeration with -e"
   ; "--no-exec", Arg.Clear use_solver, "  skip running the solver. Useful with --dump-query option"

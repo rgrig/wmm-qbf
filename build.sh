@@ -1,4 +1,5 @@
 MAINS="Pride Test ResultsBin CatTest SoTest LISATest"
+
 if [ -n "$1" ]; then TYPE=$1
 else TYPE="native"
 fi

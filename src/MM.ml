@@ -363,7 +363,7 @@ let test_union = "union" >:: (fun () ->
     let x = sample_conf in
     let y = sample_conf2 in
     assert_equal (Qbf.mk_or [subset x y; subset y x])
-      (union subset subset y x)
+      (union subset (flip subset) y x)
   )
 
 let test_same_label = "same_label" >:: (fun () ->
