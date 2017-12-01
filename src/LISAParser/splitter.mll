@@ -231,8 +231,8 @@ let show r =
     pp_loc loc_constr
     pp_loc loc_cfgs
 
-let split name chan =
-  let lexbuf = from_channel chan in
+let split name data =
+  let lexbuf = from_string data in
   lexbuf.lex_curr_p <-
     {pos_fname = name; pos_lnum = 1;
      pos_bol = 0; pos_cnum = 0};
