@@ -1,6 +1,4 @@
 LISA JCTC14
-TODO Check
-(* TODO: "a is volatile", what does that mean? *)
 { a = 0; b = 0; y = 0; }
 P0                      | P1                      ;
 r[] r1 a                | DO:                     ;

@@ -1,5 +1,4 @@
 LISA JCTC3
-TODO Check
 { x = 0; y = 0; }
 P0                      | P1                      | P2                      ;
 r[] r1 x                | r[] r3 y                | w[] x 2                 ;
