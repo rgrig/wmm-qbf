@@ -18,29 +18,43 @@ module LEXUTILS = LexUtils.Make(LexUtils.Default)
 module STATE_LEXER = StateLexer.Make(LexUtils.Default)
 module LISA_LEXER = BellLexer.Make(LexUtils.Default)
 
-(* Read a litmus test written in LISA fromt he given filename. *)
+(* Return a file's contents as a string. *)
+let read_to_eof (from : in_channel) : string =
+  let rec do_read (accumulator : Buffer.t) (buffer : bytes) (from : in_channel) : unit =
+    let bytes_read = input from buffer 0 (Bytes.length buffer) in
+    if bytes_read > 0 then begin
+      Buffer.add_subbytes accumulator buffer 0 bytes_read;
+	  do_read accumulator buffer from
+	end
+  in
+  let accumulator = Buffer.create 16 in
+  let buffer = Bytes.create 256 in
+  do_read accumulator buffer from;
+  Buffer.contents accumulator
+
+(* Read a litmus test written in LISA from a string. *)
 (* Returns the initial state of the virtual machine, a list of ids for the proces threads, *)
 (* a list of single program threads (a list of instructions for each process), *)
 (* and the constraint on the result. *)
-let load_litmus (filename : string) : init * int list * ast * constraints =
+let load_litmus (data : string) : init * int list * ast * constraints =
   (* Find the sections of the file and check it's the right architecture. *)
-  let split_result = SPLITTER.split "TODO: Name" (open_in filename) in
+  let split_result = SPLITTER.split "TODO: Name" data in
   let _ = assert split_result.is_lisa in
   let (init_range, program_range, condition_range, _) = split_result.locs in
 
   (* Parse initial state. *)
-  let lexbuf = LEXUTILS.from_section init_range (open_in filename) in
+  let lexbuf = LEXUTILS.from_section_string init_range data in
   let init = StateParser.init STATE_LEXER.token lexbuf in
 
   (* Parse LISA program. *)
-  let lexbuf = LEXUTILS.from_section program_range (open_in filename) in
+  let lexbuf = LEXUTILS.from_section_string program_range data in
   let titles, instructions, _ = LISAParser.main LISA_LEXER.token lexbuf in
 
   (* Transpose rows of instructions into columns of instructions. *)
   let processes = Misc.transpose instructions in
 
   (* Parse final condition. *)
-  let lexbuf = LEXUTILS.from_section condition_range (open_in filename) in
+  let lexbuf = LEXUTILS.from_section_string condition_range data in
   let condition = StateParser.constraints STATE_LEXER.token lexbuf in
 
   init, titles, processes, condition

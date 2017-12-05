@@ -1,5 +1,4 @@
 LISA JCTC15
-TODO Check
 { a = 0; b = 0; x = 0; y = 0; }
 P0                      | P1                      | P2                      ;
 r[] r0 x                | DO:                     | w[] x 1                 ;

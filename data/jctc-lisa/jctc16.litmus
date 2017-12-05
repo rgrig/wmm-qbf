@@ -1,5 +1,4 @@
 LISA JCTC16
-TODO Check
 { x = 0; }
 P0                      | P1                      ;
 r[] r1 x                | r[] r2 x                ;

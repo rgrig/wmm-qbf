@@ -8,5 +8,8 @@ let _ = if (Array.length Sys.argv) != 2 then begin
   exit 0
 end
 let filename = Array.get Sys.argv 1
-let litmus = Wrapper.load_litmus filename
+let _ = Printf.printf "Reading file %s\n" filename
+let source = Wrapper.read_to_eof (open_in filename)
+let _ = Printf.printf "Dumping input...\n\n%s\n" source
+let litmus = Wrapper.load_litmus source
 let _ = Wrapper.print_litmus litmus
