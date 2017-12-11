@@ -64,7 +64,7 @@ let do_decide es target solver_opts =
     ; MMSO.equals_set y target
     ; always_eventually_justifies_tc es x y ] in
   let q = MMSO.exists x (MMSO.exists y q) in
-  let s = { SO.size = 12 ; relations = SoOps.rels [] } in
+  let s = { SO.size = (es.E.events_number) ; relations = SoOps.rels [] } in
   let q = SoOps.so_to_qbf s q in
   Util.maybe (Qbf.holds q solver_opts) (printf "result: %b\n")
               

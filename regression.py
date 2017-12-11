@@ -70,6 +70,8 @@ for directory, model in TESTS:
     for test in files:
         try:
             start_time = time.time()
+            if not QUIET:
+                sys.stdout.write("{:6s}: {:20s}      {}\r".format("...", model, join(directory, test)))
             output = check_output(
                 [PRIDE_BIN, "--model", model, join(directory, test)]
             )
