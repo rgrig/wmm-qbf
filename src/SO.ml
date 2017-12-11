@@ -62,7 +62,7 @@ let pp_formula fmt f =
 
 let mk_fresh_name =
   let id = ref 0 in
-  function () -> incr id
+  fun ?(prefix = "C") () -> incr id; Printf.sprintf "%s%d" prefix !id
 
 (* p₁ ∧ p₂ ∧ pₙ → q  ⇔  ¬p₁ ∨ ¬p₂ ∨ ¬pₙ ∨ q *)
 let mk_implies prems conclusion =

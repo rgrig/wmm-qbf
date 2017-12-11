@@ -11,6 +11,7 @@ let enums = [
 let decides = [
   ("j+r", JR.do_decide)
 ; ("j+r-so", JRSO.do_decide)
+; ("j+r-so2", JRSO2.do_decide)
 ; ("pes", PES.do_decide)
 ; ("pes-certifies", PESCertifies.do_decide)
 ; ("pes-follows", PESFollows.do_decide)

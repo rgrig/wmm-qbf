@@ -105,30 +105,42 @@ let so_to_qbf s f =
   end) in
   let rec go m = function
     | SO.CRel (r,ts) ->
-      (* dubious *)
-      Printf.printf "looking up %s...\n" r;
-      let r' = SO.RelMap.find r s.SO.relations in
-      if List.mem r' (terms_to_vars s ts) then Qbf.mk_true ()
-      else Qbf.mk_false ()
-          
+      begin
+        try
+          let r' = SO.RelMap.find r s.SO.relations in
+          if List.mem r' (terms_to_vars s ts) then Qbf.mk_true ()
+          else Qbf.mk_false ()
+        with Not_found ->
+          failwith ("Could not find '" ^ r ^ "'. (pdzoj)")
+      end
+
     | SO.QRel (s,ts) ->
       if List.length ts > 0
       then Qbf.mk_var (sprintf "%s_%s" s (U.map_join "_" SO.show_term ts))
       else  Qbf.mk_var (name s [])
           
     | SO.FoAll (v, f) ->
-      let r  = SO.RelMap.find v s.SO.relations in
-      let a = get_arity v r in
-      Qbf.mk_forall (qbf_names_for v a s.SO.size) (go m f)
-        
+      begin
+        try
+          let r  = SO.RelMap.find v s.SO.relations in
+          let a = get_arity v r in
+          Qbf.mk_forall (qbf_names_for v a s.SO.size) (go m f)
+        with Not_found ->
+          failwith ("Could not find '" ^ v ^ "'. (hnxjb)")
+      end
+
+    | SO.FoAny (v, f) ->
+      begin
+        try
+          let r  = SO.RelMap.find v s.SO.relations in
+          let a = get_arity v r in
+          Qbf.mk_exists (qbf_names_for v a s.SO.size) (go m f)
+        with Not_found ->
+          failwith ("Could not find '" ^ v ^ "'. (jgpcn)")
+      end
+            
     | SO.SoAll (v, a, f) ->      
       Qbf.mk_forall (qbf_names_for v a s.SO.size) (go m f)
-        
-    | SO.FoAny (v, f) ->
-      let r  = SO.RelMap.find v s.SO.relations in
-      let a = get_arity v r in
-      Qbf.mk_exists (qbf_names_for v a s.SO.size) (go m f)
-        
     | SO.SoAny (v, a, f) ->
       Qbf.mk_exists (qbf_names_for v a s.SO.size) (go m f)
         
