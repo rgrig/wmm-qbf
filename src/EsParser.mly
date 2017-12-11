@@ -34,7 +34,7 @@ top:
 event_structure:
   e=events
   r=reads
-  // labels 
+  _=option(labels)
   j=justifies
   c=conflicts
   o=order
@@ -45,7 +45,7 @@ event_structure:
 events: v=delimited(EVENTS, INT, NL*) { v };
 conflicts: v=nl_list(CONFLICTS,pair(INT,INT),NL*) { v };
 justifies: v=nl_list(JUSTIFIES,pair(INT,INT),NL*) { v };
-// labels: nl_list(LABELS,pair(INT, QUOTED_STRING),NL*) {};
+labels: nl_list(LABELS,pair(INT, QUOTED_STRING),NL*) {};
 order: v=nl_list(ORDER,nonempty_list(INT),NL+) { flatten_order v };
 reads: v=nl_list(READS,INT,NL*) { v };
 target: v=nl_list(EXECUTION,INT,NL*) { v };
