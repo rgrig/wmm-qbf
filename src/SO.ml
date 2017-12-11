@@ -23,6 +23,7 @@ type structure =
 type term =
   | Var of fo_var
   | Const of element
+  [@@deriving show]
 
 type formula =
   | CRel of rel_sym * term list
@@ -34,29 +35,30 @@ type formula =
   | And of formula list
   | Or of formula list
   | Not of formula
+  [@@deriving show]
 
 let show_term = function
     Var n -> n
   | Const e -> string_of_int e
 
-(* TODO
+(* TODO *)
 let rec show_formula = function
   | CRel (rel,ts) | QRel (rel, ts) ->
-     Format.sprintf "%s(%s)" (fst rel) (U.map_concat ", " show_term ts)
+     Format.sprintf "%s(%s)" rel (U.map_join ", " show_term ts)
   | FoAny (var, f) | SoAny (var, _, f) ->
      Format.sprintf "∃%s . %s" var (show_formula f)
-  | FoAll (var, f) | SoAll (var, f) ->
+  | FoAll (var, f) | SoAll (var, _, f) ->
      Format.sprintf "∀%s . %s" var (show_formula f)
   | And fs ->
-     Format.sprintf "(%s)" (U.map_concat " ∧ " show_formula fs)
+     Format.sprintf "(%s)" (U.map_join " ∧ " show_formula fs)
   | Or fs ->
-     Format.sprintf "(%s)" (U.map_concat " ∧ " show_formula fs)
+     Format.sprintf "(%s)" (U.map_join " ∧ " show_formula fs)
   | Not f ->
      "¬ " ^ (show_formula f)
 
 let pp_formula fmt f =
   Format.fprintf fmt "%s" (show_formula f)
-*)
+
 
 let mk_fresh_name =
   let id = ref 0 in

@@ -46,7 +46,8 @@ TESTS = get_suite(argv, get_skip(argv, [
     ("data/jctc", "j+r"),
     ("data", "j+r-acyclic"),
     ("data/jctc", "j+r-acyclic"),
-    ("data/jctc", "pes")
+    ("data/jctc", "pes"),
+    ("data/jctc", "j+r-so")
 ]))
 
 

@@ -2,7 +2,6 @@ open Printf
 module B = BatList
 module StringSet = Set.Make (String)
 
-
 exception Parsing_failed of string
 exception Runtime_error of string
 
@@ -56,5 +55,5 @@ let maybe a f =
     Some a' -> f a'
   | None -> ()
 
-let map_concat c f ts =
+let map_join c f ts =
   String.concat c (List.map f ts)

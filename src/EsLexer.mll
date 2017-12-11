@@ -9,7 +9,7 @@
       ; "events", EVENTS
       ; "execution", EXECUTION
       ; "justifies", JUSTIFIES
-	  ; "labels", LABELS
+      ; "labels", LABELS
       ; "order", ORDER
       ; "reads", READS ];
     try Hashtbl.find table x

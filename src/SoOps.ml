@@ -3,8 +3,7 @@ module U = Util
 module ArityMap = Map.Make(String)
 
 let rels xs =
-  let f acc (n, r) =
-    let k = fst n in
+  let f acc (k, r) =
     if SO.RelMap.mem k acc then failwith "repeated relation symbol (voxdy)";
     SO.RelMap.add k r acc in
   List.fold_left f SO.RelMap.empty xs
@@ -25,10 +24,10 @@ let check_arities s f =
   let rec check_formula fml arr_map =
     match fml with
     | SO.CRel (s, ts) ->
-       let a = List.length ts in
+      let a = List.length ts in
        begin
        try
-         let a' = ArityMap.find (fst s) arr_map in
+         let a' = ArityMap.find s arr_map in
          assert (a = a')
        with
          Not_found ->
@@ -41,12 +40,12 @@ let check_arities s f =
        let a = List.length ts in
        begin
          try
-           let a' = ArityMap.find (fst s) arr_map in
+           let a' = ArityMap.find s arr_map in
            assert (a = a');
            arr_map
          with
            Not_found ->
-           ArityMap.add (fst s) a arr_map
+           ArityMap.add s a arr_map
          | Assert_failure _ ->
             failwith (Printf.sprintf "symbol %s applied with inconsistent arity" (SO.show_rel_sym s))
        end
@@ -55,7 +54,7 @@ let check_arities s f =
        check_formula f arr_map
 
     (* When a variable is quantified: shadow it's previous definition in the arity map *)
-    | SO.SoAny ((s, a), f) | SO.SoAll ((s, a), f) ->
+    | SO.SoAny (s, a, f) | SO.SoAll (s, a, f) ->
        check_formula f (ArityMap.add s a arr_map)
 
     | SO.And fs | SO.Or fs ->
@@ -83,16 +82,21 @@ let term_to_var s = function
 let terms_to_vars s ts =
   List.map (term_to_var s) ts
 
-  (*
-let qbf_names_for x =
-  let n = size_of x in
+let name p is = 
+  let rec f xs = match xs with
+    | [x] -> string_of_int x
+    | x::xs -> string_of_int x ^ "_" ^ f xs
+    | [] -> ""
+  in
+  sprintf "%s_%s" p (f is)
+
+let qbf_names_for x arity n =
   let rec lists xs i = match i with
     | 0 -> []
     | n -> xs :: lists xs (i - 1)
   in
-  let names = U.n_cartesian_product (lists (U.range 1 n) (x.arity)) in
+  let names = U.n_cartesian_product (lists (U.range 1 n) (arity)) in
   List.map (name x) names
-*)
 
 let so_to_qbf s f =
   let module So2Qbf = Map.Make (struct
@@ -101,29 +105,38 @@ let so_to_qbf s f =
   end) in
   let rec go m = function
     | SO.CRel (r,ts) ->
-       begin
-         try
-           (* dubious *)
-           let r' = SO.RelMap.find (fst r) s.SO.relations in
-           if List.mem r' (terms_to_vars s ts) then Qbf.mk_true ()
-           else Qbf.mk_false ()
-         with _ ->
-           Qbf.mk_false ()
-       end
-(*
-  | SO.QRel (s,ts) ->
-     if List.length ts > 0
-     then Qbf.mk_var (sprintf "%s_%s" (fst s) (U.map_concat "_" SO.show_term ts))
-     else  Qbf.mk_var (fst s)
-  | SO.FoAll (v, f) | SO.SoAll (v, f) ->
-     Qbf.mk_forall [(fst v)] (so_to_qbf s f)
-  | SO.FoAny (v, f) | SO.SoAny (v, f) ->
-     Qbf.mk_exists [(fst v)] (so_to_qbf s f)
-  | SO.And fs ->
-     Qbf.mk_and (List.map (so_to_qbf s) fs)
-  | SO.Or fs ->
-     Qbf.mk_or (List.map (so_to_qbf s) fs)
-  | SO.Not f ->
-     Qbf.mk_not (so_to_qbf s f)
-*)
-  go So2QbfMap.empty f
+      (* dubious *)
+      Printf.printf "looking up %s...\n" r;
+      let r' = SO.RelMap.find r s.SO.relations in
+      if List.mem r' (terms_to_vars s ts) then Qbf.mk_true ()
+      else Qbf.mk_false ()
+          
+    | SO.QRel (s,ts) ->
+      if List.length ts > 0
+      then Qbf.mk_var (sprintf "%s_%s" s (U.map_join "_" SO.show_term ts))
+      else  Qbf.mk_var (name s [])
+          
+    | SO.FoAll (v, f) ->
+      let r  = SO.RelMap.find v s.SO.relations in
+      let a = get_arity v r in
+      Qbf.mk_forall (qbf_names_for v a s.SO.size) (go m f)
+        
+    | SO.SoAll (v, a, f) ->      
+      Qbf.mk_forall (qbf_names_for v a s.SO.size) (go m f)
+        
+    | SO.FoAny (v, f) ->
+      let r  = SO.RelMap.find v s.SO.relations in
+      let a = get_arity v r in
+      Qbf.mk_exists (qbf_names_for v a s.SO.size) (go m f)
+        
+    | SO.SoAny (v, a, f) ->
+      Qbf.mk_exists (qbf_names_for v a s.SO.size) (go m f)
+        
+    | SO.And fs ->
+      Qbf.mk_and (List.map (go m) fs)
+    | SO.Or fs ->
+      Qbf.mk_or (List.map (go m) fs)
+    | SO.Not f ->
+      Qbf.mk_not (go m f)
+  in
+  go So2Qbf.empty f

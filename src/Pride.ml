@@ -1,5 +1,5 @@
 open Printf
-
+open SoOps
 module E = EventStructure
 module U = Util
 
@@ -10,6 +10,7 @@ let enums = [
 
 let decides = [
   ("j+r", JR.do_decide)
+; ("j+r-so", JRSO.do_decide)
 ; ("pes", PES.do_decide)
 ; ("pes-certifies", PESCertifies.do_decide)
 ; ("pes-follows", PESFollows.do_decide)
@@ -23,11 +24,12 @@ let enum_mode = ref false
 let use_stdin = ref false
 let default_model = List.hd decides
 let model_name = ref (fst default_model)
+let dump_qbf = ref false
 let dump_query = ref false
 let dump_lisa = ref false
 let use_solver = ref true
 let use_lisa = ref false
-    
+
 let pick_model m models =
   let rec p ms =
     match ms with
@@ -39,26 +41,41 @@ let pick_model m models =
   in
   p models
 
+let parse filename f =
+  let lexbuf = Lexing.from_channel f in
+  try
+    let r = EsParser.top EsLexer.token lexbuf in
+    close_in_noerr f;
+    r
+  with
+  | EsParser.Error ->
+    begin
+      match Lexing.lexeme_start_p lexbuf with
+        { Lexing.pos_lnum=line; Lexing.pos_bol=c0;
+          Lexing.pos_fname=_; Lexing.pos_cnum=c1} ->
+        let msg = sprintf "%s:%d:%d: parse error" filename line (c1-c0+1) in
+        failwith (msg)
+    end
+
+
 let run filename =
   let file_chan = match !use_stdin with
       true -> stdin
     | false -> open_in filename
   in
-  match !use_lisa with
-  (* No LISA file was passed so we shall parse an ES file instead *)
-    false ->
-    begin
-      let es, target = U.parse filename file_chan EsParser.top EsLexer.token EsParser.Error in
-      let fn = Filename.remove_extension filename in
-      if !enum_mode
-      then (pick_model !model_name enums) fn es target !dump_query
-      else (match target with
-          | None -> eprintf "W: skipping %s: no target execution\n" fn
-          | Some target -> (pick_model !model_name decides) es target (!dump_query, !use_solver)
-        )
-    end
-  | true ->
-    let ast = Wrapper.load_litmus filename in
+  if not !use_lisa
+  then
+    let es, target = parse filename file_chan in
+    let fn = Filename.remove_extension filename in
+    if !enum_mode
+    then (pick_model !model_name enums) fn es target !dump_qbf
+    else
+      match target with
+      | None -> eprintf "W: skipping %s: no target execution\n" fn
+      | Some target -> (pick_model !model_name decides) es target (!dump_qbf, !dump_query, !use_solver)
+  else
+    let source = Wrapper.read_to_eof (open_in filename) in
+    let ast = Wrapper.load_litmus source in
     if !dump_lisa then
       Wrapper.print_litmus ast;
     ()
@@ -72,7 +89,8 @@ let cmd_spec =
     "-e", Arg.Set enum_mode, "  enumerate all executions"
   ; "--use-lisa", Arg.Set use_lisa, "  use LISA as input language for test"
   ; "--dump-lisa", Arg.Set dump_lisa, "  print the LISA AST"
-  ; "--dump-query", Arg.Set dump_query, "  print QBF query before executing"
+  ; "--dump-qbf", Arg.Set dump_qbf, "  print QBF query before executing"
+  ; "--dump-query", Arg.Set dump_query, "  print query before executing"
   ; "--model", Arg.Set_string model_name, (Format.sprintf "  pick a model. Default is %s" !model_name)
   ; "--list-models", Arg.Unit (print_models decides), "  print list of models"
   ; "--list-enum-models", Arg.Unit (print_models enums), "  print list of models which support enumeration with -e"
