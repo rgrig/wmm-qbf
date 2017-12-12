@@ -88,14 +88,14 @@ let name p is =
     | x::xs -> string_of_int x ^ "_" ^ f xs
     | [] -> ""
   in
-  sprintf "%s_%s" p (f is)
+  List.map (sprintf "%s_%d" p) is
 
 let qbf_names_for x arity n =
   let rec lists xs i = match i with
     | 0 -> []
     | n -> xs :: lists xs (i - 1)
   in
-  let names = U.n_cartesian_product (lists (U.range 1 n) (arity)) in
+  let names = U.n_cartesian_product (lists (U.range 1 n) arity) in
   List.map (name x) names
 
 let so_to_qbf s f =
@@ -111,21 +111,32 @@ let so_to_qbf s f =
           if List.mem r' (terms_to_vars s ts) then Qbf.mk_true ()
           else Qbf.mk_false ()
         with Not_found ->
-          failwith ("Could not find '" ^ r ^ "'. (pdzoj)")
+          let msg = SO.RelMap.fold (fun k _ a -> Printf.sprintf "%s, %s" k a) s.SO.relations "" in
+          failwith ("Could not find '" ^ r ^ "' in [" ^ msg ^ "]. (pdzoj)")
       end
 
-    | SO.QRel (s,ts) ->
-      if List.length ts > 0
-      then Qbf.mk_var (sprintf "%s_%s" s (U.map_join "_" SO.show_term ts))
-      else  Qbf.mk_var (name s [])
+    (* This is total bollocks *)
+    | SO.QRel (sym,ts) ->
+      begin
+        try
+          let r' = List.map (fun f -> SO.Var f) (So2Qbf.find sym m) in
+          if List.mem r' [ts] then Qbf.mk_true ()
+          else Qbf.mk_false ()
+        with Not_found ->
+          let msg = SO.RelMap.fold (fun k _ a -> Printf.sprintf "%s, %s" k a) s.SO.relations "" in
+          failwith ("Could not find '" ^ sym ^ "' in [" ^ msg ^ "]. (pdzoj)")
+      end
           
     | SO.FoAll (v, f) ->
       begin
         try
           let r  = SO.RelMap.find v s.SO.relations in
           let a = get_arity v r in
-          Qbf.mk_forall (qbf_names_for v a s.SO.size) (go m f)
+          Qbf.mk_and (List.map (fun ai ->
+              go (So2Qbf.add v ai m) f
+            ) (qbf_names_for v a s.SO.size))
         with Not_found ->
+          SO.RelMap.iter (fun k _ -> Printf.printf "%s, " k) s.SO.relations;
           failwith ("Could not find '" ^ v ^ "'. (hnxjb)")
       end
 
@@ -134,15 +145,22 @@ let so_to_qbf s f =
         try
           let r  = SO.RelMap.find v s.SO.relations in
           let a = get_arity v r in
-          Qbf.mk_exists (qbf_names_for v a s.SO.size) (go m f)
+          Qbf.mk_or (List.map (fun ai ->
+              go (So2Qbf.add v ai m) f
+            ) (qbf_names_for v a s.SO.size))
         with Not_found ->
           failwith ("Could not find '" ^ v ^ "'. (jgpcn)")
       end
             
-    | SO.SoAll (v, a, f) ->      
-      Qbf.mk_forall (qbf_names_for v a s.SO.size) (go m f)
+    | SO.SoAll (v, a, f) ->
+      let names = qbf_names_for v a s.SO.size in
+      let m = So2Qbf.add v names m in
+      Qbf.mk_forall names (go m f)
+      
     | SO.SoAny (v, a, f) ->
-      Qbf.mk_exists (qbf_names_for v a s.SO.size) (go m f)
+      let names = qbf_names_for v a s.SO.size in
+      let m = So2Qbf.add v names m in
+      Qbf.mk_exists names (go m f)
         
     | SO.And fs ->
       Qbf.mk_and (List.map (go m) fs)

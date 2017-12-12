@@ -20,10 +20,10 @@ let justify a b =
   let x = mk_fresh_name () in
   let y = mk_fresh_name () in
   let f = FoAny (x,
-                  And [
-                    QRel (a, [Var x]);
-                    CRel ("justifies", [Var x; Var y])
-                  ]
+                 And [
+                   QRel (a, [Var x]);
+                   CRel ("justifies", [Var x; Var y])
+                 ]
                 )
   in
   FoAll (y, mk_implies [QRel (a, [Var y])] f)
@@ -37,19 +37,26 @@ let valid a =
   let y = mk_fresh_name () in
   let x' = mk_fresh_name () in
   let y' = mk_fresh_name () in
-  And [
-    QRel (a, [Var x])
-  ; QRel (a, [Var y])
-    (*  ; mk_implies [CRel "conflict" [Var a; Var b]] (Eq (a, b)) *)
-  ; FoAll (y',
-           mk_implies [QRel (a, [Var y'])]
-             (FoAll (x', mk_implies
-                       [CRel ("order", [Var x'; Var y'])]
-                       (QRel (a, [Var x']))
-                    )
-             )
-          )
-  ]
+  FoAll (
+    x, (
+      FoAll (
+        y,
+        And [
+          QRel (a, [Var x])
+        ; QRel (a, [Var y])
+        (*  ; mk_implies [CRel "conflict" [Var a; Var b]] (Eq (a, b)) *)
+        ; FoAll (y',
+                 mk_implies [QRel (a, [Var y'])]
+                   (FoAll (x', mk_implies
+                             [CRel ("order", [Var x'; Var y'])]
+                             (QRel (a, [Var x']))
+                          )
+                   )
+                )
+        ]
+      )
+    )
+  )
 
 let always_justifies a b =
   And [justify a b; subset a b; valid a; valid b]
@@ -67,7 +74,7 @@ let rec always_justifies_tc n a b =
   in
   Or [
     eq a b
-    ; SoAny (x, 1, And [always_justifies a x; step x b])
+  ; SoAny (x, 1, And [always_justifies a x; step x b])
   ]
 
 let always_eventually_justifies n a b =
@@ -95,15 +102,15 @@ let rec aej_tc m n a b =
     eq a b
   ; SoAny (x, 1, And [always_eventually_justifies m a x; step a b])  
   ]
-  
+
 let eq_crel a n =
   let x = mk_fresh_name ~prefix:"eq_crel" () in
-  FoAll (x,
+  FoAll (n,
          And [
            mk_implies [QRel (a, [Var x])] (CRel (n, [Var x]))
          ; mk_implies [CRel (n, [Var x])] (QRel (a, [Var x]))
          ]
-    )
+        )
 
 let do_decide es target solver_opts =
   let size = es.E.events_number in
