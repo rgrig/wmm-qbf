@@ -1,13 +1,13 @@
 module E = EventStructure
 open SO
 
-let build_so_structure es target =
+let build_so_structure es goal =
   let f (x,y) = [x;y] in
   let order = List.map f es.E.order in
   let conflict = List.map f es.E.conflicts in
   let justifies = List.map f es.E.justifies in
   let f x = [x] in
-  let target = List.map f target in
+  let target = List.map f goal in
   SoOps.rels [
     ("order", order)
   ; ("conflict", conflict)
@@ -16,6 +16,8 @@ let build_so_structure es target =
   ; ("empty_set", [[]])
   ]
 
+(* Configuration justifies *)
+(* ∀y∈b. (∃x∈a . x ⊢ y) *)
 let justify a b =
   let x = mk_fresh_name () in
   let y = mk_fresh_name () in
@@ -44,7 +46,7 @@ let valid a =
         And [
           QRel (a, [Var x])
         ; QRel (a, [Var y])
-        (*  ; mk_implies [CRel "conflict" [Var a; Var b]] (Eq (a, b)) *)
+        ; mk_implies [CRel ("conflict", [Var x; Var y])] (Eq [Var x; Var y])
         ; FoAll (y',
                  mk_implies [QRel (a, [Var y'])]
                    (FoAll (x', mk_implies
@@ -58,24 +60,25 @@ let valid a =
     )
   )
 
-let always_justifies a b =
-  And [justify a b; subset a b; valid a; valid b]
-
 let eq a b =
   And [subset a b; subset b a]
 
-let always_justifies_tc_0 = eq
-
-let rec always_justifies_tc n a b =
+(* Bounded reflexive transitive closure, up to n steps *)
+let rec tc arity f n a b =
   let x = mk_fresh_name () in
   let step = match n with
-      0 -> always_justifies_tc_0
-    | _ -> always_justifies_tc (n-1)
+      0 -> eq
+    | _ -> tc arity f (n-1)
   in
   Or [
     eq a b
-  ; SoAny (x, 1, And [always_justifies a x; step x b])
+  ; SoAny (x, arity, And [f a x; step x b])
   ]
+
+let always_justifies a b =
+  And [justify a b; subset a b; valid a; valid b]
+
+let always_justifies_tc = tc 1 always_justifies
 
 let always_eventually_justifies n a b =
   let x = mk_fresh_name () in
@@ -90,22 +93,11 @@ let always_eventually_justifies n a b =
           )
   ]
 
-let aej_tc_0 m = eq
-
-let rec aej_tc m n a b =
-  let x = mk_fresh_name () in
-  let step = match n with
-      0 -> aej_tc_0 m
-    | _ -> aej_tc m (n-1)
-  in
-  Or [
-    eq a b
-  ; SoAny (x, 1, And [always_eventually_justifies m a x; step a b])  
-  ]
+let aej_tc m = tc 1 (always_eventually_justifies m)
 
 let eq_crel a n =
   let x = mk_fresh_name ~prefix:"eq_crel" () in
-  FoAll (n,
+  FoAll (x,
          And [
            mk_implies [QRel (a, [Var x])] (CRel (n, [Var x]))
          ; mk_implies [CRel (n, [Var x])] (QRel (a, [Var x]))
@@ -127,5 +119,12 @@ let do_decide es target solver_opts =
           )
   in
   let s = { SO.size = size; SO.relations = build_so_structure es target } in
+  let dump_qbf,dump_query,debug = solver_opts in
+  if dump_query then (
+      SO.pp_formula Format.std_formatter q;
+      Printf.printf "\n";
+      SO.pp_structure Format.std_formatter s;
+    );
   let q = SoOps.so_to_qbf s q in
-  Util.maybe (Qbf.holds q solver_opts) (Printf.printf "result: %b\n")
+  Util.maybe (Qbf.holds q (dump_qbf,false,debug))
+    (Printf.printf "result: %b\n")
