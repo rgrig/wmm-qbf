@@ -1,3 +1,4 @@
+(* Event numbers start at one, not zero. *)
 type event = int
 type set = event list
 type relation = (event * event) list
