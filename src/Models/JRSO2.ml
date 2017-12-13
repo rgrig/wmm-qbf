@@ -1,5 +1,6 @@
 module E = EventStructure
 open SO
+open SoOps
 
 let build_so_structure es goal =
   let f (x,y) = [x;y] in
@@ -39,26 +40,21 @@ let valid a =
   let y = mk_fresh_name () in
   let x' = mk_fresh_name () in
   let y' = mk_fresh_name () in
-  FoAll (
-    x, (
-      FoAll (
-        y,
-        And [
-          QRel (a, [Var x])
-        ; QRel (a, [Var y])
-        ; mk_implies [CRel ("conflict", [Var x; Var y])] (Eq [Var x; Var y])
-        ; FoAll (y',
+  And [
+      FoAll (x, (FoAll (y,
+        mk_implies
+          [ QRel (a, [Var x])
+          ; QRel (a, [Var y])
+          ; CRel ("conflict", [Var x; Var y]) ]
+          (mk_eq (Var x) (Var y)))))
+    ; FoAll (y',
                  mk_implies [QRel (a, [Var y'])]
                    (FoAll (x', mk_implies
                              [CRel ("order", [Var x'; Var y'])]
                              (QRel (a, [Var x']))
                           )
                    )
-                )
-        ]
-      )
-    )
-  )
+    )]
 
 let eq a b =
   And [subset a b; subset b a]
@@ -66,13 +62,11 @@ let eq a b =
 (* Bounded reflexive transitive closure, up to n steps *)
 let rec tc arity f n a b =
   let x = mk_fresh_name () in
-  let step = match n with
-      0 -> eq
-    | _ -> tc arity f (n-1)
-  in
-  Or [
+  match n with
+    0 -> eq a b
+  | _ -> Or [
     eq a b
-  ; SoAny (x, arity, And [f a x; step x b])
+  ; SoAny (x, arity, And [f a x; tc arity f (n-1) x b])
   ]
 
 let always_justifies a b =

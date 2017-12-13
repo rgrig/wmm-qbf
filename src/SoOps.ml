@@ -2,11 +2,16 @@ open Printf
 module U = Util
 module ArityMap = Map.Make(String)
 
+let add_rel rs (k, r) =
+  if SO.RelMap.mem k rs then failwith "repeated relation symbol (voxdy)";
+  SO.RelMap.add k r rs
+
 let rels xs =
-  let f acc (k, r) =
-    if SO.RelMap.mem k acc then failwith "repeated relation symbol (voxdy)";
-    SO.RelMap.add k r acc in
-  List.fold_left f SO.RelMap.empty xs
+  List.fold_left add_rel SO.RelMap.empty xs
+
+let add_specials s =
+  let eq = List.map (fun x -> [x; x]) (U.range 1 s.SO.size) in
+  SO.{ s with relations = add_rel s.relations (eq_rel, eq) }
 
 let get_arity s r =
   let arity = List.length (List.nth r 0) in
@@ -62,8 +67,6 @@ let check_arities s f =
     | SO.Not f ->
       check_formula f arr_map
 
-    | SO.Eq ts ->
-      arr_map
   in
   ignore @@ SO.RelMap.fold check_structure s.SO.relations ArityMap.empty;
 
@@ -128,7 +131,7 @@ let so_to_qbf s f =
         with Not_found ->
           failwith ("Could not find '" ^ sym ^ ". (nrpfl)")
       end
-      
+
     | SO.FoAll (v, f) ->
       begin
         try
@@ -141,7 +144,7 @@ let so_to_qbf s f =
           SO.RelMap.iter (fun k _ -> Printf.printf "%s, " k) s.SO.relations;
           failwith ("Could not find '" ^ v ^ "'. (hnxjb)")
       end
-      
+
     | SO.FoAny (v, f) ->
       begin
         try
@@ -153,19 +156,19 @@ let so_to_qbf s f =
         with Not_found ->
           failwith ("Could not find '" ^ v ^ "'. (jgpcn)")
       end
-      
+
     | SO.SoAll (v, a, f) ->
       (*let names = qbf_names_for v a s.SO.size in
       let m = So2Qbf.add v names m in
       Qbf.mk_forall names (go m f)*)
       Qbf.mk_false ()
-        
+
     | SO.SoAny (v, a, f) ->
       (*let names = qbf_names_for v a s.SO.size in
       let m = So2Qbf.add v names m in
       Qbf.mk_exists names (go m f)*)
       Qbf.mk_false ()
-        
+
     | SO.And fs ->
       Qbf.mk_and (List.map (go m) fs)
     | SO.Or fs ->
@@ -173,7 +176,12 @@ let so_to_qbf s f =
     | SO.Not f ->
       Qbf.mk_not (go m f)
 
-    | SO.Eq ts ->
-      failwith "TODO (lzayv)"
   in
   go So2Qbf.empty f
+
+
+let mk_implies prems conclusion =
+  SO.Or (conclusion :: List.map (fun p -> SO.Not p) prems)
+
+let mk_eq a b =
+  SO.CRel (SO.eq_rel, [a; b])

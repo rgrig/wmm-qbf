@@ -21,7 +21,7 @@ let parse filename f parser tokeniser error_t =
             let msg = sprintf "%s:%d:%d: parse error" filename line (c1-c0+1) in
             raise (Parsing_failed msg))
 
-
+(* returns [i,...,k] *)
 let range i k =
   let rec loop xs k = if k < i then xs else loop (k :: xs) (k - 1) in
   loop [] k
@@ -43,7 +43,7 @@ let rec hp_list_sep sep hp_x f = function
   | [x] -> hp_x f x
   | x :: ((_ :: _) as xs) ->
       fprintf f (format_of_string "%a%s%a") hp_x x sep (hp_list_sep sep hp_x) xs
-        
+
 let hp_list hp_x = hp_list_sep "" hp_x
 
 let hp_int f x = fprintf f "%d" x

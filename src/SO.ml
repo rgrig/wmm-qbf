@@ -20,6 +20,10 @@ type structure =
   { size : int
   ; relations : relation RelMap.t }
 
+(* Special interpreted relations. See [SoOps.add_specials] for how to add them
+to the structure. *)
+let eq_rel = "(EQ)"
+
 type term =
   | Var of fo_var
   | Const of element
@@ -35,7 +39,6 @@ type formula =
   | And of formula list
   | Or of formula list
   | Not of formula
-  | Eq of term list
   [@@deriving show]
 
 let show_term = function
@@ -60,8 +63,6 @@ let rec show_formula = function
      Format.sprintf "(%s)" (U.map_join " | " show_formula fs)
   | Not f ->
     "~" ^ (show_formula f)
-  | Eq ts ->
-    Format.sprintf "(%s)" (U.map_join " = " show_term ts)
 
 let show_structure s =
   let f key vals acc =
@@ -83,6 +84,3 @@ let mk_fresh_name =
   let id = ref 0 in
   fun ?(prefix = "C") () -> incr id; Printf.sprintf "%s%d" prefix !id
 
-(* p₁ ∧ p₂ ∧ pₙ → q  ⇔  ¬p₁ ∨ ¬p₂ ∨ ¬pₙ ∨ q *)
-let mk_implies prems conclusion =
-  Or (conclusion :: List.map (fun p -> Not p) prems)

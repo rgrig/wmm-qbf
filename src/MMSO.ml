@@ -12,6 +12,9 @@ open Printf
 module E = EventStructure
 module U = Util
 
+open SO
+open SoOps
+
 (* These structures are quantified. They only need a prefix for their
    QBF variables *)
 type so_var  =
@@ -42,7 +45,7 @@ let name x is =
 (* Generates a variable string, with indexes from list is *)
 let var x is =
   if (x.arity != List.length is) then raise Bad_arity;
-  SO.QRel (x.prefix, is)
+  QRel (x.prefix, is)
 
 let _in is x =
   var x is
@@ -62,32 +65,32 @@ let allnames x =
 let justifies es =
 (* TODO (low priority): explain this to Mark. *)
   let h = Hashtbl.create 0 in
-  List.iter (fun j -> Hashtbl.replace h (SO.Const j) []) es.E.reads;
+  List.iter (fun j -> Hashtbl.replace h (Const j) []) es.E.reads;
   let add (i, j) =
-    let is = Hashtbl.find h (SO.Const j) in
-    Hashtbl.replace h (SO.Const j) (i :: is) in
+    let is = Hashtbl.find h (Const j) in
+    Hashtbl.replace h (Const j) (i :: is) in
   List.iter add es.E.justifies;
   (fun x y ->
     assert (es = x.event_structure);
     assert (es = y.event_structure);
     let justify_read j =
-      let b = SO.Or (List.map (fun i -> var x [SO.Const i]) (Hashtbl.find h (SO.Const j))) in
-      let b = SO.Or [b; var x [SO.Const j]] in (* tweak: justify only new *)
-      SO.mk_implies [var y [SO.Const j]] b in
-    SO.And (List.map justify_read es.E.reads)
+      let b = Or (List.map (fun i -> var x [Const i]) (Hashtbl.find h (Const j))) in
+      let b = Or [b; var x [Const j]] in (* tweak: justify only new *)
+      mk_implies [var y [Const j]] b in
+    And (List.map justify_read es.E.reads)
   )
   
 let valid_conf es x =
   let downclosed =
-    let f (i, j) = SO.mk_implies [var x [SO.Const j]] (var x [SO.Const i]) in
-    SO.And (List.map f es.E.order)
+    let f (i, j) = mk_implies [var x [Const j]] (var x [Const i]) in
+    And (List.map f es.E.order)
   in
 (* Query: this differs from the definition in the doc. Why? *)
   let no_conflict =
-    let f (i, j) = SO.Not (SO.And [var x [SO.Const i]; var x [SO.Const j]]) in
-    SO.And (List.map f es.E.conflicts)
+    let f (i, j) = Not (And [var x [Const i]; var x [Const j]]) in
+    And (List.map f es.E.conflicts)
   in
-  SO.And [ downclosed; no_conflict ]
+  And [ downclosed; no_conflict ]
 
 let compose x rel =
   List.map snd (List.filter (fun (l,r) -> x == l) rel)
@@ -106,7 +109,7 @@ let same_label es x y =
        
 
 let valid_rel es x y =
-  SO.And [ valid_conf es x; valid_conf es y ]
+  And [ valid_conf es x; valid_conf es y ]
 
 let fresh_so_var = 
   let n = ref 0 in
@@ -114,17 +117,17 @@ let fresh_so_var =
      incr n; { prefix = sprintf "%s%d" prefix !n; arity = a; event_structure = es } )
 
 let forall x a =
-  SO.SoAll (x.prefix, x.arity, a)
+  SoAll (x.prefix, x.arity, a)
 
 let exists x a =
-  SO.SoAny (x.prefix, x.arity, a)
+  SoAny (x.prefix, x.arity, a)
   
 let equals_set x is =
   let n = size_of x in
   let f i =
-    if List.mem i is then var x [SO.Const i] else SO.Not (var x [SO.Const i])
+    if List.mem i is then var x [Const i] else Not (var x [Const i])
   in
-  SO.And (List.map f (U.range 1 n))
+  And (List.map f (U.range 1 n))
   
 let writes es w =
   let writes = EventStructure.writes es in
@@ -133,42 +136,42 @@ let writes es w =
 let subset x y =
   assert (same_es x y);
   let n = size_of x in
-  let f i = SO.mk_implies [var x [SO.Const i]] (var y [SO.Const i]) in
-  SO.And (List.map f (U.range 1 n))
+  let f i = mk_implies [var x [Const i]] (var y [Const i]) in
+  And (List.map f (U.range 1 n))
 
 let flip p x y = p y x
 
-let intersect p q x y = SO.And [p x y; q x y]
-let union p q x y = SO.Or [p x y; q x y]
+let intersect p q x y = And [p x y; q x y]
+let union p q x y = Or [p x y; q x y]
 
 let set_union es x e =
   assert (x.arity == 1);
   let n = size_of x in
   let xn = fresh_so_var es 1 in
-  let f i = SO.Or [SO.mk_implies [var xn [SO.Const i]] (var x [SO.Const i]); var xn e] in
-  let g i = SO.Or [SO.mk_implies [var x [SO.Const i]] (var xn [SO.Const i])] in
-  SO.SoAny (xn.prefix, 1,
-            SO.And [
-              SO.And (List.map f (U.range 1 n))
-            ; SO.And (List.map g (U.range 1 n))
+  let f i = Or [mk_implies [var xn [Const i]] (var x [Const i]); var xn e] in
+  let g i = Or [mk_implies [var x [Const i]] (var xn [Const i])] in
+  SoAny (xn.prefix, 1,
+            And [
+              And (List.map f (U.range 1 n))
+            ; And (List.map g (U.range 1 n))
             ]
            )
   
 let intersect_n ps x y =
-  SO.And (List.map (fun p -> p x y) ps)
+  And (List.map (fun p -> p x y) ps)
 let union_n ps x y =
-  SO.Or (List.map (fun p -> p x y) ps)
+  Or (List.map (fun p -> p x y) ps)
 
 let equal = intersect subset (flip subset)
 
 (* reflexive r ≜ ∀x∈Dom. r x x *)
 let reflexive es r =
   let n = size_of r in
-  SO.And (List.map (fun i -> var r [SO.Const i; SO.Const i]) (U.range 1 n))
+  And (List.map (fun i -> var r [Const i; Const i]) (U.range 1 n))
 
 let irreflexive es r =
   let n = size_of r in
-  SO.And (List.map (fun i -> SO.Not (var r [SO.Const i; SO.Const i])) (U.range 1 n))
+  And (List.map (fun i -> Not (var r [Const i; Const i])) (U.range 1 n))
 
 exception Unreachable of string
 (* TODO: There's got to be a better way... *)
@@ -190,37 +193,37 @@ let subset_r a b =
   let sub a b =
     let f xs =
       match xs with
-        [i;j] -> SO.mk_implies [var a [SO.Const i; SO.Const j]] (var b [SO.Const i; SO.Const j])
+        [i;j] -> mk_implies [var a [Const i; Const j]] (var b [Const i; Const j])
       | _ -> raise (U.Runtime_error "") (* compiler warns without this *)
     in
     List.map f (U.n_cartesian_product [(U.range 1 x); (U.range 1 x)])
   in
-  SO.And (sub a b)
+  And (sub a b)
 
 
 let sequence es p q = fun x z ->
   assert (x.arity == z.arity);
   let y = fresh_so_var es x.arity in
-  SO.SoAny (y.prefix, y.arity, SO.And [p x y; q y z])
+  SoAny (y.prefix, y.arity, And [p x y; q y z])
 
 (* transitive r ≜ ∀x,y,z ∈ Dom . r x y ∧ r y z → r x z *)
 let transitive es r =
   let n = size_of r in
   (* !!! *)
   (*  subset (sequence es r r) r *)
-  let f x y z = SO.mk_implies [
-      SO.And [var r [SO.Const x; SO.Const y]; var r [SO.Const y; SO.Const z]]
+  let f x y z = mk_implies [
+      And [var r [Const x; Const y]; var r [Const y; Const z]]
     ]
-      (var r [SO.Const x; SO.Const z])
+      (var r [Const x; Const z])
   in
-  SO.And (map3 f (U.range 1 n) (U.range 1 n) (U.range 1 n))
+  And (map3 f (U.range 1 n) (U.range 1 n) (U.range 1 n))
 
 
 (* ∃x . y⁺ ⊆ x *)
 let trancl es y =
   let x = fresh_so_var es 2 in
   let x_is_trans = transitive es x in
-  SO.SoAny (x.prefix, x.arity, SO.And [x_is_trans; subset_r y x])
+  SoAny (x.prefix, x.arity, And [x_is_trans; subset_r y x])
 
 let rec at_most_n es n p =
   if n = 0
