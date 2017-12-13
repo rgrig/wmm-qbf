@@ -60,7 +60,10 @@ let check_arities s f =
     | SO.And fs | SO.Or fs ->
        List.fold_right check_formula fs arr_map
     | SO.Not f ->
-       check_formula f arr_map
+      check_formula f arr_map
+
+    | SO.Eq ts ->
+      arr_map
   in
   ignore @@ SO.RelMap.fold check_structure s.SO.relations ArityMap.empty;
 
@@ -82,12 +85,12 @@ let term_to_var s = function
 let terms_to_vars s ts =
   List.map (term_to_var s) ts
 
-let name p is = 
+let name p is = (*
   let rec f xs = match xs with
     | [x] -> string_of_int x
     | x::xs -> string_of_int x ^ "_" ^ f xs
     | [] -> ""
-  in
+  in*)
   List.map (sprintf "%s_%d" p) is
 
 let qbf_names_for x arity n =
@@ -120,13 +123,12 @@ let so_to_qbf s f =
       begin
         try
           let r' = List.map (fun f -> SO.Var f) (So2Qbf.find sym m) in
-          if List.mem r' [ts] then Qbf.mk_true ()
+          if r' = ts then Qbf.mk_true ()
           else Qbf.mk_false ()
         with Not_found ->
-          let msg = SO.RelMap.fold (fun k _ a -> Printf.sprintf "%s, %s" k a) s.SO.relations "" in
-          failwith ("Could not find '" ^ sym ^ "' in [" ^ msg ^ "]. (pdzoj)")
+          failwith ("Could not find '" ^ sym ^ ". (nrpfl)")
       end
-          
+      
     | SO.FoAll (v, f) ->
       begin
         try
@@ -139,7 +141,7 @@ let so_to_qbf s f =
           SO.RelMap.iter (fun k _ -> Printf.printf "%s, " k) s.SO.relations;
           failwith ("Could not find '" ^ v ^ "'. (hnxjb)")
       end
-
+      
     | SO.FoAny (v, f) ->
       begin
         try
@@ -151,16 +153,18 @@ let so_to_qbf s f =
         with Not_found ->
           failwith ("Could not find '" ^ v ^ "'. (jgpcn)")
       end
-            
-    | SO.SoAll (v, a, f) ->
-      let names = qbf_names_for v a s.SO.size in
-      let m = So2Qbf.add v names m in
-      Qbf.mk_forall names (go m f)
       
-    | SO.SoAny (v, a, f) ->
-      let names = qbf_names_for v a s.SO.size in
+    | SO.SoAll (v, a, f) ->
+      (*let names = qbf_names_for v a s.SO.size in
       let m = So2Qbf.add v names m in
-      Qbf.mk_exists names (go m f)
+      Qbf.mk_forall names (go m f)*)
+      Qbf.mk_false ()
+        
+    | SO.SoAny (v, a, f) ->
+      (*let names = qbf_names_for v a s.SO.size in
+      let m = So2Qbf.add v names m in
+      Qbf.mk_exists names (go m f)*)
+      Qbf.mk_false ()
         
     | SO.And fs ->
       Qbf.mk_and (List.map (go m) fs)
@@ -168,5 +172,8 @@ let so_to_qbf s f =
       Qbf.mk_or (List.map (go m) fs)
     | SO.Not f ->
       Qbf.mk_not (go m f)
+
+    | SO.Eq ts ->
+      failwith "TODO (lzayv)"
   in
   go So2Qbf.empty f

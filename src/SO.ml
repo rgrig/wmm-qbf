@@ -35,6 +35,7 @@ type formula =
   | And of formula list
   | Or of formula list
   | Not of formula
+  | Eq of term list
   [@@deriving show]
 
 let show_term = function
@@ -45,16 +46,34 @@ let show_term = function
 let rec show_formula = function
   | CRel (rel,ts) | QRel (rel, ts) ->
      Format.sprintf "%s(%s)" rel (U.map_join ", " show_term ts)
-  | FoAny (var, f) | SoAny (var, _, f) ->
-     Format.sprintf "∃%s . %s" var (show_formula f)
-  | FoAll (var, f) | SoAll (var, _, f) ->
-     Format.sprintf "∀%s . %s" var (show_formula f)
+  | FoAll (var, f) ->
+      Format.sprintf "!%s . %s" var (show_formula f)
+  | FoAny (var, f) ->
+      Format.sprintf "?%s . %s" var (show_formula f)
+  | SoAll (var, a, f) ->
+    Format.sprintf "!%s:%d . %s" var a (show_formula f)
+  | SoAny (var, a, f) ->
+    Format.sprintf "?%s:%d . %s" var a (show_formula f)   
   | And fs ->
-     Format.sprintf "(%s)" (U.map_join " ∧ " show_formula fs)
+     Format.sprintf "(%s)" (U.map_join " & " show_formula fs)
   | Or fs ->
-     Format.sprintf "(%s)" (U.map_join " ∧ " show_formula fs)
+     Format.sprintf "(%s)" (U.map_join " | " show_formula fs)
   | Not f ->
-     "¬ " ^ (show_formula f)
+    "~" ^ (show_formula f)
+  | Eq ts ->
+    Format.sprintf "(%s)" (U.map_join " = " show_term ts)
+
+let show_structure s =
+  let f key vals acc =
+    let v' =  List.map (U.map_join " " string_of_int) vals in
+    let v'' = String.concat "\n\t\t\t" v' in
+    (Format.sprintf "\t\t%s:\n\t\t\t%s\n" key v'') ^ acc
+  in
+  let m = RelMap.fold f s.relations "" in
+  Format.sprintf "{\n\tsize: %d\n\trelations:\n%s}\n" (s.size) m
+
+let pp_structure fmt s =
+  Format.fprintf fmt "%s" (show_structure s)
 
 let pp_formula fmt f =
   Format.fprintf fmt "%s" (show_formula f)
