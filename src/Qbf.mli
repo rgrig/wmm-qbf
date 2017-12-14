@@ -10,8 +10,8 @@ type t =
   | Exists of variable list * t * qid
   | Forall of variable list * t * qid
 
-val fresh_var : ?prefix:string -> int -> variable
-  
+val fresh_var : ?prefix:string -> unit -> variable
+
 val mk_var : variable -> t
 val mk_implies : t list -> t -> t
 val mk_true : unit -> t

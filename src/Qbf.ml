@@ -34,9 +34,9 @@ let rec show_t t =
 let last_qid = ref 0
 let fresh_qid () = incr last_qid; !last_qid
 
-let fresh_var = 
+let fresh_var =
   let n = ref 0 in
-  fun ?(prefix = "C") a ->
+  fun ?(prefix = "C") () ->
     incr n;
     sprintf "%s_%d" prefix !n
 

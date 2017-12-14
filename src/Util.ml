@@ -1,6 +1,7 @@
 open Printf
 module B = BatList
 module StringSet = Set.Make (String)
+module StringMap = Map.Make (String)
 
 exception Parsing_failed of string
 exception Runtime_error of string
@@ -25,6 +26,9 @@ let parse filename f parser tokeniser error_t =
 let range i k =
   let rec loop xs k = if k < i then xs else loop (k :: xs) (k - 1) in
   loop [] k
+
+let rec repeat n x =
+  if n == 0 then [] else x :: repeat (n-1) x
 
 let option d f = function
   | None -> d

@@ -81,13 +81,6 @@ let check_inv s f =
 let model_check s f =
   failwith "exjfn"
 
-let term_to_var s = function
-  | SO.Var v -> SO.RelMap.find v s.SO.relations
-  | SO.Const e -> [[e]]
-
-let terms_to_vars s ts =
-  List.map (term_to_var s) ts
-
 let name p is = (*
   let rec f xs = match xs with
     | [x] -> string_of_int x
@@ -104,58 +97,78 @@ let qbf_names_for x arity n =
   let names = U.n_cartesian_product (lists (U.range 1 n) arity) in
   List.map (name x) names
 
-let so_to_qbf s f =
-  let module So2Qbf = Map.Make (struct
-    type t = SO.so_var
-    let compare = compare
-  end) in
-  let rec go m = function
-    | SO.CRel (r,ts) ->
-      begin
-        try
-          let r' = SO.RelMap.find r s.SO.relations in
-          if List.mem r' (terms_to_vars s ts) then Qbf.mk_true ()
-          else Qbf.mk_false ()
-        with Not_found ->
-          let msg = SO.RelMap.fold (fun k _ a -> Printf.sprintf "%s, %s" k a) s.SO.relations "" in
-          failwith ("Could not find '" ^ r ^ "' in [" ^ msg ^ "]. (pdzoj)")
-      end
+module ElementListMap = Map.Make (struct
+  type t = SO.element list
+  let compare = compare
+end)
 
+module SoVarMap = Util.StringMap
+module FoVarMap = Util.StringMap
+
+let so_to_qbf structure formula =
+  let module ByIdx = ElementListMap in
+  let module FoEnv = FoVarMap in
+  let module SoEnv = SoVarMap in
+  let fo_subst env = SO.(function
+    | Var v -> (try FoEnv.find v env with Not_found -> Var v)
+    | t -> t) in
+  let from_const = SO.(function
+    | Const c -> c
+    | _ -> failwith "INTERNAL (tlegz)") in
+  let so_lookup r env =
+    try SoEnv.find r env
+    with Not_found -> failwith "TODO: nice error (ikgsp)" in
+  let byidx_lookup cs qvars =
+    try ByIdx.find cs qvars
+    with Not_found -> failwith "TODO: nice error (sggmh)" in
+  let mk_fresh_qvars ~prefix a =
+    let xs = Util.range 1 structure.SO.size in
+    let xss = Util.repeat a xs in
+    let xss = Util.n_cartesian_product xss in
+    let add_one acc xs =
+      ByIdx.add xs (Qbf.fresh_var ~prefix ()) acc in
+    List.fold_left add_one ByIdx.empty xss in
+  let qvars_list qvars =
+    List.map snd (ByIdx.bindings qvars) in
+  let rec go so_env fo_env  = SO.(function
+    | CRel (r,ts) ->
+        let ts = List.map (fo_subst fo_env) ts in
+        let cs = List.map from_const ts in
+        (try
+          let r' = RelMap.find r structure.relations in
+          if List.mem cs r' then Qbf.mk_true () else Qbf.mk_false ()
+        with Not_found ->
+          let msg = RelMap.fold (fun k _ a -> Printf.sprintf "%s, %s" k a) structure.relations "" in
+          failwith ("Could not find '" ^ r ^ "' in [" ^ msg ^ "]. (pdzoj)"))
+    | QRel (sym,ts) ->
+        let ts = List.map (fo_subst fo_env) ts in
+        let cs = List.map from_const ts in
+        let qvars = so_lookup sym so_env in
+        Qbf.mk_var (byidx_lookup cs qvars)
+    | FoAll (v, f) ->
+        let add_sub c = FoEnv.add v (Const c) fo_env in
+        let go' fo_env' = go so_env fo_env' f in
+
+        let xs = Util.range 1 structure.size in
+        let fo_envs = List.map add_sub xs in
+        let qs = List.map go' fo_envs in
+        Qbf.mk_and qs
+    | FoAny (v, f) -> (* TODO: maybe refactor *)
+        let add_sub c = FoEnv.add v (Const c) fo_env in
+        let go' fo_env' = go so_env fo_env' f in
+
+        let xs = Util.range 1 structure.size in
+        let fo_envs = List.map add_sub xs in
+        let qs = List.map go' fo_envs in
+        Qbf.mk_or qs
+    | SoAll (v, a, f) ->
+        let qvars = mk_fresh_qvars ~prefix:v a in
+        let so_env' = SoEnv.add v qvars so_env in
+        let q = go so_env' fo_env f in
+        Qbf.mk_forall (qvars_list qvars) q
+
+(*
     (* This is total bollocks *)
-    | SO.QRel (sym,ts) ->
-      begin
-        try
-          let r' = List.map (fun f -> SO.Var f) (So2Qbf.find sym m) in
-          if r' = ts then Qbf.mk_true ()
-          else Qbf.mk_false ()
-        with Not_found ->
-          failwith ("Could not find '" ^ sym ^ ". (nrpfl)")
-      end
-
-    | SO.FoAll (v, f) ->
-      begin
-        try
-          let r  = SO.RelMap.find v s.SO.relations in
-          let a = get_arity v r in
-          Qbf.mk_and (List.map (fun ai ->
-              go (So2Qbf.add v ai m) f
-            ) (qbf_names_for v a s.SO.size))
-        with Not_found ->
-          SO.RelMap.iter (fun k _ -> Printf.printf "%s, " k) s.SO.relations;
-          failwith ("Could not find '" ^ v ^ "'. (hnxjb)")
-      end
-
-    | SO.FoAny (v, f) ->
-      begin
-        try
-          let r  = SO.RelMap.find v s.SO.relations in
-          let a = get_arity v r in
-          Qbf.mk_or (List.map (fun ai ->
-              go (So2Qbf.add v ai m) f
-            ) (qbf_names_for v a s.SO.size))
-        with Not_found ->
-          failwith ("Could not find '" ^ v ^ "'. (jgpcn)")
-      end
 
     | SO.SoAll (v, a, f) ->
       (*let names = qbf_names_for v a s.SO.size in
@@ -175,9 +188,9 @@ let so_to_qbf s f =
       Qbf.mk_or (List.map (go m) fs)
     | SO.Not f ->
       Qbf.mk_not (go m f)
-
-  in
-  go So2Qbf.empty f
+*)
+  ) in
+  go SoEnv.empty FoEnv.empty formula
 
 
 let mk_implies prems conclusion =
