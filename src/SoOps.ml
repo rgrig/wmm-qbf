@@ -78,9 +78,6 @@ let check_inv s f =
   check_arities s f (*
   check_elem_bounds s f*)
 
-let model_check s f =
-  failwith "exjfn"
-
 module ElementListMap = Map.Make (struct
     type t = SO.element list
     let compare = compare
@@ -171,6 +168,17 @@ let so_to_qbf structure formula =
     ) in
   go SoEnv.empty FoEnv.empty formula
 
+let model_check opts s f =
+  let s = add_specials s in
+  let dump_qbf,dump_query,debug = opts in
+  if dump_query then (
+      SO.pp_formula Format.std_formatter f;
+      Printf.printf "\n";
+      SO.pp_structure Format.std_formatter s;
+    );
+  let q = so_to_qbf s f in
+  Util.maybe (Qbf.holds q (dump_qbf,false,debug))
+    (Printf.printf "result: %b\n")
 
 let mk_implies prems conclusion =
   SO.Or (conclusion :: List.map (fun p -> SO.Not p) prems)

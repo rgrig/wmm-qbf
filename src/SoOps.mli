@@ -2,7 +2,7 @@ val rels : (SO.rel_sym * SO.relation) list -> SO.relation SO.RelMap.t
 val add_specials : SO.structure -> SO.structure
 
 val check_inv : SO.structure -> SO.formula -> unit
-val model_check : SO.structure -> SO.formula -> bool
+val model_check : (bool * bool * bool) -> SO.structure -> SO.formula -> unit
 
 val so_to_qbf : SO.structure -> SO.formula -> Qbf.t
 

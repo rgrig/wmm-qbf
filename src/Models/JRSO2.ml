@@ -113,7 +113,7 @@ let do_decide es target solver_opts =
           )
   in
   let s = { SO.size = size; SO.relations = build_so_structure es target } in
-  let s = add_specials s in
+  let s = SoOps.add_specials s in
   let dump_qbf,dump_query,debug = solver_opts in
   if dump_query then (
       SO.pp_formula Format.std_formatter q;
