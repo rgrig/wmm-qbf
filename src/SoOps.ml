@@ -2,11 +2,16 @@ open Printf
 module U = Util
 module ArityMap = Map.Make(String)
 
+let add_rel rs (k, r) =
+  if SO.RelMap.mem k rs then failwith "repeated relation symbol (voxdy)";
+  SO.RelMap.add k r rs
+
 let rels xs =
-  let f acc (k, r) =
-    if SO.RelMap.mem k acc then failwith "repeated relation symbol (voxdy)";
-    SO.RelMap.add k r acc in
-  List.fold_left f SO.RelMap.empty xs
+  List.fold_left add_rel SO.RelMap.empty xs
+
+let add_specials s =
+  let eq = List.map (fun x -> [x; x]) (U.range 1 s.SO.size) in
+  SO.{ s with relations = add_rel s.relations (eq_rel, eq) }
 
 let get_arity s r =
   let arity = List.length (List.nth r 0) in
@@ -60,7 +65,8 @@ let check_arities s f =
     | SO.And fs | SO.Or fs ->
        List.fold_right check_formula fs arr_map
     | SO.Not f ->
-       check_formula f arr_map
+      check_formula f arr_map
+
   in
   ignore @@ SO.RelMap.fold check_structure s.SO.relations ArityMap.empty;
 
@@ -82,12 +88,12 @@ let term_to_var s = function
 let terms_to_vars s ts =
   List.map (term_to_var s) ts
 
-let name p is = 
+let name p is = (*
   let rec f xs = match xs with
     | [x] -> string_of_int x
     | x::xs -> string_of_int x ^ "_" ^ f xs
     | [] -> ""
-  in
+  in*)
   List.map (sprintf "%s_%d" p) is
 
 let qbf_names_for x arity n =
@@ -120,13 +126,12 @@ let so_to_qbf s f =
       begin
         try
           let r' = List.map (fun f -> SO.Var f) (So2Qbf.find sym m) in
-          if List.mem r' [ts] then Qbf.mk_true ()
+          if r' = ts then Qbf.mk_true ()
           else Qbf.mk_false ()
         with Not_found ->
-          let msg = SO.RelMap.fold (fun k _ a -> Printf.sprintf "%s, %s" k a) s.SO.relations "" in
-          failwith ("Could not find '" ^ sym ^ "' in [" ^ msg ^ "]. (pdzoj)")
+          failwith ("Could not find '" ^ sym ^ ". (nrpfl)")
       end
-          
+
     | SO.FoAll (v, f) ->
       begin
         try
@@ -151,22 +156,32 @@ let so_to_qbf s f =
         with Not_found ->
           failwith ("Could not find '" ^ v ^ "'. (jgpcn)")
       end
-            
+
     | SO.SoAll (v, a, f) ->
-      let names = qbf_names_for v a s.SO.size in
+      (*let names = qbf_names_for v a s.SO.size in
       let m = So2Qbf.add v names m in
-      Qbf.mk_forall names (go m f)
-      
+      Qbf.mk_forall names (go m f)*)
+      Qbf.mk_false ()
+
     | SO.SoAny (v, a, f) ->
-      let names = qbf_names_for v a s.SO.size in
+      (*let names = qbf_names_for v a s.SO.size in
       let m = So2Qbf.add v names m in
-      Qbf.mk_exists names (go m f)
-        
+      Qbf.mk_exists names (go m f)*)
+      Qbf.mk_false ()
+
     | SO.And fs ->
       Qbf.mk_and (List.map (go m) fs)
     | SO.Or fs ->
       Qbf.mk_or (List.map (go m) fs)
     | SO.Not f ->
       Qbf.mk_not (go m f)
+
   in
   go So2Qbf.empty f
+
+
+let mk_implies prems conclusion =
+  SO.Or (conclusion :: List.map (fun p -> SO.Not p) prems)
+
+let mk_eq a b =
+  SO.CRel (SO.eq_rel, [a; b])

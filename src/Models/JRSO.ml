@@ -2,6 +2,8 @@ module E = EventStructure
 module U = Util
 
 open Printf
+open SO
+open SoOps
 
 (* TODO: optimize validity checks; think sequence, and correctness. *)
          
@@ -28,7 +30,7 @@ let always_eventually_justifies es =
     (fun x y ->
       let z = MMSO.fresh_so_var es 1 in
       MMSO.forall z
-        (SO.mk_implies
+        (mk_implies
           [aj_tc x z]
           (sequence aj_tc justifies z y))) in
   (* Query: in the doc, we do not check valid_rel here. *)
@@ -59,12 +61,12 @@ let always_eventually_justifies_tc es = MMSO.at_most_n es es.E.events_number (al
 let do_decide es target solver_opts =
   let x = MMSO.fresh_so_var es 1 in
   let y = MMSO.fresh_so_var es 1 in
-  let q = SO.And
+  let q = And
     [ MMSO.equals_set x []
     ; MMSO.equals_set y target
     ; always_eventually_justifies_tc es x y ] in
   let q = MMSO.exists x (MMSO.exists y q) in
-  let s = { SO.size = (es.E.events_number) ; relations = SoOps.rels [] } in
+  let s = { size = (es.E.events_number) ; relations = SoOps.rels [] } in
   let q = SoOps.so_to_qbf s q in
   Util.maybe (Qbf.holds q solver_opts) (printf "result: %b\n")
               

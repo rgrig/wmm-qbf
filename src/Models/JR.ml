@@ -4,7 +4,7 @@ module U = Util
 open Printf
 
 (* TODO: optimize validity checks; think sequence, and correctness. *)
-         
+
 (* Always Justifies *)
 let always_justifies es = MM.intersect_n [ MM.subset; MM.justifies es; MM.valid_rel es ]
 
@@ -16,7 +16,7 @@ let always_justifies es = MM.intersect_n [ MM.subset; MM.justifies es; MM.valid_
  *)
 let always_justifies_tc es = MM.at_most_n es es.E.events_number (always_justifies es)
 
-(* Always Eventually Justifies 
+(* Always Eventually Justifies
 
    This relation contains always_justifies which is applied n times.
  *)
@@ -35,7 +35,7 @@ let always_eventually_justifies es =
   MM.intersect_n [ MM.subset; ae_justifies; MM.valid_rel es ]
 
 (* Always Eventually Justifies Transitively Closed
-   
+
    Similar to Always Justifies there is a proof burden to show that
    appling the relation n times is total.
  *)
@@ -115,7 +115,7 @@ let do_decide es target solver_opts =
     ; always_eventually_justifies_tc es x y ] in
   let q = MM.exists x (MM.exists y q) in
   Util.maybe (Qbf.holds q solver_opts) (printf "result: %b\n")
-              
+
 let do_enum fn es target debug =
   let whys = ref [] in
   let seen = Hashtbl.create 101 in
