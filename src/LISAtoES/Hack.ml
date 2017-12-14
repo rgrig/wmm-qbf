@@ -7,12 +7,25 @@ type values = {
 	minimum : int;
 	maximum : int;
 }
+(* A write event and what it wrote. *)
+type write_info = {
+	event : event,
+	global : string,
+	value : int,
+}
+(* Boxed list of write events and what they wrote. *)
+(* Used to accumulate data that allows justification relations to be built. *)
+type justifications = write_info list ref
+
+let translate (init : TODO) (program : TODO) (values : values) : EventStructure =
+	(* TODO: Translate threads and product them, calculate justifications. *)
 
 (* TODO: Accumulate write mappings for justification. *)
 let rec translate_thread
 	(instructions : instructions)
 	(program_counter : int)
 	(store : Store.t)
+	(justifications : () list ref)
 	(values : values)
 	(depth : int)
 : EventStructure =
