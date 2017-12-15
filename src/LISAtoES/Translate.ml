@@ -108,7 +108,7 @@ let sum (a : events) (b : events) (root_a : event) (root_b : event) : events =
 		reads = a.reads @ b.reads;
 		writes = a.writes @ b.writes;
 		(* "#1 ∪ #2 ∪ (E1 × E2) ∪ (E2 × E1)", except the redundant conflicts are elided, see above. *)
-		conflict = (root_a, root_b) :: (root_b, root_a) :: (a.conflict @ b.conflict);
+		conflict = (root_a, root_b) :: (a.conflict @ b.conflict);
 		(* "≤1 ∪ ≤2". *)
 		order =  a.order @ b.order;
 	}
@@ -146,25 +146,26 @@ let prefix_event (events : events) (event : event) : events =
 let prefix_read (events : events) (next_id : event ref) (from : address) (value : int) : events * event =
 	let id = !next_id in
 	next_id := !next_id + 1;
-	let events = prefix_event {
-			reads = { id = id; from = from; value = value; } :: events.reads;
-			writes = events.writes;
-			conflict = events.conflict;
-			order = events.order;
-		} id
-	in
+	let events = prefix_event events id in
+	let events = {
+		reads = { id = id; from = from; value = value; } :: events.reads;
+		writes = events.writes;
+		conflict = events.conflict;
+		order = events.order;
+	} in
 	events, id
 
 (* Add a write event before the given events. *)
 let prefix_write (events : events) (next_id : event ref) (into : address) (value : int) : events =
 	let id = !next_id in
 	next_id := !next_id + 1;
-	prefix_event {
+	let events = prefix_event events id in
+	{
 		reads = events.reads;
 		writes = { id = id; into = into; value = value; } :: events.writes;
 		conflict = events.conflict;
 		order = events.order;
-	} id
+	}
 
 (* Return true if a labelled instruction has the given label. *)
 let rec has_label (pseudo : BellBase.parsedPseudo) (label : string) : bool =
@@ -192,9 +193,9 @@ let write_justifies_read (write : write) (read : read) : bool =
 	read.from.offset = write.into.offset &&
 	read.value = write.value
 
-(* Returns an event set with writes that attribute all the values in `init` to `event_id`. *)
-let writes_from_init (init : MiscParser.state) (event_id : event) : events =
-	let writes = List.fold_left (fun accumulator init ->
+(* Returns a list of writes justified by the init event specified. *)
+let writes_from_init (init : MiscParser.state) (event_id : event) : write list =
+	List.fold_left (fun accumulator init ->
 		(* TODO: Assumes that run_type isn't relevant. *)
 		let (location, (run_type, value)) = init in
 
@@ -215,13 +216,7 @@ let writes_from_init (init : MiscParser.state) (event_id : event) : events =
 		in
 
 		{ id = event_id; into = address; value = value; } :: accumulator
-	) [] init in
-	{
-		reads = [];
-		writes = writes;
-		conflict = [];
-		order = [];
-	}
+	) [] init
 
 (* Translates a sequence of instructions form a single thread into an event structure. *)
 (* `program_counter` gives the index of the instruction to interpret, allowing arbitrary branching. *)
@@ -333,20 +328,24 @@ let translate
 	(* This boxed counter is used to make sure all events get unique ID numbers. *)
 	let next_id = ref (init_id + 1) in
 
-	(* An initial set of write records needs to be added because the init event sets global to values *)
-	(* given in the initial state AST. *)
-	let events = writes_from_init init init_id in
-
 	(* Translate each thread and compose the resulting event structures together. *)
 	let compose_threads (events : events) (instructions : BellBase.parsedPseudo list) : events =
 		let instructions = Array.of_list instructions in
 		let subtree = translate_instructions instructions 0 Store.empty values next_id 0 in
 		product events subtree
 	in
-	let events = List.fold_left compose_threads events program in
+	let events = List.fold_left compose_threads empty_events program in
 
 	(* Add the order relations for the init event. *)
 	let events = prefix_event events init_id in
+
+	(* Add writes that are justified by init. *)
+	let events = {
+		reads = events.reads;
+		writes = (writes_from_init init init_id) @ events.writes;
+		conflict = events.conflict;
+		order = events.order;
+	} in
 
 	(* Generate the justifies relation. *)
 	(* In this case, "justifies" pairs reads and writes of the same variable and value. *)
@@ -358,7 +357,8 @@ let translate
 
 	(* Convert from intermediate representation to final event structure. *)
 	{
-		events_number = 1 + (List.length events.reads) + (List.length events.writes);
+		(* Beware, not all writes now correspond to events! Don't use it calculate number of events. *)
+		events_number = !next_id - 1;
 		(* TODO: Why do I have to specify the types here to get this to compile? *)
 		reads = List.map (fun (read : read) -> read.id) events.reads;
 		justifies = justifies;
