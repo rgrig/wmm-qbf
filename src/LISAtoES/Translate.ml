@@ -1,53 +1,34 @@
 (* TODO: Replace tabs with spaces. *)
 (* TODO: Sanity check. *)
 
-(* Range of values to enumerate, includes minimum and maximum. *)
-type values = {
-	minimum : int;
-	maximum : int;
-}
+open EventStructure
+
+(* List of values to build event structures with. E.g. [0;1;42] *)
+type value = int
+type values = value list
 
 (* A location in memory denoted by the name of a global variable and an array index (pointer offset). *)
 (* Non-array variables always have a zero offset. *)
 type address = {
-	global : string;
-	offset : int;
+  global : string;
+  offset : int;
 }
 
-type read {
-	id : event;
-	from : address;
-	value : int;
-}
+type event =
+    Read of event * address * value
+  | Write of event * address * value
 
-type write {
-	id : event;
-	to : address;
-	value : int;
-}
+(* Generates a fresh identifier. The first value ever returned will be 1 *)
+let fresh_id =
+  let id = ref 0 in
+  function () ->
+    incr id; !id
 
-type events {
-	reads : read list;
-	writes : write list;
-	conflict : relation;
-	order : relation;
-}
+(* From EventStruture we get EventStructure.t and EventStructure.empty *)
+let translate init program values : EventStructure.t =
+	let store = () in(* TODO: From init. *)
+	let init_id = fresh_id () in
 
-let empty_events = {
-	reads = [];
-	writes = [];
-	conflict = [];
-	order = [];
-}
-
-let translate
-	(init : LISAParser.TODO)
-	(program : LISAParser.BellBase.parsedInstruction list list)
-	(values : values)
-: EventStructure.t =
-	let store = (* TODO: From init. *)
-	let init_id = 1;
-	let next_id = ref init_id + 1;
 	let events = List.fold_left (fun events instructions ->
 		let instructions = Array.of_list instructions in
 		let subtree = translate_instructions instructions 0 store values next_id in
