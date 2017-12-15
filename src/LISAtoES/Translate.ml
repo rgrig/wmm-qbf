@@ -56,12 +56,12 @@ let empty_events = {
 let unwrap_reg (register : BellBase.reg) : int =
 	match register with
 	| GPRreg number -> number
-	| Symbolic_reg _ -> assert false
+	| Symbolic_reg _ -> raise (LISAtoESException "Symbolic registers not supported")
 
 let unwrap_metaconst (value : MetaConst.k) : int =
 	match value with
 	| Int value -> value
-	| Meta _ -> assert false
+	| Meta _ -> raise (LISAtoESException "Symbolic constants not supported")
 
 let value_from_reg_or_imm
 	(store : Store.t)
@@ -90,14 +90,33 @@ let address_from_addr_op
 		let offset = value_from_reg_or_imm store reg_or_imm in
 		{ global = base.global; offset = base.offset + offset; }
 
-let rec instruction_from_pseudo_label (pseudo : BellBase.parsedPseudo) : BellBase.parsedInstruction =
+let value_from_imm_or_addr_or_reg (store : Store.t) (from : MetaConst.k imm_or_addr_or_reg) : int =
+	match from with
+	| IAR_roa(Rega reg) -> unwrap_reg reg
+	| IAR_roa(Abs _) -> raise (LISAtoESException "mov from address not supported.")
+	| IAR_imm value -> unwrap_metaconst value
+
+let do_arithmetic (operation : op_t) (a : int) (b : int) (values : values) : int =
+	let out = match operation with
+	| Add -> a + b
+	| Xor -> a lxor b
+	| And -> a land b
+	| Eq -> if a = b then 1 else 0
+	| Neq -> if a = b then 0 else 1
+	in
+	if out < values.minimum || out > values.maximum then
+		raise (LISAtoESException "Arithmetic result out of range")
+	else
+		out
+
+let rec instruction_from_pseudo_label (pseudo : BellBase.parsedPseudo) : BellBase.parsedInstruction option =
 	match pseudo with
-	| Label(_, Instruction instruction) -> instruction
+	| Label(_, Instruction instruction) -> Some instruction
 	| Label(_, next_label) -> instruction_from_pseudo_label next_label
 	| Nop
 	| Instruction _
 	| Macro _
-	| Symbolic _ -> assert false (* Called with something that isn't label. *)
+	| Symbolic _ -> None
 
 (* Sum event trees, assuming that root_a and root_b are the top of each tree. *)
 (* Only adds a conflict between the root events to save generating lots of unused conflicts. *)
@@ -206,7 +225,7 @@ let writes_from_init (init : MiscParser.state) (event_id : event) : write list =
 
 		let address = match location with
 		| Location_reg _
-		| Location_sreg _ -> assert false (* TODO: Allow writes to registers? *)
+		| Location_sreg _ -> raise (LISAtoESException "write register [value] not supported.")
 		| Location_global(Symbolic name) -> { global = name; offset = 0; }
 		(* TODO: It doesn't look like the parser generates this in init. *)
 		(* TODO: This means that some of the JCTC LISA tests are broken because they use arrays in init. *)
@@ -244,7 +263,8 @@ let rec translate_instructions
 		| Nop -> translate_instructions instructions (program_counter + 1) store values next_id depth
 		| Label(_, next_label) ->
 			let instruction = instruction_from_pseudo_label next_label in
-			translate_instruction
+			(match instruction with
+			| Some instruction -> translate_instruction
 				instructions
 				program_counter
 				store
@@ -252,6 +272,7 @@ let rec translate_instructions
 				next_id
 				depth
 				instruction
+			| None -> translate_instructions instructions (program_counter + 1) store values next_id depth)
 		| Instruction instruction -> translate_instruction
 			instructions
 			program_counter
@@ -277,6 +298,8 @@ and translate_instruction
 : events =
 	match instruction with
 	| Pld(destination, source, labels) ->
+		Printf.printf "TODO HACK Load\n";
+
 		(* Spawn a set of conflicting read events, one for each value that could be read. *)
 		let destination = unwrap_reg destination in
 		let source = address_from_addr_op store source in
@@ -294,6 +317,8 @@ and translate_instruction
 		done;
 		!events
 	| Pst(destination, source, labels) ->
+		Printf.printf "TODO HACK Store\n";
+
 		(* Spawn a write event. *)
 		let destination = address_from_addr_op store destination in
 		let value = value_from_reg_or_imm store source in
@@ -301,6 +326,8 @@ and translate_instruction
 		let subtree = translate_instructions instructions program_counter store values next_id depth in
 		prefix_write subtree next_id destination value
 	| Pbranch(Some(test), destination, labels) ->
+		Printf.printf "TODO HACK Branch\n";
+
 		(* Conditional jump, doesn't create any events directly. *)
 		let test = unwrap_reg test in
 		let value = Store.lookup store test in
@@ -308,9 +335,33 @@ and translate_instruction
 		let next = if value != 0 then find_label instructions destination else program_counter + 1 in
 		translate_instructions instructions next store values next_id depth
 	| Pbranch(None, destination, labels) ->
+		Printf.printf "TODO HACK Jump\n";
+
 		(* Unconditional jump, doesn't create any events directly. *)
 		let next = find_label instructions destination in
 		translate_instructions instructions next store values next_id depth
+	| Pmov(destination, (RAI source)) ->
+		Printf.printf "TODO HACK Mov\n";
+
+		(* Move from register or immediate. *)
+		(* TODO: Support globals as source addresses, major restructuring needed. *)
+		let destination = unwrap_reg destination in
+		let value = value_from_imm_or_addr_or_reg store source in
+		let program_counter = program_counter + 1 in
+		let store = Store.update store destination value in
+		translate_instructions instructions program_counter store values next_id depth
+	| Pmov(destination, OP(operation, a, b)) ->
+		Printf.printf "TODO HACK Arithmetic\n";
+
+		(* Arithmetic, doesn't generate events. *)
+		(* TODO: Support globals as source addresses, major restructuring needed. *)
+		let destination = unwrap_reg destination in
+		let a = value_from_imm_or_addr_or_reg store a in
+		let b = value_from_imm_or_addr_or_reg store b in
+		let value = do_arithmetic operation a b values in
+		let program_counter = program_counter + 1 in
+		let store = Store.update store destination value in
+		translate_instructions instructions program_counter store values next_id depth
 	| _ -> assert false (* TODO: Other instructions. *)
 
 (* Translate a program AST into an event structure, this is the entrypoint into the module. *)
