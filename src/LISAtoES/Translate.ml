@@ -92,11 +92,13 @@ let address_from_addr_op
 
 let value_from_imm_or_addr_or_reg (store : Store.t) (from : MetaConst.k imm_or_addr_or_reg) : int =
 	match from with
-	| IAR_roa(Rega reg) -> unwrap_reg reg
+	| IAR_roa(Rega reg) -> Store.lookup store (unwrap_reg reg)
 	| IAR_roa(Abs _) -> raise (LISAtoESException "mov from address not supported.")
 	| IAR_imm value -> unwrap_metaconst value
 
 let do_arithmetic (operation : op_t) (a : int) (b : int) (values : values) : int =
+	Printf.printf "TODO HACK Operation on %d and %d\n" a b;
+
 	let out = match operation with
 	| Add -> a + b
 	| Xor -> a lxor b
@@ -298,17 +300,25 @@ and translate_instruction
 : events =
 	match instruction with
 	| Pld(destination, source, labels) ->
-		Printf.printf "TODO HACK Load\n";
-
 		(* Spawn a set of conflicting read events, one for each value that could be read. *)
 		let destination = unwrap_reg destination in
 		let source = address_from_addr_op store source in
 		let program_counter = program_counter + 1 in
 		let events = ref empty_events in
 		let last_root = ref None in
+
+		Printf.printf "TODO HACK Load r%d = %s[%d]\n" destination source.global source.offset;
+
 		for value = values.minimum to values.maximum do
-			let store = Store.update store destination value in
-			let subtree = translate_instructions instructions program_counter store values next_id depth in
+			let new_store = Store.update store destination value in
+			let subtree = translate_instructions
+				instructions
+				program_counter
+				new_store
+				values
+				next_id
+				depth
+			in
 			let subtree, read_id = prefix_read subtree next_id source value in
 			match !last_root with
 			| Some last_id -> (events := sum !events subtree last_id read_id)
@@ -317,42 +327,43 @@ and translate_instruction
 		done;
 		!events
 	| Pst(destination, source, labels) ->
-		Printf.printf "TODO HACK Store\n";
-
 		(* Spawn a write event. *)
 		let destination = address_from_addr_op store destination in
 		let value = value_from_reg_or_imm store source in
 		let program_counter = program_counter + 1 in
+
+		Printf.printf "TODO HACK Store %s[%d] = %d\n" destination.global destination.offset value;
+
 		let subtree = translate_instructions instructions program_counter store values next_id depth in
 		prefix_write subtree next_id destination value
 	| Pbranch(Some(test), destination, labels) ->
-		Printf.printf "TODO HACK Branch\n";
-
 		(* Conditional jump, doesn't create any events directly. *)
 		let test = unwrap_reg test in
 		let value = Store.lookup store test in
+
+		Printf.printf "TODO HACK Branch %s if r%d (currently %d)\n" destination test value;
+
 		(* TODO: What means true? *)
 		let next = if value != 0 then find_label instructions destination else program_counter + 1 in
 		translate_instructions instructions next store values next_id depth
 	| Pbranch(None, destination, labels) ->
-		Printf.printf "TODO HACK Jump\n";
+		Printf.printf "TODO HACK Jump %s\n" destination;
 
 		(* Unconditional jump, doesn't create any events directly. *)
 		let next = find_label instructions destination in
 		translate_instructions instructions next store values next_id depth
 	| Pmov(destination, (RAI source)) ->
-		Printf.printf "TODO HACK Mov\n";
-
 		(* Move from register or immediate. *)
 		(* TODO: Support globals as source addresses, major restructuring needed. *)
 		let destination = unwrap_reg destination in
 		let value = value_from_imm_or_addr_or_reg store source in
 		let program_counter = program_counter + 1 in
 		let store = Store.update store destination value in
+
+		Printf.printf "TODO HACK Mov r%d = %d\n" destination value;
+
 		translate_instructions instructions program_counter store values next_id depth
 	| Pmov(destination, OP(operation, a, b)) ->
-		Printf.printf "TODO HACK Arithmetic\n";
-
 		(* Arithmetic, doesn't generate events. *)
 		(* TODO: Support globals as source addresses, major restructuring needed. *)
 		let destination = unwrap_reg destination in
@@ -361,6 +372,9 @@ and translate_instruction
 		let value = do_arithmetic operation a b values in
 		let program_counter = program_counter + 1 in
 		let store = Store.update store destination value in
+
+		Printf.printf "TODO HACK Arithmetic r%d = %d\n" destination value;
+
 		translate_instructions instructions program_counter store values next_id depth
 	| _ -> assert false (* TODO: Other instructions. *)
 
