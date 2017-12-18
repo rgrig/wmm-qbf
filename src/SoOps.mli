@@ -1,14 +1,18 @@
-val rels : (SO.rel_sym * SO.relation) list -> SO.relation SO.RelMap.t
-val add_specials : SO.structure -> SO.structure
+open SO
+val rels : (rel_sym * relation) list -> relation RelMap.t
+val add_specials : structure -> structure
 
-val check_inv : SO.structure -> SO.formula -> unit
-val model_check : Qbf.checker_opts -> SO.structure -> SO.formula -> bool
+val check_inv : structure -> formula -> unit
+val model_check : Qbf.checker_opts -> structure -> formula -> bool
 
-val so_to_qbf : SO.structure -> SO.formula -> Qbf.t
+val so_to_qbf : structure -> formula -> Qbf.t
 
 (* [mk_implies [p1;p2] q] is (p₁ ∧ p₂) → q *)
-val mk_implies : SO.formula list -> SO.formula -> SO.formula
-val mk_eq : SO.term -> SO.term -> SO.formula
-val subset : SO.so_var -> SO.so_var -> SO.formula
-val intersect : SO.so_var -> SO.so_var -> SO.so_var -> SO.formula
-val eq : SO.so_var -> SO.so_var -> SO.formula
+val mk_implies : formula list -> formula -> formula
+val mk_eq : term -> term -> formula
+val subset : so_var -> so_var -> formula
+val eq : so_var -> so_var -> formula
+
+val intersect : so_var -> so_var -> so_var -> formula
+val union : so_var -> so_var -> so_var -> formula
+
