@@ -39,7 +39,7 @@ let t3 = "check_misapplied_pass" >:: (fun () ->
   )
 
 let t4 = "check_misapplied_fail" >:: (fun () ->
-    let bar = SO.mk_fresh_sv () in
+    let bar = SO.mk_fresh_sv ~prefix:"bar" () in
     let s =
       { SO.size = 3
       ; relations = SoOps.rels [("foo", [[1];[1]])] } in
@@ -47,7 +47,7 @@ let t4 = "check_misapplied_fail" >:: (fun () ->
       SO.SoAll (bar, 2, (SO.QRel (bar, [SO.Const 1])))
     in
     OUnit.assert_raises
-      (Failure "symbol \"bar\" applied with inconsistent arity")
+      (Failure "symbol \"bar2\" applied with inconsistent arity")
       (fun () -> SoOps.check_inv s f)
   )
 
@@ -81,30 +81,34 @@ let id_reln_test = "identity relation test" >:: (fun () ->
     OUnit.assert_bool "models" (check s f)
   )
 
-(* ∀R. ∀R'. ∃Z . Z = R ∩ R' → Z ⊆ R *)
+(* ∀R. ∀R'. ∀Z . Z = R ∩ R' → (Z ⊆ R ∧ Z ⊆ R') *)
 let intersect_subset = "intersection produces subset" >:: (fun () ->
     let s = { SO.size = 10; SO.relations = SoOps.rels [] } in
-    let r = SO.mk_fresh_sv ~prefix:"r" () in
-    let r' = SO.mk_fresh_sv ~prefix:"r'" () in
-    let z = SO.mk_fresh_sv ~prefix:"z" () in
-    let f = SO.SoAll(
+    let r = SO.mk_fresh_sv () in
+    let r' = SO.mk_fresh_sv () in
+    let z = SO.mk_fresh_sv () in
+    let f = SO.SoAll (
         r, 1,
-        SO.SoAll(
+        SO.SoAll (
           r', 1,
-          SO.SoAny (
+          SO.SoAll (
             z, 1,
             SoOps.mk_implies
               [SoOps.intersect z r r']
-              (SoOps.subset z r')
+              (SO.And [
+                  SoOps.subset z r
+                ; SoOps.subset z r'
+                ]
+              )
           )
         )
       )
     in
-    Printf.printf "\nFormula: %s\n" (SO.show_formula f);
     OUnit.assert_bool "models" (check s f)
   )
 
-let so_structure_tests = "so" >::: [t1;t2;t3;t4;t5; so_eq_test; id_reln_test; intersect_subset]
+let so_structure_tests = "so_structure" >::: [t1;t2;t3;t4;t5]
+let so_formula_tests = "so_formula" >::: [so_eq_test; id_reln_test; intersect_subset]
 
 let options = Arg.align [("--verbose", Arg.Set verbose, "run with verbose output")];;
 
@@ -112,4 +116,5 @@ let _ = Arg.parse options (fun _ -> ()) ""
 
 let () =
   let _ = run_test_tt so_structure_tests ~verbose:(!verbose) in
+  let _ = run_test_tt so_formula_tests  ~verbose:(!verbose) in
   ()
