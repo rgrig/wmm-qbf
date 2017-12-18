@@ -177,8 +177,9 @@ let model_check opts s f =
       SO.pp_structure Format.std_formatter s;
     );
   let q = so_to_qbf s f in
-  Util.maybe (Qbf.holds q (dump_qbf,false,debug))
-    (Printf.printf "result: %b\n")
+  match Qbf.holds q (dump_qbf,false,debug) with
+    Some x -> x
+  | None -> false
 
 let mk_implies prems conclusion =
   SO.Or (conclusion :: List.map (fun p -> SO.Not p) prems)

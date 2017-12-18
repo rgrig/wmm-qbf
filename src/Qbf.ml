@@ -9,6 +9,7 @@ type model = variable list
   [@@deriving show] (* DBG *)
 type qid = int (* quantifier id *)
   [@@deriving show] (* DBG *)
+type checker_opts = bool * bool * bool
 
 type t =
   | Var of variable
