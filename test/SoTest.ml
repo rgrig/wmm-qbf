@@ -6,43 +6,45 @@ let verbose = ref false
 
 
 (* Check the invariants of an SO structure with a simple and well
-formed relation `foo' *)
+   formed relation `foo' *)
 let t1 = "check_arity_pass" >:: (fun () ->
-  let s =
-    { SO.size = 3
-    ; relations = SoOps.rels [("foo", [[1];[2]])] } in
-  let f = SO.CRel ("foo", [SO.Const 1]) in
-  SoOps.check_inv s f
-)
+    let s =
+      { SO.size = 3
+      ; relations = SoOps.rels [("foo", [[1];[2]])] } in
+    let f = SO.CRel ("foo", [SO.Const 1]) in
+    SoOps.check_inv s f
+  )
 
 (* Check the invarients of an SO structure which contains a poorly
-formed relation `foo' *)
+   formed relation `foo' *)
 let t2 = "check_arity_fail" >:: (fun () ->
-  let s =
-    { SO.size = 3
-    ; relations = SoOps.rels [("foo", [[1];[1;2]])] } in
-  let f = SO.CRel ("foo", [SO.Const 1]) in
-  OUnit.assert_raises
-    (Failure "inconsistent arity of symbol foo")
-    (fun () -> SoOps.check_inv s f)
+    let s =
+      { SO.size = 3
+      ; relations = SoOps.rels [("foo", [[1];[1;2]])] } in
+    let f = SO.CRel ("foo", [SO.Const 1]) in
+    OUnit.assert_raises
+      (Failure "inconsistent arity of symbol foo")
+      (fun () -> SoOps.check_inv s f)
   )
 
 let t3 = "check_misapplied_pass" >:: (fun () ->
+    let bar = SO.mk_fresh_sv () in
     let s =
       { SO.size = 3
       ; relations = SoOps.rels [("foo", [[1];[1]])] } in
     let f =
-      SO.SoAll ("bar", 2, (SO.QRel ("bar", [SO.Const 1; SO.Const 2])))
+      SO.SoAll (bar, 2, (SO.QRel (bar, [SO.Const 1; SO.Const 2])))
     in
     SoOps.check_inv s f
   )
-       
+
 let t4 = "check_misapplied_fail" >:: (fun () ->
+    let bar = SO.mk_fresh_sv () in
     let s =
       { SO.size = 3
       ; relations = SoOps.rels [("foo", [[1];[1]])] } in
     let f =
-      SO.SoAll ("bar", 2, (SO.QRel ("bar", [SO.Const 1])))
+      SO.SoAll (bar, 2, (SO.QRel (bar, [SO.Const 1])))
     in
     OUnit.assert_raises
       (Failure "symbol \"bar\" applied with inconsistent arity")
@@ -58,8 +60,8 @@ let check s f =
 
 let t5 = "simple so logic model" >:: (fun () ->
     let s = { SO.size = 3; SO.relations = SoOps.rels [("baz", [[1]])] } in
-    let r = SO.mk_fresh_name () in
-    let x = SO.mk_fresh_name () in
+    let r = SO.mk_fresh_sv () in
+    let x = SO.mk_fresh_fv () in
     let f = SO.SoAny (r, 1, SO.FoAny (x, SO.QRel (r, [SO.Var x]))) in
     OUnit.assert_bool "models" (check s f)
   )
@@ -67,35 +69,38 @@ let t5 = "simple so logic model" >:: (fun () ->
 (* ∀X . X ⊆ X ∧ X ⊆ X *)
 let so_eq_test = "simple equality test" >:: (fun () ->
     let s = { SO.size = 10; SO.relations = SoOps.rels [] } in
-    let r = SO.mk_fresh_name () in
+    let r = SO.mk_fresh_sv () in
     let f = SO.SoAll (r, 1, SoOps.eq r r) in
     OUnit.assert_bool "models" (check s f)
   )
 
 let id_reln_test = "identity relation test" >:: (fun () ->
     let s = { SO.size = 10; SO.relations = SoOps.rels [] } in
-    let r = SO.mk_fresh_name () in
+    let r = SO.mk_fresh_fv () in
     let f = SO.FoAll (r, (SoOps.mk_eq (SO.Var r) (SO.Var r))) in
     OUnit.assert_bool "models" (check s f)
   )
 
+(* ∀R. ∀R'. ∃Z . Z = R ∩ R' → Z ⊆ R *)
 let intersect_subset = "intersection produces subset" >:: (fun () ->
     let s = { SO.size = 10; SO.relations = SoOps.rels [] } in
-    let r = SO.mk_fresh_name ~prefix:"r" () in
-    let r' = SO.mk_fresh_name ~prefix:"r'" () in
-    let z = SO.mk_fresh_name ~prefix:"z" () in
+    let r = SO.mk_fresh_sv ~prefix:"r" () in
+    let r' = SO.mk_fresh_sv ~prefix:"r'" () in
+    let z = SO.mk_fresh_sv ~prefix:"z" () in
     let f = SO.SoAll(
         r, 1,
         SO.SoAll(
           r', 1,
           SO.SoAny (
             z, 1,
-            SoOps.mk_implies [SoOps.intersect z r r'] (SoOps.subset z r')
+            SoOps.mk_implies
+              [SoOps.intersect z r r']
+              (SoOps.subset z r')
           )
         )
       )
     in
-    Printf.printf "Formula: %s" (SO.show_formula f);
+    Printf.printf "\nFormula: %s\n" (SO.show_formula f);
     OUnit.assert_bool "models" (check s f)
   )
 

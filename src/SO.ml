@@ -2,11 +2,11 @@ module U = Util
 
 type element = int
   [@@deriving show]
-type fo_var = string
+type fo_var = F of string
   [@@deriving show]
 
 (* Variables with same name but different arities *do* shadow each-other. *)
-type so_var = string
+type so_var = S of string
   [@@deriving show]
 type rel_sym = string
   [@@deriving show] (* same as so_var *)
@@ -44,7 +44,7 @@ type formula =
   [@@deriving show]
 
 let show_term = function
-    Var n -> n
+    Var (F n) -> n
   | Const e -> string_of_int e
 
 let show_eq_rel rel ts =
@@ -64,15 +64,15 @@ let rec show_formula = function
   | CRel (rel,ts) ->
     (show_special_crel rel) ts
   | QRel (rel, ts) ->
-     Format.sprintf "%s(%s)" rel (U.map_join ", " show_term ts)
+     Format.sprintf "%s(%s)" (show_so_var rel) (U.map_join ", " show_term ts)
   | FoAll (var, f) ->
-      Format.sprintf "(!%s . (%s))" var (show_formula f)
+      Format.sprintf "(!%s . (%s))" (show_fo_var var) (show_formula f)
   | FoAny (var, f) ->
-      Format.sprintf "(?%s . (%s))" var (show_formula f)
+      Format.sprintf "(?%s . (%s))" (show_fo_var var) (show_formula f)
   | SoAll (var, a, f) ->
-    Format.sprintf "(!%s:%d . (%s))" var a (show_formula f)
+    Format.sprintf "(!%s:%d . (%s))" (show_so_var var) a (show_formula f)
   | SoAny (var, a, f) ->
-    Format.sprintf "(?%s:%d . (%s))" var a (show_formula f)   
+    Format.sprintf "(?%s:%d . (%s))" (show_so_var var) a (show_formula f)   
   | And fs ->
      Format.sprintf "(%s)" (U.map_join " & " show_formula fs)
   | Or fs ->
@@ -105,8 +105,9 @@ let pp_structure fmt s =
 
 let pp_formula fmt f =
   Format.fprintf fmt "%s" (show_formula f)
-    
-let mk_fresh_name =
-  let id = ref 0 in
-  fun ?(prefix = "C") () -> incr id; Printf.sprintf "%s%d" prefix !id
 
+let id = ref 0
+let mk_fresh_fv =
+  fun ?(prefix = "F") () -> incr id; F (Printf.sprintf "%s%d" prefix !id)
+let mk_fresh_sv =
+  fun ?(prefix = "S") () -> incr id; S (Printf.sprintf "%s%d" prefix !id)

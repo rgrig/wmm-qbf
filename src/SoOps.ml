@@ -41,7 +41,7 @@ let check_arities s f =
           failwith (Printf.sprintf "symbol %s applied with inconsistent arity" (SO.show_rel_sym s))
       end;
       arr_map
-    | SO.QRel (s, ts) ->
+    | SO.QRel (SO.S s, ts) ->
       let a = List.length ts in
       begin
         try
@@ -59,7 +59,7 @@ let check_arities s f =
       check_formula f arr_map
 
     (* When a variable is quantified: shadow it's previous definition in the arity map *)
-    | SO.SoAny (s, a, f) | SO.SoAll (s, a, f) ->
+    | SO.SoAny (SO.S s, a, f) | SO.SoAll (SO.S s, a, f) ->
       check_formula f (ArityMap.add s a arr_map)
 
     | SO.And fs | SO.Or fs ->
@@ -91,11 +91,11 @@ let so_to_qbf structure formula =
   let module FoEnv = FoVarMap in
   let module SoEnv = SoVarMap in
   let fo_subst env = SO.(function
-      | Var v -> (try FoEnv.find v env with Not_found -> Var v)
+      | Var (F v) -> (try FoEnv.find v env with Not_found -> Var (F v))
       | t -> t) in
   let from_const = SO.(function
       | Const c -> c
-      | Var v -> failwith (Printf.sprintf "'%s' appears to be free in the formula. (tlegz)" v)) in
+      | Var (F v) -> failwith (Printf.sprintf "'%s' appears to be free in the formula. (tlegz)" v)) in
 
   let structure_lookup r =
     try
@@ -137,23 +137,23 @@ let so_to_qbf structure formula =
         let r' = structure_lookup r in
         if List.mem cs r' then Qbf.mk_true () else Qbf.mk_false ()
 
-      | QRel (sym,ts) ->
+      | QRel (S sym,ts) ->
         let ts = List.map (fo_subst fo_env) ts in
         let cs = List.map from_const ts in
         let qvars = so_lookup sym so_env in
         Qbf.mk_var (byidx_lookup cs qvars)
 
-      | FoAll (v, f) ->
+      | FoAll (F v, f) ->
         Qbf.mk_and (fo_qs so_env fo_env v f)
-      | FoAny (v, f) ->
+      | FoAny (F v, f) ->
         Qbf.mk_or (fo_qs so_env fo_env v f)
 
-      | SoAll (v, a, f) ->
+      | SoAll (S v, a, f) ->
         let qvars = mk_fresh_qvars ~prefix:v a in
         let so_env' = SoEnv.add v qvars so_env in
         let q = go so_env' fo_env f in
         Qbf.mk_forall (qvars_list qvars) q
-      | SoAny (v, a, f) ->
+      | SoAny (S v, a, f) ->
         let qvars = mk_fresh_qvars ~prefix:v a in
         let so_env' = SoEnv.add v qvars so_env in
         let q = go so_env' fo_env f in
@@ -188,25 +188,25 @@ let mk_eq a b =
   SO.CRel (SO.eq_rel, [a; b])
     
 let subset a b =
-  let y = SO.mk_fresh_name () in
+  let y = SO.mk_fresh_fv () in
   SO.FoAll (y, mk_implies [SO.QRel (a, [SO.Var y])] (SO.QRel (b, [SO.Var y])))
 
 (* z = a ∩ b *)
 let intersect z a b =
-  let v = SO.mk_fresh_name ~prefix:"v" () in
+  let v = SO.mk_fresh_fv ~prefix:"v" () in
   SO.FoAll (
     v,
     SO.And [
       mk_implies
-        [ SO.QRel (v, [SO.Var a])
-        ; SO.QRel (v, [SO.Var b])
+        [ SO.QRel (a, [SO.Var v])
+        ; SO.QRel (b, [SO.Var v])
         ]
-        (SO.QRel (v, [SO.Var z]))
+        (SO.QRel (z, [SO.Var v]))
     ; mk_implies
-        [ SO.QRel (v, [SO.Var z]) ]
+        [ SO.QRel (z, [SO.Var v]) ]
         (SO.And [
-            SO.QRel (v, [SO.Var a])
-          ; SO.QRel (v, [SO.Var b])
+            SO.QRel (a, [SO.Var v])
+          ; SO.QRel (b, [SO.Var v])
           ]
         )
     ]
