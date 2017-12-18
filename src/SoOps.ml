@@ -95,7 +95,7 @@ let so_to_qbf structure formula =
       | t -> t) in
   let from_const = SO.(function
       | Const c -> c
-      | _ -> failwith "INTERNAL (tlegz)") in
+      | Var v -> failwith (Printf.sprintf "'%s' appears to be free in the formula. (tlegz)" v)) in
 
   let structure_lookup r =
     try
@@ -159,11 +159,11 @@ let so_to_qbf structure formula =
         let q = go so_env' fo_env f in
         Qbf.mk_exists (qvars_list qvars) q
 
-      | SO.And fs ->
+      | And fs ->
         Qbf.mk_and (List.map (go so_env fo_env) fs)
-      | SO.Or fs ->
+      | Or fs ->
         Qbf.mk_or (List.map (go so_env fo_env) fs)
-      | SO.Not f ->
+      | Not f ->
         Qbf.mk_not (go so_env fo_env f)
     ) in
   go SoEnv.empty FoEnv.empty formula
@@ -185,3 +185,33 @@ let mk_implies prems conclusion =
 
 let mk_eq a b =
   SO.CRel (SO.eq_rel, [a; b])
+    
+let subset a b =
+  let y = SO.mk_fresh_name () in
+  SO.FoAll (y, mk_implies [SO.QRel (a, [SO.Var y])] (SO.QRel (b, [SO.Var y])))
+
+(* z = a ∩ b *)
+let intersect z a b =
+  let v = SO.mk_fresh_name ~prefix:"v" () in
+  SO.FoAll (
+    v,
+    SO.And [
+      mk_implies
+        [ SO.QRel (v, [SO.Var a])
+        ; SO.QRel (v, [SO.Var b])
+        ]
+        (SO.QRel (v, [SO.Var z]))
+    ; mk_implies
+        [ SO.QRel (v, [SO.Var z]) ]
+        (SO.And [
+            SO.QRel (v, [SO.Var a])
+          ; SO.QRel (v, [SO.Var b])
+          ]
+        )
+    ]
+  )
+
+  
+let eq a b =
+  SO.And [subset a b; subset b a]
+

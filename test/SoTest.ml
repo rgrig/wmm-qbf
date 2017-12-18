@@ -49,35 +49,57 @@ let t4 = "check_misapplied_fail" >:: (fun () ->
       (fun () -> SoOps.check_inv s f)
   )
 
-let t5 = "show formula" >:: (fun () ->
-    let s = SO.show_formula (SO.SoAll ("bar", 1,
-               (SO.Or [
-                   SO.QRel ("bar", [SO.Const 1])
-                 ; SO.QRel ("baz", [SO.Const 2])
-                 ]
-               )
-              )
-    )
-    in
-    OUnit.assert_equal s "∀bar . (bar(1) ∧ baz(2))"
-  )
+let check s f =
+  let s = SoOps.add_specials s in
+  let q = SoOps.so_to_qbf s f in
+  match Qbf.holds q (false, false, true) with
+    Some x -> x
+  | None -> false
 
-let t6 = "simple so logic model" >:: (fun () ->
+let t5 = "simple so logic model" >:: (fun () ->
     let s = { SO.size = 3; SO.relations = SoOps.rels [("baz", [[1]])] } in
-    let f = SO.SoAny ("bar", 1, SO.QRel ("bar", [SO.Const 1])) in
-    Printf.printf "\nFormula : %s\n" (SO.show_formula f);
-    
-    let q = SoOps.so_to_qbf s f in
-    Printf.printf "Qbf : %s\n" (Qbf.show q);
-    
-    let r = match Qbf.holds q (false, false, true) with
-        Some x -> x
-      | None -> false
-    in
-    OUnit.assert_bool "models" r
+    let r = SO.mk_fresh_name () in
+    let x = SO.mk_fresh_name () in
+    let f = SO.SoAny (r, 1, SO.FoAny (x, SO.QRel (r, [SO.Var x]))) in
+    OUnit.assert_bool "models" (check s f)
   )
 
-let so_structure_tests = "so" >::: [t1;t2;t3;t4;t5;t6]
+(* ∀X . X ⊆ X ∧ X ⊆ X *)
+let so_eq_test = "simple equality test" >:: (fun () ->
+    let s = { SO.size = 10; SO.relations = SoOps.rels [] } in
+    let r = SO.mk_fresh_name () in
+    let f = SO.SoAll (r, 1, SoOps.eq r r) in
+    OUnit.assert_bool "models" (check s f)
+  )
+
+let id_reln_test = "identity relation test" >:: (fun () ->
+    let s = { SO.size = 10; SO.relations = SoOps.rels [] } in
+    let r = SO.mk_fresh_name () in
+    let f = SO.FoAll (r, (SoOps.mk_eq (SO.Var r) (SO.Var r))) in
+    OUnit.assert_bool "models" (check s f)
+  )
+
+let intersect_subset = "intersection produces subset" >:: (fun () ->
+    let s = { SO.size = 10; SO.relations = SoOps.rels [] } in
+    let r = SO.mk_fresh_name ~prefix:"r" () in
+    let r' = SO.mk_fresh_name ~prefix:"r'" () in
+    let z = SO.mk_fresh_name ~prefix:"z" () in
+    let f = SO.SoAll(
+        r, 1,
+        SO.SoAll(
+          r', 1,
+          SO.SoAny (
+            z, 1,
+            SoOps.mk_implies [SoOps.intersect z r r'] (SoOps.subset z r')
+          )
+        )
+      )
+    in
+    Printf.printf "Formula: %s" (SO.show_formula f);
+    OUnit.assert_bool "models" (check s f)
+  )
+
+let so_structure_tests = "so" >::: [t1;t2;t3;t4;t5; so_eq_test; id_reln_test; intersect_subset]
 
 let options = Arg.align [("--verbose", Arg.Set verbose, "run with verbose output")];;
 
