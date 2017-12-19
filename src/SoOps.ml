@@ -171,14 +171,16 @@ let so_to_qbf structure formula =
 
 let model_check opts s f =
   let s = add_specials s in
-  let dump_qbf,dump_query,debug = opts in
+  let dump_qbf,dump_query,debug,filename = opts in
   if dump_query then (
-      pp_formula Format.std_formatter f;
-      Printf.printf "\n";
-      pp_structure Format.std_formatter s;
-    );
+    let basename = Filename.remove_extension filename in
+    let f_c = open_out (basename ^ ".sol") in
+    let s_c = open_out (basename ^ ".str") in
+    Printf.fprintf f_c "%s\n" (show_formula f);
+    Printf.fprintf s_c "%s\n" (show_structure s);
+  );
   let q = so_to_qbf s f in
-  match Qbf.holds q (dump_qbf,false,debug) with
+  match Qbf.holds q (dump_qbf,false,debug,filename) with
     Some x -> x
   | None -> false
 

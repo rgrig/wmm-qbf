@@ -104,7 +104,7 @@ let do_decide es target solver_opts =
   let size = es.E.events_number in
   let x = mk_fresh_sv () in
   let y = mk_fresh_sv () in
-  let q =
+  let f =
     SoAny (x, 1,
            SoAny (y, 1,
                   And [
@@ -116,12 +116,17 @@ let do_decide es target solver_opts =
   in
   let s = { SO.size = size; SO.relations = build_so_structure es target } in
   let s = SoOps.add_specials s in
-  let dump_qbf,dump_query,debug = solver_opts in
+  let dump_qbf,dump_query,debug,filename = solver_opts in
   if dump_query then (
-      SO.pp_formula Format.std_formatter q;
-      Printf.printf "\n";
-      SO.pp_structure Format.std_formatter s;
-    );
-  let q = SoOps.so_to_qbf s q in
-  Util.maybe (Qbf.holds q (dump_qbf,false,debug))
+    let basename = Filename.remove_extension filename in
+    let f_c = open_out (basename ^ ".sol") in
+    Printf.fprintf f_c "%s\n" (show_formula f); 
+    close_out f_c;
+
+    let s_c = open_out (basename ^ ".str") in
+    Printf.fprintf s_c "%s\n" (show_structure s);
+    close_out s_c;
+  );
+  let q = SoOps.so_to_qbf s f in
+  Util.maybe (Qbf.holds q (dump_qbf,false,debug,filename))
     (Printf.printf "result: %b\n")

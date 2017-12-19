@@ -43,6 +43,9 @@ type formula =
   | Not of formula
   [@@deriving show]
 
+let show_fo_var (F n) = n
+let show_so_var (S n) = n
+
 let show_term = function
     Var (F n) -> n
   | Const e -> string_of_int e

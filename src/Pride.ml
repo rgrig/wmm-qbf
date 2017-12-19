@@ -73,7 +73,7 @@ let run filename =
     else
       match target with
       | None -> eprintf "W: skipping %s: no target execution\n" fn
-      | Some target -> (pick_model !model_name decides) es target (!dump_qbf, !dump_query, !use_solver)
+      | Some target -> (pick_model !model_name decides) es target (!dump_qbf, !dump_query, !use_solver, filename)
   else
     let source = Wrapper.read_to_eof (open_in filename) in
     let ast = Wrapper.load_litmus source in

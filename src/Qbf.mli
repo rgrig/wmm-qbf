@@ -1,7 +1,7 @@
 type variable = string
 type model = variable list
 type qid = int (* quantifier id *)
-type checker_opts = bool * bool * bool
+type checker_opts = bool * bool * bool * string 
 
 type t =
   | Var of variable

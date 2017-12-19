@@ -9,7 +9,7 @@ type model = variable list
   [@@deriving show] (* DBG *)
 type qid = int (* quantifier id *)
   [@@deriving show] (* DBG *)
-type checker_opts = bool * bool * bool
+type checker_opts = bool * bool * bool * string
 
 type t =
   | Var of variable
@@ -229,10 +229,15 @@ let build_query_string p =
   qcir_to_buffer qcir p;
   Buffer.contents qcir
 
-let call_solver options parse p (print_qbf, print_query, use_solver) =
+let call_solver options parse p (print_qbf, print_query, use_solver, filename) =
   if print_query then pp Format.std_formatter p;
   let query = build_query_string p in
-  if print_qbf then printf "%s\n" query;
+  if print_qbf then (
+    let basename = Filename.remove_extension filename in
+    let q_c = open_out (basename ^ ".qcir") in
+    Printf.fprintf q_c "%s\n" query;
+    close_out q_c
+  );
   (* Discard the return code *)
   (* TODO: Handle solver errors? *)
   if use_solver
@@ -245,6 +250,6 @@ let call_solver options parse p (print_qbf, print_query, use_solver) =
 let holds = call_solver [||] Results.parse_answer
 let models p debug =
   (* We really can't do enum if the user turns off the solver *)
-  match call_solver [|"-e"|] Results.parse_models p (debug, false, true) with
+  match call_solver [|"-e"|] Results.parse_models p (debug, false, true, "") with
     Some r -> r
   | None -> raise (Util.Runtime_error "solver returned no response")
