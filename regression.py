@@ -67,7 +67,7 @@ def colorise(color, text):
         return text
     
 for directory, model in TESTS:
-    files = [path for path in listdir(directory) if isfile(join(directory, path))]
+    files = [path for path in listdir(directory) if (isfile(join(directory, path)) and ".es" in path)]
     for test in files:
         try:
             start_time = time.time()
