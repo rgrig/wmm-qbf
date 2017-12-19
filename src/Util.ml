@@ -8,20 +8,6 @@ exception Runtime_error of string
 
 let n_cartesian_product = B.n_cartesian_product
 
-let parse filename f parser tokeniser error_t =
-  let lexbuf = Lexing.from_channel f in
-  try
-    let r = parser tokeniser lexbuf in
-    close_in_noerr f;
-    r
-  with
-    | error_t ->
-        (match Lexing.lexeme_start_p lexbuf with
-        { Lexing.pos_lnum=line; Lexing.pos_bol=c0;
-          Lexing.pos_fname=_; Lexing.pos_cnum=c1} ->
-            let msg = sprintf "%s:%d:%d: parse error" filename line (c1-c0+1) in
-            raise (Parsing_failed msg))
-
 (* returns [i,...,k] *)
 let range i k =
   let rec loop xs k = if k < i then xs else loop (k :: xs) (k - 1) in
