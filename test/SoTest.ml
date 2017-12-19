@@ -54,7 +54,7 @@ let t4 = "check_misapplied_fail" >:: (fun () ->
 let check s f =
   let s = SoOps.add_specials s in
   let q = SoOps.so_to_qbf s f in
-  match Qbf.holds q (false, false, true, "test") with
+  match Qbf.holds q  with
     Some x -> x
   | None -> false
 

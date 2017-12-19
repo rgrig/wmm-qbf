@@ -72,7 +72,7 @@ let address_from_reg_or_addr
   (source : BellBase.reg_or_addr)
 : address =
   match source with
-  | Rega register -> assert false (* TODO: What does this mean? *)
+  | Rega register -> raise (LISAtoESException "Can't convert register to address")
   | Abs(Concrete _) -> assert false (* Not allowed by parser. *)
   | Abs(Symbolic global) -> { global = global; offset = 0; }
 
@@ -230,6 +230,7 @@ let writes_from_init (init : MiscParser.state) (event_id : event) : write list =
     (* TODO: This means that some of the JCTC LISA tests are broken because they use arrays in init. *)
     | Location_deref(Symbolic name, offset) -> (* { global = name; offset = offset; } *) assert false
     | Location_global(Concrete _)
+	(* TODO: This is what a[0] actually seems to match. *)
     | Location_deref(Concrete _, _) -> assert false (* Meaningless. *)
     in
 
@@ -323,6 +324,16 @@ and translate_instruction
       last_root := Some read_id
     done;
     !events
+  | Pst(Addr_op_atom(Rega destination), source, labels) ->
+    (* Special case for writing to a register, doesn't create any events directly. *)
+	let destination = unwrap_reg destination in
+    let value = value_from_reg_or_imm store source in
+	let program_counter = program_counter + 1 in
+	let store = Store.update store destination value in
+
+    Printf.printf "TODO HACK Register write r%d = %d\n" destination value;
+
+    translate_instructions instructions program_counter store values next_id depth
   | Pst(destination, source, labels) ->
     (* Spawn a write event. *)
     let destination = address_from_addr_op store destination in

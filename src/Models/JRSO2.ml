@@ -74,15 +74,14 @@ let always_justifies_tc = tc 1 always_justifies
 let always_eventually_justifies n a b =
   let x = mk_fresh_sv () in
   let y = mk_fresh_sv () in
-  And [
-    subset a b
-   ; SoAll (x, 1,
-           SoAny (y, 1,
-                  mk_implies [always_justifies_tc n a x]
-                    (And [always_justifies_tc n x y; justify y b])
-                 )
-          )
-  ]
+  And
+    [ subset a b
+    ; SoAll (x, 1,
+        mk_implies
+          [ always_justifies_tc n a x ]
+          ( SoAny (y, 1,
+              And
+                [ always_justifies_tc n x y; justify y b ] ) ) ) ]
 
 let true_reln n a b =
   let x = mk_fresh_sv () in
@@ -100,7 +99,7 @@ let eq_crel a n =
          ]
         )
 
-let do_decide es target solver_opts =
+let do_decide es target =
   let size = es.E.events_number in
   let x = mk_fresh_sv () in
   let y = mk_fresh_sv () in
@@ -116,9 +115,8 @@ let do_decide es target solver_opts =
   in
   let s = { SO.size = size; SO.relations = build_so_structure es target } in
   let s = SoOps.add_specials s in
-  let dump_qbf,dump_query,debug,filename = solver_opts in
-  if dump_query then (
-    let basename = Filename.remove_extension filename in
+  if Config.dump_query () then (
+    let basename = Filename.remove_extension (Config.filename ()) in
     let f_c = open_out (basename ^ ".sol") in
     Printf.fprintf f_c "%s\n" (show_formula f); 
     close_out f_c;
@@ -128,5 +126,5 @@ let do_decide es target solver_opts =
     close_out s_c;
   );
   let q = SoOps.so_to_qbf s f in
-  Util.maybe (Qbf.holds q (dump_qbf,false,debug,filename))
+  Util.maybe (Qbf.holds q)
     (Printf.printf "result: %b\n")

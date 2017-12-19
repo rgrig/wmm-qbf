@@ -3,7 +3,7 @@ val rels : (rel_sym * relation) list -> relation RelMap.t
 val add_specials : structure -> structure
 
 val check_inv : structure -> formula -> unit
-val model_check : Qbf.checker_opts -> structure -> formula -> bool
+val model_check : structure -> formula -> bool
 
 val so_to_qbf : structure -> formula -> Qbf.t
 

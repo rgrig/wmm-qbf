@@ -12,6 +12,8 @@ models to QBF queries.
     - oUnit
     - extlib
     - ocamlgraph
+Use:
+  opam install batteries extlib ocamlgraph oUnit ppx_deriving
 
 ## Usage
 

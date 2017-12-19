@@ -169,18 +169,17 @@ let so_to_qbf structure formula =
   in
   go SoEnv.empty FoEnv.empty formula
 
-let model_check opts s f =
+let model_check s f =
   let s = add_specials s in
-  let dump_qbf,dump_query,debug,filename = opts in
-  if dump_query then (
-    let basename = Filename.remove_extension filename in
+  if (Config.dump_query ()) then (
+    let basename = Filename.remove_extension (Config.filename ()) in
     let f_c = open_out (basename ^ ".sol") in
     let s_c = open_out (basename ^ ".str") in
     Printf.fprintf f_c "%s\n" (show_formula f);
     Printf.fprintf s_c "%s\n" (show_structure s);
   );
   let q = so_to_qbf s f in
-  match Qbf.holds q (dump_qbf,false,debug,filename) with
+  match Qbf.holds q with
     Some x -> x
   | None -> false
 

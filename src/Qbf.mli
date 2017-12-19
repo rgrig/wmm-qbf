@@ -1,7 +1,6 @@
 type variable = string
 type model = variable list
 type qid = int (* quantifier id *)
-type checker_opts = bool * bool * bool * string 
 
 type t =
   | Var of variable
@@ -23,7 +22,7 @@ val mk_not : t -> t
 val mk_exists : variable list -> t -> t
 val mk_forall : variable list -> t -> t
 
-val holds : t -> checker_opts -> bool option
-val models : t -> bool -> model list
+val holds : t -> bool option
+val models : t -> model list
 val show: t -> string
 val pp : Format.formatter -> t -> unit

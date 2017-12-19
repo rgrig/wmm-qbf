@@ -54,6 +54,7 @@ let hp_int f x = fprintf f "%d" x
 
 let hp_string f x = fprintf f "%s" x
 
+(* TODO: either use same type as Haskell, or rename; maybe_unit? maybe_do? *)
 let maybe a f =
   match a with
     Some a' -> f a'
@@ -61,3 +62,13 @@ let maybe a f =
 
 let map_join c f ts =
   String.concat c (List.map f ts)
+
+let on_channel (filename : string) (f : in_channel -> 'a) : 'a option =
+  let ch = (try Some (open_in filename) with Sys_error _ -> None) in
+  let result = (match ch with Some x -> Some (f x) | None -> None) in
+  (match ch with Some x -> close_in_noerr x | _ -> ());
+  result
+
+let from_some = function
+  | None -> failwith "INTERNAL: expected Some"
+  | Some x -> x
