@@ -1,6 +1,8 @@
 *.dot
 *.out
 *.qcir
+*.sol
+*.str
 /*.byte
 /*.native
 /_build
