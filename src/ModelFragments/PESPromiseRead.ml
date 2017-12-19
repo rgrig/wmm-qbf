@@ -1,9 +1,9 @@
 open PES
 open Printf
 
-let do_decide es target solver_opts =
+let do_decide es target =
   let c = MM.fresh_so_var es 1 in
-  let p = MM.fresh_so_var es 1 in  
+  let p = MM.fresh_so_var es 1 in
   let c' = MM.fresh_so_var es 1 in
   let p' = MM.fresh_so_var es 1 in
   let q = Qbf.mk_and [
@@ -19,4 +19,4 @@ let do_decide es target solver_opts =
     @@ MM.exists c'
     @@ MM.exists p' q
   in
-  Util.maybe (Qbf.holds q solver_opts) (printf "result: %b")
+  Util.maybe (Qbf.holds q) (printf "result: %b")

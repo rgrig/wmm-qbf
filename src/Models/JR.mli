@@ -3,5 +3,5 @@ val always_justifies_tc : EventStructure.t -> MM.relation
 val always_eventually_justifies : EventStructure.t -> MM.relation
 val always_eventually_justifies_tc : EventStructure.t -> MM.relation
 
-val do_enum: string -> EventStructure.t -> EventStructure.set option -> bool -> unit
-val do_decide: EventStructure.t -> EventStructure.set -> Qbf.checker_opts -> unit
+val do_enum: string -> EventStructure.t -> EventStructure.set option -> unit
+val do_decide: EventStructure.t -> EventStructure.set -> unit

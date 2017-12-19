@@ -58,7 +58,7 @@ let always_eventually_justifies_tc es = MMSO.at_most_n es es.E.events_number (al
  *)
 
 
-let do_decide es target solver_opts =
+let do_decide es target =
   let x = MMSO.fresh_so_var es 1 in
   let y = MMSO.fresh_so_var es 1 in
   let q = And
@@ -68,5 +68,5 @@ let do_decide es target solver_opts =
   let q = MMSO.exists x (MMSO.exists y q) in
   let s = { size = (es.E.events_number) ; relations = SoOps.rels [] } in
   let q = SoOps.so_to_qbf s q in
-  Util.maybe (Qbf.holds q solver_opts) (printf "result: %b\n")
+  Util.maybe (Qbf.holds q) (printf "result: %b\n")
               

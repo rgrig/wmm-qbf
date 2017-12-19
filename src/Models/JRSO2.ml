@@ -122,5 +122,5 @@ let do_decide es target solver_opts =
       SO.pp_structure Format.std_formatter s;
     );
   let q = SoOps.so_to_qbf s q in
-  Util.maybe (Qbf.holds q (dump_qbf,false,debug))
+  Util.maybe (Qbf.holds q)
     (Printf.printf "result: %b\n")

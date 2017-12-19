@@ -178,7 +178,7 @@ let model_check opts s f =
       pp_structure Format.std_formatter s;
     );
   let q = so_to_qbf s f in
-  match Qbf.holds q (dump_qbf,false,debug) with
+  match Qbf.holds q with
     Some x -> x
   | None -> false
 
