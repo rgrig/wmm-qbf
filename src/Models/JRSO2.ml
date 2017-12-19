@@ -74,15 +74,14 @@ let always_justifies_tc = tc 1 always_justifies
 let always_eventually_justifies n a b =
   let x = mk_fresh_sv () in
   let y = mk_fresh_sv () in
-  And [
-    subset a b
-   ; SoAll (x, 1,
-           SoAny (y, 1,
-                  mk_implies [always_justifies_tc n a x]
-                    (And [always_justifies_tc n x y; justify y b])
-                 )
-          )
-  ]
+  And
+    [ subset a b
+    ; SoAll (x, 1,
+        mk_implies
+          [ always_justifies_tc n a x ]
+          ( SoAny (y, 1,
+              And
+                [ always_justifies_tc n x y; justify y b ] ) ) ) ]
 
 let true_reln n a b =
   let x = mk_fresh_sv () in
