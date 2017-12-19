@@ -14,32 +14,32 @@ let build_so_structure es goal =
   ; ("conflict", conflict)
   ; ("justifies", justifies)
   ; ("target", target)
-  ; ("empty_set", [[]])
+  ; ("empty_set", [])
   ]
 
 (* Configuration justifies *)
 (* ∀y∈b. (∃x∈a . x ⊢ y) *)
 let justify a b =
-  let x = mk_fresh_name () in
-  let y = mk_fresh_name () in
-  let f = FoAny (x,
-                 And [
-                   QRel (a, [Var x]);
-                   CRel ("justifies", [Var x; Var y])
-                 ]
-                )
-  in
-  FoAll (y, mk_implies [QRel (a, [Var y])] f)
-
-let subset a b =
-  let y = mk_fresh_name () in
-  FoAll (y, mk_implies [QRel (a, [Var y])] (QRel (b, [Var y])))
+  let x = mk_fresh_fv () in
+  let y = mk_fresh_fv () in
+  FoAll (y,
+         (mk_implies
+           [QRel (b, [Var y])]
+           (FoAny (x,
+                  And [
+                    QRel (a, [Var x]);
+                    CRel ("justifies", [Var x; Var y])
+                  ]
+                  )
+           )
+         )
+        )
 
 let valid a =
-  let x = mk_fresh_name () in
-  let y = mk_fresh_name () in
-  let x' = mk_fresh_name () in
-  let y' = mk_fresh_name () in
+  let x = mk_fresh_fv () in
+  let y = mk_fresh_fv () in
+  let x' = mk_fresh_fv () in
+  let y' = mk_fresh_fv () in
   And [
       FoAll (x, (FoAll (y,
         mk_implies
@@ -56,12 +56,9 @@ let valid a =
                    )
     )]
 
-let eq a b =
-  And [subset a b; subset b a]
-
 (* Bounded reflexive transitive closure, up to n steps *)
 let rec tc arity f n a b =
-  let x = mk_fresh_name () in
+  let x = mk_fresh_sv () in
   match n with
     0 -> eq a b
   | _ -> Or [
@@ -75,11 +72,11 @@ let always_justifies a b =
 let always_justifies_tc = tc 1 always_justifies
 
 let always_eventually_justifies n a b =
-  let x = mk_fresh_name () in
-  let y = mk_fresh_name () in
+  let x = mk_fresh_sv () in
+  let y = mk_fresh_sv () in
   And [
     subset a b
-  ; SoAll (x, 1,
+   ; SoAll (x, 1,
            SoAny (y, 1,
                   mk_implies [always_justifies_tc n a x]
                     (And [always_justifies_tc n x y; justify y b])
@@ -87,10 +84,15 @@ let always_eventually_justifies n a b =
           )
   ]
 
+let true_reln n a b =
+  let x = mk_fresh_sv () in
+  SoAny (x, 1, subset x x)
+
 let aej_tc m = tc 1 (always_eventually_justifies m)
+(* let aej_tc m = tc 1 (true_reln m) *)
 
 let eq_crel a n =
-  let x = mk_fresh_name ~prefix:"eq_crel" () in
+  let x = mk_fresh_fv ~prefix:"eq_crel" () in
   FoAll (x,
          And [
            mk_implies [QRel (a, [Var x])] (CRel (n, [Var x]))
@@ -100,8 +102,8 @@ let eq_crel a n =
 
 let do_decide es target solver_opts =
   let size = es.E.events_number in
-  let x = mk_fresh_name () in
-  let y = mk_fresh_name () in
+  let x = mk_fresh_sv () in
+  let y = mk_fresh_sv () in
   let q =
     SoAny (x, 1,
            SoAny (y, 1,

@@ -45,7 +45,7 @@ let name x is =
 (* Generates a variable string, with indexes from list is *)
 let var x is =
   if (x.arity != List.length is) then raise Bad_arity;
-  QRel (x.prefix, is)
+  QRel (S x.prefix, is)
 
 let _in is x =
   var x is
@@ -117,10 +117,10 @@ let fresh_so_var =
      incr n; { prefix = sprintf "%s%d" prefix !n; arity = a; event_structure = es } )
 
 let forall x a =
-  SoAll (x.prefix, x.arity, a)
+  SoAll (S x.prefix, x.arity, a)
 
 let exists x a =
-  SoAny (x.prefix, x.arity, a)
+  SoAny (S x.prefix, x.arity, a)
   
 let equals_set x is =
   let n = size_of x in
@@ -150,7 +150,7 @@ let set_union es x e =
   let xn = fresh_so_var es 1 in
   let f i = Or [mk_implies [var xn [Const i]] (var x [Const i]); var xn e] in
   let g i = Or [mk_implies [var x [Const i]] (var xn [Const i])] in
-  SoAny (xn.prefix, 1,
+  SoAny (S xn.prefix, 1,
             And [
               And (List.map f (U.range 1 n))
             ; And (List.map g (U.range 1 n))
@@ -204,7 +204,7 @@ let subset_r a b =
 let sequence es p q = fun x z ->
   assert (x.arity == z.arity);
   let y = fresh_so_var es x.arity in
-  SoAny (y.prefix, y.arity, And [p x y; q y z])
+  SoAny (S y.prefix, y.arity, And [p x y; q y z])
 
 (* transitive r ≜ ∀x,y,z ∈ Dom . r x y ∧ r y z → r x z *)
 let transitive es r =
@@ -223,7 +223,7 @@ let transitive es r =
 let trancl es y =
   let x = fresh_so_var es 2 in
   let x_is_trans = transitive es x in
-  SoAny (x.prefix, x.arity, And [x_is_trans; subset_r y x])
+  SoAny (S x.prefix, x.arity, And [x_is_trans; subset_r y x])
 
 let rec at_most_n es n p =
   if n = 0
