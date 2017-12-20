@@ -45,7 +45,7 @@ let run_program program options data =
   let (child_stderr_r, child_stderr_w) = Unix.pipe () in
 
   (* Mark our end of each pipe to be closed by the child. *)
-  ignore @@ List.map (Unix.set_close_on_exec) [child_stdin_w;child_stdout_r;child_stderr_r];
+  List.iter (Unix.set_close_on_exec) [child_stdin_w; child_stdout_r; child_stderr_r];
 
   (* Launch process with the new pipes. *)
   (* NOTE: Using create_process to avoid calling /bin/sh because it might cause trouble. *)
@@ -61,10 +61,10 @@ let run_program program options data =
   let old_sigpipe = Sys.signal Sys.sigpipe Sys.Signal_ignore in
 
   (* Close our copy of child's end of each pipe. *)
-  ignore @@ List.map Unix.close [child_stdin_r; child_stdout_w; child_stderr_w];
+  List.iter Unix.close [child_stdin_r; child_stdout_w; child_stderr_w];
 
   (* Make pipes nonblocking so we can check each in turn. *)
-  ignore @@ List.map Unix.set_nonblock [child_stdin_w; child_stdout_r; child_stderr_r];
+  List.iter Unix.set_nonblock [child_stdin_w; child_stdout_r; child_stderr_r];
 
   (* Setup buffers for IO. *)
   let to_child_offset = ref 0 in
