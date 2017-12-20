@@ -17,5 +17,7 @@ let do_decide es target solver_opts =
     ; MM.valid_conf es y
     ; (MM.at_most_n es (EventStructure.events_number es) (acyclic_just es)) x y] in
   let q = MM.exists x (MM.exists y q) in
-  Util.maybe (Qbf.holds q solver_opts) (printf "result: %b\n")
-              
+  match Config.use_solver () with
+    Some (Config.SolveQbf) -> printf "result: %b\n" (Qbf.holds q)
+  | Some _ -> failwith "This model requires the Qbf solver."
+  | None -> ()

@@ -238,16 +238,8 @@ let call_solver options parse p =
   );
   (* Discard the return code *)
   (* TODO: Handle solver errors? *)
-  if Config.use_solver ()
-  then
-    let out = R.run_solver options query in
-    Some (parse out)
-  else
-    None
+  let out = R.run_qbf_solver options query in
+  parse out
 
 let holds = call_solver [||] Results.parse_answer
-let models p =
-  (* We really can't do enum if the user turns off the solver *)
-  match call_solver [|"-e"|] Results.parse_models p with
-    Some r -> r
-  | None -> raise (Util.Runtime_error "solver returned no response")
+let models p = call_solver [|"-e"|] Results.parse_models p

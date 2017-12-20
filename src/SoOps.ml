@@ -169,20 +169,32 @@ let so_to_qbf structure formula =
   in
   go SoEnv.empty FoEnv.empty formula
 
+let dump s f =
+  let basename = Filename.remove_extension (Config.filename ()) in
+  let f_c = open_out (basename ^ ".sol") in
+  let s_c = open_out (basename ^ ".str") in
+  Printf.fprintf f_c "%s\n" (show_formula f);
+  Printf.fprintf s_c "%s\n" (show_structure s);
+  close_out f_c;
+  close_out s_c
+
+let holds s f =
+  dump s f;
+  let basename = Filename.remove_extension (Config.filename ()) in
+  let o = RunSolver.run_so_solver [|(basename ^ ".sol"); (basename ^ ".str")|] "" in
+  Results.parse_answer o
+
+
 let model_check s f =
   let s = add_specials s in
-  if (Config.dump_query ()) then (
-    let basename = Filename.remove_extension (Config.filename ()) in
-    let f_c = open_out (basename ^ ".sol") in
-    let s_c = open_out (basename ^ ".str") in
-    Printf.fprintf f_c "%s\n" (show_formula f);
-    Printf.fprintf s_c "%s\n" (show_structure s);
-  );
-  let q = so_to_qbf s f in
-  match Qbf.holds q with
-    Some x -> x
-  | None -> false
-
+  if (Config.dump_query ()) then dump s f;
+  match Config.use_solver () with
+    Some (Config.SolveQbf) ->
+    Qbf.holds (so_to_qbf s f)
+  | Some (Config.SolveSO) ->
+    holds s f
+  | None -> failwith "Solver disabled."
+  
 let mk_implies prems conclusion =
   Or (conclusion :: List.map (fun p -> Not p) prems)
 

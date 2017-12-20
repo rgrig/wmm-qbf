@@ -108,4 +108,7 @@ let do_decide es target solver_opts =
     @@ MM.exists p
     @@ MM.exists g q
   in
-  Util.maybe (Qbf.holds q solver_opts) (printf "result: %b\n")
+  match Config.use_solver () with
+    Some (Config.SolveQbf) -> printf "result: %b\n" (Qbf.holds q)
+  | Some _ -> failwith "This model requires the Qbf solver."
+  | None -> ()

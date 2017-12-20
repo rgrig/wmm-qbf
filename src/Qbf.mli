@@ -22,7 +22,7 @@ val mk_not : t -> t
 val mk_exists : variable list -> t -> t
 val mk_forall : variable list -> t -> t
 
-val holds : t -> bool option
+val holds : t -> bool
 val models : t -> model list
 val show: t -> string
 val pp : Format.formatter -> t -> unit
