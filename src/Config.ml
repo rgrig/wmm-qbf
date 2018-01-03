@@ -3,8 +3,11 @@ type worker = EventStructure.t -> EventStructure.set -> unit
 let model_val = ref None
 let model () = Util.from_some !model_val
 
-let dump_qbf_val = ref false
-let dump_qbf () = !dump_qbf_val
+let qbf_dump_val = ref false
+let qbf_dump () = !qbf_dump_val
+
+let qbf_prenex_val = ref true
+let qbf_prenex () = !qbf_prenex_val
 
 let dump_query_val = ref false
 let dump_query () = !dump_query_val
@@ -42,7 +45,7 @@ let command_spec available_models =
       "  use LISA as input language for test"
   ; "--dump-lisa", Arg.Set dump_lisa_val,
       "  print the LISA AST"
-  ; "--dump-qbf", Arg.Set dump_qbf_val,
+  ; "--dump-qbf", Arg.Set qbf_dump_val,
       "  print QBF query before executing"
   ; "--dump-query", Arg.Set dump_query_val,
       "  print query before executing"
