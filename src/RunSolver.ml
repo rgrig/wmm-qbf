@@ -43,8 +43,8 @@ let run_program program options data =
     raise (SubprocessFailed ("missing executable (" ^ program ^ ")", ""));
 
   if (Config.verbose ()) then (
-    Printf.printf "running `%s %s'\n" program (String.concat " " (Array.to_list options));
-    flush stdout;
+    Printf.eprintf "running `%s'\n" (String.concat " " (program :: (Array.to_list options)));
+    flush stderr;
   );
 
   (* Create stdio pipes to talk to subprocess. *)
@@ -130,4 +130,6 @@ let run_program program options data =
     ))
 
 let run_qbf_solver = run_program (Config.qbf_solver_bin ())
-let run_so_solver = run_program (Config.so_solver_bin ())
+let run_so_solver =
+  Printf.eprintf "calling solver: %s\n" (Config.so_solver_bin ()); 
+  run_program (Config.so_solver_bin ())
