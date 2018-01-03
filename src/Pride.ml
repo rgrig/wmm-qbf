@@ -6,6 +6,7 @@ let available_models =
 (* TODO  ; "j+r-enum", JR.do_enum *)
   ; "j+r-so", JRSO.do_decide
   ; "j+r-so2", JRSO2.do_decide
+  ; "j+r-so2-valid-conf", JRSO2ValidConf.do_decide
   ; "pes", PES.do_decide
   ; "pes-certifies", PESCertifies.do_decide
   ; "pes-follows", PESFollows.do_decide
@@ -31,6 +32,7 @@ let run_on_file run filename =
 
 let () =
   Config.parse_args available_models;
+  if Config.verbose () then Config.print_options ();
   List.iter (run_on_file run_on_es) (Config.es_files ());
   List.iter (run_on_file run_on_lisa) (Config.lisa_files ())
 

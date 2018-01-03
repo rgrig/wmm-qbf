@@ -18,3 +18,4 @@ val set_solver : solver option -> unit
 
 val parse_args : (string * worker) list -> unit
 val show_solver : solver option -> string
+val print_options : unit -> unit

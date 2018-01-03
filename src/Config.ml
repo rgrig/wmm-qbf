@@ -19,6 +19,7 @@ let qbf_solver_bin () = !qbf_solver_bin_val
 
 let so_solver_bin_val = ref "qfm"
 let so_solver_bin () = !so_solver_bin_val
+let set_so_solver_bin v = so_solver_bin_val := v
 
 let use_solver_val = ref (Some SolveQbf)
 let use_solver () = !use_solver_val
@@ -91,7 +92,7 @@ let command_spec available_models =
 let show_solver = function
     Some SolveSO -> "SO"
   | Some SolveQbf -> "QBF"
-  | None -> "None"  
+  | None -> "None"
 
 let get_version p =
   try
@@ -110,7 +111,11 @@ let print_options () =
   if !use_solver_val = Some SolveSO then
     Printf.eprintf "  Solver Path: %s (%s)\n" !so_solver_bin_val (get_version !so_solver_bin_val);
   if !use_solver_val = Some SolveQbf then
-    Printf.eprintf "  Solver Path: %s (%s)\n" !qbf_solver_bin_val (get_version !qbf_solver_bin_val)
+    Printf.eprintf "  Solver Path: %s (%s)\n" !qbf_solver_bin_val (get_version !qbf_solver_bin_val);
+  (* From where this is called we can start executing the solver
+     before the printing makes it to the terminal, so flushing is
+     needed. *)
+  flush_all ()
 
 
 let parse_args (available_models : (string * worker) (*nonempty*) list) =
@@ -123,5 +128,4 @@ let parse_args (available_models : (string * worker) (*nonempty*) list) =
     | ".lisa" -> lisa_files_val := name :: !lisa_files_val
     | _ -> Printf.eprintf "W: unrecognized extension, ignoring %s\n" name in
   let usage = Printf.sprintf "%s <files>" Sys.executable_name in
-  Arg.parse command_spec record_file usage;
-  if verbose () then print_options ();
+  Arg.parse command_spec record_file usage

@@ -56,6 +56,8 @@ let show_eq_rel rel ts =
 let show_rel rel ts = 
   Format.sprintf "%s(%s)" rel (U.map_join ", " show_term ts)
 
+(* We could provide an interface for show_special here, but as there's
+   only one for now I've not bothered - sjc *)
 let show_special_crel rel =
   if rel = eq_rel then
     show_eq_rel rel

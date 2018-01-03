@@ -28,27 +28,32 @@ def get_skip(args, tests):
 
 TESTS = get_suite(argv, get_skip(argv, [
     # -- PES Regression Tests --
-    ("data/pes-regression", "pes"),
-    ("data/pes-regression/certifies", "pes-certifies"),
+    ("data/pes-regression", "pes", "qbf"),
+    ("data/pes-regression/certifies", "pes-certifies", "qbf"),
     # Control. We should check that the data represents a test that
     # actually passes
-    ("data/pes-regression/transitions", "j+r"),
-    ("data/pes-regression/transitions", "pes-transitions"),
-    ("data/pes-regression/transitions/make-promise", "pes-make-promise"),
-    ("data/pes-regression/transitions/promise-read", "pes-promise-read"),
-    ("data/pes-regression/transitions/follows", "pes-follows"),
+    ("data/pes-regression/transitions", "j+r", "qbf"),
+    ("data/pes-regression/transitions", "pes-transitions", "qbf"),
+    ("data/pes-regression/transitions/make-promise", "pes-make-promise", "qbf"),
+    ("data/pes-regression/transitions/promise-read", "pes-promise-read", "qbf"),
+    ("data/pes-regression/transitions/follows", "pes-follows", "qbf"),
 
     # -- Common Model Validation --
-    ("data/common-regression/valid-conf", "common-valid-conf"),
-
+    ("data/common-regression/valid-conf", "common-valid-conf", "qbf"),
+    ("data/common-regression/valid-conf", "j+r-so2-valid-conf", "qbf"),
+    ("data/common-regression/valid-conf", "j+r-so2-valid-conf", "so"),
+    
     # -- Java Causaility Test Cases --
-    ("data", "j+r"),
-    ("data/jctc", "j+r"),
-    ("data", "j+r-acyclic"),
-    ("data/jctc", "j+r-acyclic"),
-    ("data/jctc", "pes"),
-    ("data/jctc", "j+r-so"),
-    ("data/jctc", "j+r-so2")
+    ("data", "j+r", "qbf"),
+    ("data/jctc", "j+r", "qbf"),
+    ("data", "j+r-acyclic", "qbf"),
+    ("data/jctc", "j+r-acyclic", "qbf"),
+    ("data/jctc", "pes", "qbf"),
+    ("data/jctc", "j+r-so", "qbf"),
+    ("data/jctc", "j+r-so2", "qbf"),
+    ("data/jctc", "j+r-so", "so"),
+    ("data/jctc", "j+r-so2", "so")
+
 ]))
 
 
@@ -66,15 +71,15 @@ def colorise(color, text):
     else:
         return text
     
-for directory, model in TESTS:
+for directory, model, solver in TESTS:
     files = [path for path in listdir(directory) if (isfile(join(directory, path)) and ".es" in path)]
     for test in files:
         try:
             start_time = time.time()
             if not QUIET:
-                sys.stdout.write("{:6s}: {:20s}      {}\r".format("...", model, join(directory, test)))
+                sys.stdout.write("{:6s}: {:20s} {:3s}     {}\r".format("...", model, solver, join(directory, test)))
             output = check_output(
-                [PRIDE_BIN, "--model", model, join(directory, test)]
+                [PRIDE_BIN, "--model", model, join(directory, test), "--solver", solver]
             )
             elapsed_time = time.time() - start_time
             qbf_result = b"true" in output
@@ -89,7 +94,7 @@ for directory, model in TESTS:
             
         if not QUIET:
             result_string = colorise("\033[34m", "Passed") if result else colorise("\033[33m", "Failed")
-            print("{}: {:20s}{:.02f}s {}".format(result_string, model, elapsed_time, join(directory, test)))
+            print("{}: {:20s} {:3s} {:.02f}s {}".format(result_string, model, solver, elapsed_time, join(directory, test)))
         results.append((model, test, result, elapsed_time))
 
 passed = [p for p in results if result_to_bool(p)]

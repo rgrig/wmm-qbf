@@ -42,8 +42,10 @@ let run_program program options data =
   if not (program_in_path program) then
     raise (SubprocessFailed ("missing executable (" ^ program ^ ")", ""));
 
-  if (Config.verbose ()) then
-    Printf.printf "running %s %s...\n" program (String.concat " " (Array.to_list options));
+  if (Config.verbose ()) then (
+    Printf.printf "running `%s %s'\n" program (String.concat " " (Array.to_list options));
+    flush stdout;
+  );
 
   (* Create stdio pipes to talk to subprocess. *)
   (* NOTE: Pipes could be left open if an exception is thrown, doesn't matter if we're only called once. *)
