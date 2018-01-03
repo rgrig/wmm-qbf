@@ -1,5 +1,7 @@
 open SO
+val add_rel : relation RelMap.t -> (rel_sym * relation) -> relation RelMap.t
 val rels : (rel_sym * relation) list -> relation RelMap.t
+
 val add_specials : structure -> structure
 
 val check_inv : structure -> formula -> unit
