@@ -9,6 +9,7 @@ val filename : unit -> string
 val use_solver : unit -> solver option
 val qbf_solver_bin : unit -> string
 val so_solver_bin : unit -> string
+val verbose : unit -> bool
 val es_files : unit -> string list
 val lisa_files : unit -> string list
 

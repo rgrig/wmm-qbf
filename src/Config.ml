@@ -11,6 +11,7 @@ let dump_lisa_val = ref false
 let dump_lisa () = !dump_lisa_val
 
 let model_val = ref None
+let model_name_val = ref ""
 let model () = Util.from_some !model_val
 
 let qbf_solver_bin_val = ref "qfun-enum"
@@ -24,6 +25,9 @@ let use_solver () = !use_solver_val
 
 let use_lisa_val = ref false
 let use_lisa () = !use_lisa_val
+
+let verbose_val = ref false
+let verbose () = !verbose_val
 
 let es_files_val = ref []
 let es_files () = !es_files_val
@@ -40,7 +44,9 @@ let list_models ms () =
   List.iter one ms
 
 let choose_model available_models name =
-  try model_val := Some (List.assoc name available_models)
+  try
+    model_val := Some (List.assoc name available_models);
+    model_name_val := name
   with Not_found -> Printf.eprintf "E: unrecognized model name: %s\n" name
 
 let default_solver = Some SolveQbf
@@ -70,7 +76,7 @@ let command_spec available_models =
   ; "--dump-query", Arg.Set dump_query_val,
     "  print query before executing"
   ; "--model", Arg.String (choose_model available_models),
-    "  pick a model"
+    "  pick a model (default: " ^ (fst (List.hd available_models)) ^ ")"
   ; "--list-models", Arg.Unit (list_models available_models),
     "  print list of models"
   ; "--qbf-solver-path", Arg.String ((:=) qbf_solver_bin_val),
@@ -78,7 +84,34 @@ let command_spec available_models =
   ; "--so-solver-path", Arg.String ((:=) so_solver_bin_val),
     "  set the path to the SO solver binary"  
   ; "--solver", Arg.String choose_solver,
-      "  pick the solver type to use. (default: " ^ (show_solver default_solver) ^ ")"]
+    "  pick the solver type to use. (default: " ^ (show_solver default_solver) ^ ")"
+  ; "--verbose", Arg.Set verbose_val,
+    "  print aditional status information during execution"]
+
+let show_solver = function
+    Some SolveSO -> "SO"
+  | Some SolveQbf -> "QBF"
+  | None -> "None"  
+
+let get_version p =
+  try
+    let help_cin = Unix.open_process_in (p ^ " -h") in
+    let help_output = input_line help_cin in
+    ignore @@ Unix.close_process_in help_cin;
+    let toks = String.split_on_char ' ' help_output in
+    let version_long = List.nth toks 3 in
+    String.sub version_long 0 6
+  with _ -> ""
+
+let print_options () =
+  Printf.eprintf "Configuration:\n";
+  Printf.eprintf "  Model:       %s\n" (!model_name_val);
+  Printf.eprintf "  Solver type: %s\n" (show_solver !use_solver_val);
+  if !use_solver_val = Some SolveSO then
+    Printf.eprintf "  Solver Path: %s (%s)\n" !so_solver_bin_val (get_version !so_solver_bin_val);
+  if !use_solver_val = Some SolveQbf then
+    Printf.eprintf "  Solver Path: %s (%s)\n" !qbf_solver_bin_val (get_version !qbf_solver_bin_val)
+
 
 let parse_args (available_models : (string * worker) (*nonempty*) list) =
   model_val := Some (snd (List.hd available_models));
@@ -90,5 +123,5 @@ let parse_args (available_models : (string * worker) (*nonempty*) list) =
     | ".lisa" -> lisa_files_val := name :: !lisa_files_val
     | _ -> Printf.eprintf "W: unrecognized extension, ignoring %s\n" name in
   let usage = Printf.sprintf "%s <files>" Sys.executable_name in
-  Arg.parse command_spec record_file usage
-
+  Arg.parse command_spec record_file usage;
+  if verbose () then print_options ();

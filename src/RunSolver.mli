@@ -5,3 +5,5 @@
 (* Either returns the resulting output or throws SubprocessFailed if the process writes to stderr. *)
 val run_qbf_solver: string array -> string -> string
 val run_so_solver: string array -> string -> string
+
+val run_program: string -> string array -> bytes -> string

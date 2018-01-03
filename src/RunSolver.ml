@@ -33,10 +33,17 @@ let nonblock_write buffer offset file =
   (* NOTE: EAGAIN only occurs if no bytes are written. *)
   with Unix.Unix_error (Unix.EAGAIN, _, _) -> ()
 
+(* This seems elegant to me, perhaps people with better tastes would
+   disagree though - sjc*)
+let program_in_path p =
+  (Sys.command ("which " ^ p ^ "> /dev/null")) = 0
+
 let run_program program options data =
-  (* TODO: Check the program is available on the $PATH *)
-  (*if not (Sys.file_exists program) then
-    raise (SubprocessFailed ("missing executable (" ^ program ^ ")", ""));*)
+  if not (program_in_path program) then
+    raise (SubprocessFailed ("missing executable (" ^ program ^ ")", ""));
+
+  if (Config.verbose ()) then
+    Printf.printf "running %s %s...\n" program (String.concat " " (Array.to_list options));
 
   (* Create stdio pipes to talk to subprocess. *)
   (* NOTE: Pipes could be left open if an exception is thrown, doesn't matter if we're only called once. *)
@@ -122,5 +129,3 @@ let run_program program options data =
 
 let run_qbf_solver = run_program (Config.qbf_solver_bin ())
 let run_so_solver = run_program (Config.so_solver_bin ())
-
-
