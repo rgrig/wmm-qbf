@@ -61,12 +61,16 @@ let always_eventually_justifies_tc es = MMSO.at_most_n es es.E.events_number (al
 let do_decide es target =
   let x = MMSO.fresh_so_var es 1 in
   let y = MMSO.fresh_so_var es 1 in
-  let q = And
+  let f = And
     [ MMSO.equals_set x []
     ; MMSO.equals_set y target
     ; always_eventually_justifies_tc es x y ] in
-  let q = MMSO.exists x (MMSO.exists y q) in
+  let f = MMSO.exists x (MMSO.exists y f) in
   let s = { size = (es.E.events_number) ; relations = SoOps.rels [] } in
-  let q = SoOps.so_to_qbf s q in
-  Util.maybe (Qbf.holds q) (printf "result: %b\n")
-              
+  match Config.use_solver () with
+    Some (Config.SolveQbf) ->
+    printf "result: %b\n" (Qbf.holds (SoOps.so_to_qbf s f))
+  | Some (Config.SolveSO) ->
+    printf "result: %b\n" (SoOps.model_check s f)
+  | None -> ()
+

@@ -46,17 +46,16 @@ let t4 = "check_misapplied_fail" >:: (fun () ->
     let f =
       SO.SoAll (bar, 2, (SO.QRel (bar, [SO.Const 1])))
     in
-    OUnit.assert_raises
-      (Failure "symbol \"bar2\" applied with inconsistent arity")
-      (fun () -> SoOps.check_inv s f)
+    try
+      SoOps.check_inv s f;
+      (* This should throw a failure message about inconsistent arity *)
+      assert false
+    with Failure msg ->
+      ()
   )
 
 let check s f =
-  let s = SoOps.add_specials s in
-  let q = SoOps.so_to_qbf s f in
-  match Qbf.holds q  with
-    Some x -> x
-  | None -> false
+  SoOps.model_check s f
 
 let t5 = "simple so logic model" >:: (fun () ->
     let s = { SO.size = 3; SO.relations = SoOps.rels [("baz", [[1]])] } in
@@ -115,6 +114,12 @@ let options = Arg.align [("--verbose", Arg.Set verbose, "run with verbose output
 let _ = Arg.parse options (fun _ -> ()) ""
 
 let () =
+  Config.set_solver (Some Config.SolveSO);
   let _ = run_test_tt so_structure_tests ~verbose:(!verbose) in
   let _ = run_test_tt so_formula_tests  ~verbose:(!verbose) in
+
+  Config.set_solver (Some Config.SolveQbf);
+  let _ = run_test_tt so_structure_tests ~verbose:(!verbose) in
+  let _ = run_test_tt so_formula_tests  ~verbose:(!verbose) in
+
   ()

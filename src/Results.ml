@@ -45,4 +45,10 @@ let parse_answer data =
     ignore (Str.search_forward re_yes_answer data 0);
     true
   (* TODO: Is there a way to detect if the output is malformed due to errors? *)
-  with Not_found -> false
+  with Not_found -> (
+      try
+        ignore (Str.search_forward (Str.regexp "Satisfiable") data 0);
+        true
+      with Not_found -> false
+    )
+    

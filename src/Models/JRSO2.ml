@@ -114,7 +114,6 @@ let do_decide es target =
           )
   in
   let s = { SO.size = size; SO.relations = build_so_structure es target } in
-  let s = SoOps.add_specials s in
   if Config.dump_query () then (
     let basename = Filename.remove_extension (Config.filename ()) in
     let f_c = open_out (basename ^ ".sol") in
@@ -125,6 +124,5 @@ let do_decide es target =
     Printf.fprintf s_c "%s\n" (show_structure s);
     close_out s_c;
   );
-  let q = SoOps.so_to_qbf s f in
-  Util.maybe (Qbf.holds q)
-    (Printf.printf "result: %b\n")
+  Printf.printf "result: %b\n" (SoOps.model_check s f)
+
