@@ -129,7 +129,8 @@ let run_program program options data =
       (Buffer.contents errors)
     ))
 
-let run_qbf_solver = run_program (Config.qbf_solver_bin ())
-let run_so_solver =
+let run_qbf_solver options data =
+  run_program (Config.qbf_solver_bin ()) options data
+let run_so_solver options data =
   Printf.eprintf "calling solver: %s\n" (Config.so_solver_bin ()); 
-  run_program (Config.so_solver_bin ())
+  run_program (Config.so_solver_bin ()) options data

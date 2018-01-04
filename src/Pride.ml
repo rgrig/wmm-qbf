@@ -24,7 +24,7 @@ let run_on_lisa filename ch =
   let source = Wrapper.read_to_eof ch in
   let ast = Wrapper.load_litmus source in
   if Config.dump_lisa () then Wrapper.print_litmus ast
-      
+
 let run_on_file run filename =
   (match Util.on_channel filename (run filename) with
   | None -> Printf.eprintf "E: could not open %s\n" filename

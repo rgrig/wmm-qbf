@@ -117,7 +117,7 @@ let do_decide es target =
   if Config.dump_query () then (
     let basename = Filename.remove_extension (Config.filename ()) in
     let f_c = open_out (basename ^ ".sol") in
-    Printf.fprintf f_c "%s\n" (show_formula f); 
+    Printf.fprintf f_c "%s\n" (show_formula f);
     close_out f_c;
 
     let s_c = open_out (basename ^ ".str") in
