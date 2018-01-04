@@ -18,13 +18,14 @@ let build_so_structure es goal =
   ]
 
 (* Configuration justifies *)
-(* ∀y∈b. (∃x∈a . x ⊢ y) *)
+(* ∀y∈(b-a). (∃x∈a . x ⊢ y) *)
 let justify a b =
   let x = mk_fresh_fv () in
   let y = mk_fresh_fv () in
   FoAll (y,
          (mk_implies
-           [QRel (b, [Var y])]
+           [QRel (b, [Var y]);
+              Not (QRel (a, [Var y]))] (* only justify new stuff *)
            (FoAny (x,
                   And [
                     QRel (a, [Var x]);
