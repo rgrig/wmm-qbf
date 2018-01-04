@@ -19,10 +19,6 @@ let qbf_solver_bin () = !qbf_solver_bin_val
 
 let so_solver_bin_val = ref "qfm"
 let so_solver_bin () = !so_solver_bin_val
-let set_so_solver_bin v =
-  Printf.eprintf "setting so_solver_bin to %s\n" v;
-  so_solver_bin_val := v;
-  Printf.eprintf "so_solver_bin = %s\n" !so_solver_bin_val
 
 let use_solver_val = ref (Some SolveQbf)
 let use_solver () = !use_solver_val
@@ -85,7 +81,7 @@ let command_spec available_models =
     "  print list of models"
   ; "--qbf-solver-path", Arg.String ((:=) qbf_solver_bin_val),
     "  set the path to the Qbf solver binary"
-  ; "--so-solver-path", Arg.String (set_so_solver_bin),
+  ; "--so-solver-path", Arg.String ((:=) so_solver_bin_val),
     "  set the path to the SO solver binary"  
   ; "--solver", Arg.String choose_solver,
     "  pick the solver type to use. (default: " ^ (show_solver default_solver) ^ ")"
