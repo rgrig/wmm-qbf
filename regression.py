@@ -10,6 +10,9 @@ import time
 PRIDE_BIN = "./bin/Pride"
 QUIET = "-q" in argv or "--quiet" in argv
 USE_COLORS = sys.stdout.isatty()
+TTY_RESET = "\033[0m"
+TTY_BLUE = "\033[34m"
+TTY_ORANGE = "\033[33m"
 
 def get_suite(args, tests):
     for i in range(len(args)):
@@ -67,7 +70,7 @@ if TESTS == []:
 
 def colorise(color, text):
     if USE_COLORS:
-        return "{}{}{}".format(color, text, "\033[0m")
+        return "{}{}{}".format(color, text, TTY_RESET)
     else:
         return text
     
@@ -77,7 +80,7 @@ for directory, model, solver in TESTS:
         try:
             start_time = time.time()
             if not QUIET:
-                sys.stdout.write("{:6s}: {:20s} {:3s}     {}\r".format("...", model, solver, join(directory, test)))
+                sys.stdout.write("{:6s}: {:20s} {:3s}         {}\r".format("...", model, solver, join(directory, test)))
             output = check_output(
                 [PRIDE_BIN, "--model", model, join(directory, test), "--solver", solver]
             )
@@ -93,8 +96,8 @@ for directory, model, solver in TESTS:
             continue
             
         if not QUIET:
-            result_string = colorise("\033[34m", "Passed") if result else colorise("\033[33m", "Failed")
-            print("{}: {:20s} {:3s} {:.02f}s {}".format(result_string, model, solver, elapsed_time, join(directory, test)))
+            result_string = colorise(TTY_BLUE, "Passed") if result else colorise(TTY_ORANGE, "Failed")
+            print("{}: {:20s} {:3s} {:6.02f}s {}".format(result_string, model, solver, elapsed_time, join(directory, test)))
         results.append((model, test, result, elapsed_time))
 
 passed = [p for p in results if result_to_bool(p)]
