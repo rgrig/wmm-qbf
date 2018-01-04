@@ -28,6 +28,11 @@ def get_skip(args, tests):
             return [test for test in tests if test[1] not in suites]
     return tests
 
+def get_passthrough_args(args):
+    for i in range(len(args)):
+        if args[i] == "--args":
+            return args[i+1:]
+    return []
 
 TESTS = get_suite(argv, get_skip(argv, [
     # -- PES Regression Tests --
@@ -52,11 +57,12 @@ TESTS = get_suite(argv, get_skip(argv, [
     ("data", "j+r-acyclic", "qbf"),
     ("data/jctc", "j+r-acyclic", "qbf"),
     ("data/jctc", "pes", "qbf"),
-    ("data/jctc", "j+r-so", "qbf"),
-    ("data/jctc", "j+r-so2", "qbf"),
-    ("data/jctc", "j+r-so", "so"),
-    ("data/jctc", "j+r-so2", "so")
 
+    ("data/jctc", "j+r-so", "so"),
+    ("data/jctc", "j+r-so", "qbf"),
+    
+    ("data/jctc", "j+r-so2", "so"),
+    ("data/jctc", "j+r-so2", "qbf")
 ]))
 
 
@@ -73,6 +79,8 @@ def colorise(color, text):
         return "{}{}{}".format(color, text, TTY_RESET)
     else:
         return text
+
+aditional_args = get_passthrough_args(argv)
     
 for directory, model, solver in TESTS:
     files = [path for path in listdir(directory) if (isfile(join(directory, path)) and ".es" in path)]
@@ -82,7 +90,7 @@ for directory, model, solver in TESTS:
             if not QUIET:
                 sys.stdout.write("{:6s}: {:20s} {:3s}         {}\r".format("...", model, solver, join(directory, test)))
             output = check_output(
-                [PRIDE_BIN, "--model", model, join(directory, test), "--solver", solver]
+                [PRIDE_BIN, "--model", model, join(directory, test), "--solver", solver] + aditional_args
             )
             elapsed_time = time.time() - start_time
             qbf_result = b"true" in output
