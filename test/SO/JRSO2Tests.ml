@@ -9,6 +9,7 @@ let jctc1 = SO.{
         ("target", [[1]; [2]; [3]; [6]; [7]]);
         ("order", [[6;7]; [1;8]; [1;6]; [1;4]; [1;2]; [8;9]; [2;3]; [4;5]]);
         ("justifies", [[7;2]; [1;4]; [9;4]; [3;6]; [5;6]; [1;8]]);
+        ("reads", [[2]; [4]; [6]; [8]]);
         ("empty_set", [[]]);
         ("conflict", [[6;8]; [2;4]])
       ];
@@ -56,9 +57,26 @@ let jctc1_not_subset_of_target = "not subset of target" >:: (fun () ->
   )
 
 
-
+let jctc1_wx1_not_justified = "Wx1 not justified by empty in jctc1" >:: (fun () ->
+    let s = { jctc1 with relations = add_rel jctc1.relations ("interesting_read", [[2]]) } in
+    let x = mk_fresh_sv () in
+    let y = mk_fresh_sv () in
+    let f =
+      SoAny (x, 1,
+             SoAny (y, 1,
+                    And [
+                      eq_crel x "interesting_read"
+                    ; eq_crel y "empty_set"
+                    ; Not (justify y x)
+                    ]
+                   )
+            )
+    in
+    OUnit.assert_bool "models" (SoOps.model_check s f)
+  )
 
 let tests = "jrso2_tests" >::: [
     jctc1_subset_of_target
   ; jctc1_not_subset_of_target
+  ; jctc1_wx1_not_justified
   ]
