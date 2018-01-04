@@ -83,7 +83,7 @@ let rec show_formula = function
   | Or fs ->
      Format.sprintf "(%s)" (U.map_join " | " show_formula fs)
   | Not f ->
-    "~" ^ (show_formula f)
+    Format.sprintf "~(%s)" (show_formula f)
 
 let show_structure s =
   (* Turn a list of lists into a nice-readable format of tuples *)
