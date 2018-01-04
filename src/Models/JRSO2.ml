@@ -8,11 +8,13 @@ let build_so_structure es goal =
   let conflict = List.map f es.E.conflicts in
   let justifies = List.map f es.E.justifies in
   let f x = [x] in
+  let reads = List.map f es.E.reads in
   let target = List.map f goal in
   SoOps.rels [
     ("order", order)
   ; ("conflict", conflict)
   ; ("justifies", justifies)
+  ; ("reads", reads)
   ; ("target", target)
   ; ("empty_set", [])
   ]
@@ -24,15 +26,18 @@ let justify a b =
   let y = mk_fresh_fv () in
   FoAll (y,
          (mk_implies
-           [QRel (b, [Var y]);
-              Not (QRel (a, [Var y]))] (* only justify new stuff *)
-           (FoAny (x,
-                  And [
-                    QRel (a, [Var x]);
-                    CRel ("justifies", [Var x; Var y])
-                  ]
-                  )
-           )
+            [
+              Not (QRel (a, [Var y]))
+            ; QRel (b, [Var y])
+            ; CRel ("reads", [Var y])
+            ] (* only justify new stuff *)
+            (FoAny (x,
+                    And [
+                      QRel (a, [Var x]);
+                      CRel ("justifies", [Var x; Var y])
+                    ]
+                   )
+            )
          )
         )
 
