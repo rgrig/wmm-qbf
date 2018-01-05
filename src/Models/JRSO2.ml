@@ -96,15 +96,6 @@ let true_reln n a b =
 let aej_tc m = tc 1 (always_eventually_justifies m)
 (* let aej_tc m = tc 1 (true_reln m) *)
 
-let eq_crel a n =
-  let x = mk_fresh_fv ~prefix:"eq_crel" () in
-  FoAll (x,
-         And [
-           mk_implies [QRel (a, [Var x])] (CRel (n, [Var x]))
-         ; mk_implies [CRel (n, [Var x])] (QRel (a, [Var x]))
-         ]
-        )
-
 let do_decide es target =
   let size = es.E.events_number in
   let x = mk_fresh_sv () in

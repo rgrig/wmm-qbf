@@ -12,7 +12,9 @@ let available_models =
   ; "pes-follows", PESFollows.do_decide
   ; "pes-make-promise", PESMakePromise.do_decide
   ; "pes-promise-read", PESPromiseRead.do_decide
-  ; "pes-transitions", PESTransitions.do_decide ]
+  ; "pes-transitions", PESTransitions.do_decide
+  ; "cat-so", CatSO.do_decide
+  ]
 
 let run_on_es filename ch =
   Config.set_current_file filename;

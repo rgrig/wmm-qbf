@@ -18,3 +18,4 @@ val eq : so_var -> so_var -> formula
 val intersect : so_var -> so_var -> so_var -> formula
 val union : so_var -> so_var -> so_var -> formula
 
+val eq_crel: SO.so_var -> SO.rel_sym -> SO.formula
