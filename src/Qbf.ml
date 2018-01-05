@@ -195,7 +195,8 @@ let rec buffer_list_sep separator buffer_x buffer = function
   | [] -> ()
   | [x] -> buffer_x buffer x
   | x :: ((_ :: _) as xs) ->
-  bprintf buffer "%a%s%a" buffer_x x separator (buffer_list_sep separator buffer_x) xs
+      bprintf buffer "%a%s" buffer_x x separator;
+      buffer_list_sep separator buffer_x buffer xs
 let buffer_list buffer_x = buffer_list_sep "" buffer_x
 
 let to_buffer buffer p =
