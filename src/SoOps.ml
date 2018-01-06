@@ -118,7 +118,7 @@ let so_to_qbf structure formula =
       Printf.printf "%s\n" (Printexc.get_callstack 100 |> Printexc.raw_backtrace_to_string);
       failwith ("Could not apply relation " ^ (Util.map_join "_" string_of_int cs) ^ ". (sggmh)")
   in
-  
+
   let mk_fresh_qvars ?(prefix="q") a =
     let xs = Util.range 1 structure.size in
     let xss = Util.repeat a xs in
@@ -128,7 +128,7 @@ let so_to_qbf structure formula =
     List.fold_left add_one ByIdx.empty xss in
   let qvars_list qvars =
     List.map snd (ByIdx.bindings qvars) in
-  
+
   let rec fo_qs so_env fo_env v f =
     let add_sub c = FoEnv.add v (Const c) fo_env in
     let go' fo_env' = go so_env fo_env' f in
@@ -198,13 +198,13 @@ let model_check s f =
   | Some (Config.SolveSO) ->
     holds s f
   | None -> failwith "Solver disabled."
-  
+
 let mk_implies prems conclusion =
   Or (conclusion :: List.map (fun p -> Not p) prems)
 
 let mk_eq a b =
   CRel (eq_rel, [a; b])
-    
+
 let subset a b =
   let y = mk_fresh_fv () in
   FoAll (y, mk_implies [QRel (a, [Var y])] (QRel (b, [Var y])))
@@ -237,7 +237,7 @@ let union z a b =
     v,
     And [
       mk_implies
-        [ Or 
+        [ Or
             [ QRel (a, [Var v])
             ; QRel (b, [Var v])
             ]
@@ -253,7 +253,7 @@ let union z a b =
     ]
   )
 
-  
+
 let eq a b =
   And [subset a b; subset b a]
 

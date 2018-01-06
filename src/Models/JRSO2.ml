@@ -82,6 +82,8 @@ let always_eventually_justifies n a b =
   let y = mk_fresh_sv () in
   And
     [ subset a b
+    ; valid a
+    ; valid b
     ; SoAll (x, 1,
         mk_implies
           [ always_justifies_tc n a x ]
