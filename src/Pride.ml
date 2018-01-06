@@ -34,7 +34,10 @@ let run_on_file run filename =
 
 let () =
   Config.parse_args available_models;
-  if Config.verbose () then Config.print_options ();
+  if Config.verbose () then (
+    Config.print_options ();
+    flush stderr;
+  );
   List.iter (run_on_file run_on_es) (Config.es_files ());
   List.iter (run_on_file run_on_lisa) (Config.lisa_files ())
 

@@ -91,6 +91,7 @@ let so_to_qbf structure formula =
   let module ByIdx = ElementListMap in
   let module FoEnv = FoVarMap in
   let module SoEnv = SoVarMap in
+
   let fo_subst env = (function
       | Var (F v) -> (try FoEnv.find v env with Not_found -> Var (F v))
       | t -> t) in
@@ -112,7 +113,10 @@ let so_to_qbf structure formula =
   in
   let byidx_lookup cs qvars =
     try ByIdx.find cs qvars
-    with Not_found -> failwith "Could not apply relation. (sggmh)"
+    with Not_found ->
+      (* Print stack trace *)
+      Printf.printf "%s\n" (Printexc.get_callstack 100 |> Printexc.raw_backtrace_to_string);
+      failwith ("Could not apply relation " ^ (Util.map_join "_" string_of_int cs) ^ ". (sggmh)")
   in
   
   let mk_fresh_qvars ?(prefix="q") a =

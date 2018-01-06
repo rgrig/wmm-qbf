@@ -437,4 +437,6 @@ let translate
     justifies = justifies;
     conflicts = events.conflict;
     order = events.order;
+    (* TODO *)
+    sloc = []
   }

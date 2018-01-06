@@ -8,14 +8,16 @@ type t =
   ; reads : set (* more properly named "events that need justification" *)
   ; justifies : relation
   ; conflicts : relation
-  ; order : relation }
+  ; order : relation
+  ; sloc : relation}
 
 let empty =
   { events_number = 0
   ; reads = []
   ; justifies = []
   ; conflicts = []
-  ; order = [] }
+  ; order = []
+  ; sloc = [] }
 
 exception Bad_count of int
 exception Bad_event of int
