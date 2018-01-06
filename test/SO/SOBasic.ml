@@ -5,7 +5,7 @@ open OUnit
 let t1 = "check_arity_pass" >:: (fun () ->
     let s =
       { SO.size = 3
-      ; relations = SoOps.rels [("foo", [[1];[2]])] } in
+      ; relations = SoOps.rels [("foo", (1, [[1];[2]]))] } in
     let f = SO.CRel ("foo", [SO.Const 1]) in
     SoOps.check_inv s f
   )
@@ -15,7 +15,7 @@ let t1 = "check_arity_pass" >:: (fun () ->
 let t2 = "check_arity_fail" >:: (fun () ->
     let s =
       { SO.size = 3
-      ; relations = SoOps.rels [("foo", [[1];[1;2]])] } in
+      ; relations = SoOps.rels [("foo", (1, [[1];[1;2]]))] } in
     let f = SO.CRel ("foo", [SO.Const 1]) in
     OUnit.assert_raises
       (Failure "inconsistent arity of symbol foo")
@@ -26,7 +26,7 @@ let t3 = "check_misapplied_pass" >:: (fun () ->
     let bar = SO.mk_fresh_sv () in
     let s =
       { SO.size = 3
-      ; relations = SoOps.rels [("foo", [[1];[1]])] } in
+      ; relations = SoOps.rels [("foo", (1, [[1];[1]]))] } in
     let f =
       SO.SoAll (bar, 2, (SO.QRel (bar, [SO.Const 1; SO.Const 2])))
     in
@@ -37,7 +37,7 @@ let t4 = "check_misapplied_fail" >:: (fun () ->
     let bar = SO.mk_fresh_sv ~prefix:"bar" () in
     let s =
       { SO.size = 3
-      ; relations = SoOps.rels [("foo", [[1];[1]])] } in
+      ; relations = SoOps.rels [("foo", (1, [[1];[1]]))] } in
     let f =
       SO.SoAll (bar, 2, (SO.QRel (bar, [SO.Const 1])))
     in
@@ -50,7 +50,7 @@ let t4 = "check_misapplied_fail" >:: (fun () ->
   )
 
 let t5 = "simple so logic model" >:: (fun () ->
-    let s = { SO.size = 3; SO.relations = SoOps.rels [("baz", [[1]])] } in
+    let s = { SO.size = 3; SO.relations = SoOps.rels [("baz", (1, [[1]]))] } in
     let r = SO.mk_fresh_sv () in
     let x = SO.mk_fresh_fv () in
     let f = SO.SoAny (r, 1, SO.FoAny (x, SO.QRel (r, [SO.Var x]))) in

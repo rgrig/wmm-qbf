@@ -4,7 +4,7 @@ module U = Util
 module ArityMap = Map.Make(String)
 
 let add_rel rs (k, r) =
-  if RelMap.mem k rs then failwith "repeated relation symbol (voxdy)";
+  if RelMap.mem k rs then failwith ("repeated relation symbol " ^ k ^ " (voxdy)");
   RelMap.add k r rs
 
 let rels xs =
@@ -12,7 +12,7 @@ let rels xs =
 
 let add_specials s =
   let eq = List.map (fun x -> [x; x]) (U.range 1 s.size) in
-  { s with relations = add_rel s.relations (eq_rel, eq) }
+  { s with relations = add_rel s.relations (eq_rel, (1, eq)) }
 
 let get_arity s r =
   let arity = List.length (List.nth r 0) in
@@ -21,8 +21,8 @@ let get_arity s r =
   arity
 
 let check_arities s f =
-  let check_structure sym l arr_map =
-    let a = get_arity sym l in
+  let check_structure sym (a, l) arr_map =
+    assert (a = get_arity sym l);
     if ArityMap.mem sym arr_map
     then failwith "relation defined multiple times in SO structure";
     ArityMap.add sym a arr_map
@@ -72,7 +72,7 @@ let check_arities s f =
   ignore @@ RelMap.fold check_structure s.relations ArityMap.empty;
 
   (* Collect the arities of all of the constant relation symbols *)
-  let collect_arities = RelMap.fold (fun k v a -> ArityMap.add k (get_arity k v) a) in
+  let collect_arities = RelMap.fold (fun k (ar, _) a -> ArityMap.add k ar a) in
   ignore @@ check_formula f (collect_arities s.relations ArityMap.empty)
 
 let check_inv s f =
@@ -135,7 +135,7 @@ let so_to_qbf structure formula =
       | CRel (r,ts) ->
         let ts = List.map (fo_subst fo_env) ts in
         let cs = List.map from_const ts in
-        let r' = structure_lookup r in
+        let _, r' = structure_lookup r in
         if List.mem cs r' then Qbf.mk_true () else Qbf.mk_false ()
 
       | QRel (S sym,ts) ->

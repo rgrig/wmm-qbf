@@ -11,7 +11,7 @@ type so_var = S of string
 type rel_sym = string
   [@@deriving show] (* same as so_var *)
 
-type relation = int list list
+type relation = int * int list list
   [@@deriving show]
 
 module RelMap = Map.Make (String)
@@ -88,19 +88,14 @@ let rec show_formula = function
 let show_structure s =
   (* Turn a list of lists into a nice-readable format of tuples *)
   (* [[1;2;3]; [4;5;6]] -> { (1 2 3) (4 5 6) } *)
-  let get_arity = function
-    (* TODO: Empty set doesn't really have an arity, it's arbitrary. *)
-      [] -> 1
-    | x::xs -> List.length x
-  in
-  let f key vals acc =
+  let f key (a, vals) acc =
     if List.mem key specials
     then acc
     else
       let v = List.map (U.map_join " " string_of_int) vals in
       let v = List.map (Printf.sprintf "(%s)") v in
       let vs = String.concat " " v in
-      (Format.sprintf "\t\t%s:%d := { %s }\n" key (get_arity vals) vs) ^ acc
+      (Format.sprintf "\t\t%s:%d := { %s }\n" key a vs) ^ acc
   in
   let m = RelMap.fold f s.relations "" in
   Format.sprintf "{\n\t.size: 1..%d\n\t.relations:\n%s}\n" (s.size) m

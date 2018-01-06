@@ -11,12 +11,12 @@ let build_so_structure es goal =
   let reads = List.map f es.E.reads in
   let target = List.map f goal in
   SoOps.rels [
-    ("order", order)
-  ; ("conflict", conflict)
-  ; ("justifies", justifies)
-  ; ("reads", reads)
-  ; ("target", target)
-  ; ("empty_set", [])
+    ("order", (2, order))
+  ; ("conflict", (2, conflict))
+  ; ("justifies", (2, justifies))
+  ; ("reads", (1, reads))
+  ; ("target", (1, target))
+  ; ("empty_set", (1, []))
   ]
 
 (* Configuration justifies *)
