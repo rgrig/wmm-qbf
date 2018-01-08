@@ -190,11 +190,13 @@ let co_constrain co =
     FoAll (
       b,
       And [
-        mk_implies [
+        iff [
           CRel ("writes", [Var a])
         ; CRel ("writes", [Var b])
         ; CRel ("sloc", [Var a; Var b])
-        ] (Or [(co (Var a) (Var b)); (co (Var b) (Var a))])
+        ] [Or [(co (Var a) (Var b)); (co (Var b) (Var a))]]
+      (* Alternatively it might be sufficient to constrain co to be
+         acyclic, rather than trancl irrefl. *)
       ; irreflexive co
       ; transitive co
       ]

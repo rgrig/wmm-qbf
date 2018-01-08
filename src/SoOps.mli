@@ -13,6 +13,7 @@ val so_to_qbf : structure -> formula -> Qbf.t
 val mk_implies : formula list -> formula -> formula
 val mk_eq : term -> term -> formula
 val subset : so_var -> so_var -> formula
+val iff : formula list -> formula list -> formula
 val eq : so_var -> so_var -> formula
 
 val intersect : so_var -> so_var -> so_var -> formula

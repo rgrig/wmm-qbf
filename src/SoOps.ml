@@ -253,15 +253,21 @@ let union z a b =
     ]
   )
 
+let iff ps qs =
+  And [
+    mk_implies ps (And qs)
+  ; mk_implies qs (And ps)
+  ]
 
 let eq a b =
   And [subset a b; subset b a]
 
 let eq_crel a n =
   let x = mk_fresh_fv ~prefix:"eq_crel" () in
-  FoAll (x,
-         And [
-           mk_implies [QRel (a, [Var x])] (CRel (n, [Var x]))
-         ; mk_implies [CRel (n, [Var x])] (QRel (a, [Var x]))
-         ]
-        )
+  FoAll (
+    x,
+    And [
+      mk_implies [QRel (a, [Var x])] (CRel (n, [Var x]))
+    ; mk_implies [CRel (n, [Var x])] (QRel (a, [Var x]))
+    ]
+  )
