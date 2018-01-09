@@ -63,22 +63,4 @@ let writes es = List.filter (fun x -> not (List.mem x es.reads)) (events es)
 let justifies es = es.justifies
 let events_number es = es.events_number
 
-
-open Graph
-module EventGraph = Imperative.Digraph.Concrete(struct
-  type t = int
-  let compare = Pervasives.compare
-  let hash = Hashtbl.hash
-  let equal = (=)
-end)
-open EventGraph
-module EventGraphBuilder = Builder.I(EventGraph)
-module EventGraphOps = Oper.Make(EventGraphBuilder)
-
-let transitive_closure edges =
-  let g = EventGraph.create () in
-  let _ = List.map (fun (l, r) -> EventGraph.add_edge g l r) edges in
-  let g = EventGraphOps.transitive_closure g in
-  EventGraph.fold_edges (fun l r acc -> (l, r)::acc) g []
-
-let order_tc es = transitive_closure (order es)
+let order_tc es = GraphHelpers.transitive_closure (order es)

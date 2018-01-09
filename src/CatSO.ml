@@ -1,4 +1,5 @@
 module E = EventStructure
+module GH = GraphHelpers
 open SO
 open SoOps
 
@@ -8,6 +9,16 @@ let intersect a b =
     List.filter (fun x -> List.mem x a) b
 
 let build_so_structure es goal =
+  (* 
+     Each of the relations in the SO structure is represented as a
+     list of lists. A set is a list of singletons, a binary relation
+     is a list of lists of length 2, a tenary relation is a list of
+     lists of length 3, etc. 
+     
+     {(3, 4), (1, 2)} = [[3;4]; [1;2]]
+     {4,6,2,1} = [[4]; [6]; [2]; [1]]
+  *)
+  (* Turn single elements into singleton lists *)
   let f x = [x] in
   let target = List.map f goal in
   let reads = List.map f (intersect es.E.reads goal) in
@@ -19,8 +30,17 @@ let build_so_structure es goal =
       ) goal)
   in
 
+  (* Turn pairs into a list of two elements *)
   let f (x,y) = [x;y] in
-  let sloc = List.map f es.E.sloc in
+  
+  (* We'll take the symmetric closure of the transitive closure for
+     the same location relation *)
+  let sloc' = GH.symmetric_closure (GH.transitive_closure es.E.sloc) in
+  let sloc = List.map f sloc' in
+  let xs = Util.range 2 es.E.events_number in
+  let sloc_extra = List.map (fun x -> [1;x]) xs in
+  let sloc = sloc @ sloc_extra in
+  
   let order = List.map f es.E.order in
   let justifies = List.map f es.E.justifies in
 
@@ -41,6 +61,12 @@ let build_so_structure es goal =
   ; ("reads", (1, reads))
   ; ("writes", (1, writes))
   ; ("empty_set", (1, []))
+
+  ; ("co", (2, [[2;3]]))
+  ; ("rf", (2, [[3;7];[1;8]]))
+  ; ("my_po", (2, [[7;8]]))
+  ; ("my_fr", (2, [[8;3]]))
+  ; ("my_rf", (2, [[8;2]]))    
   ]
 
 let eq r r' =
@@ -239,7 +265,7 @@ let do_decide es target =
             rf
             (curry_crel "justifies")
         ; cat_constrain rf co (fr rf co) (curry_crel "order")
-        ; co_constrain co
+        ; co_constrain co 
         ]
       )
     )
