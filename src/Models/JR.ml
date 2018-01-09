@@ -31,7 +31,6 @@ let always_eventually_justifies es =
         (Qbf.mk_implies
           [aj_tc x z]
           (sequence aj_tc justifies z y))) in
-  (* Query: in the doc, we do not check valid_rel here. *)
   MM.intersect_n [ MM.subset; ae_justifies; MM.valid_rel es ]
 
 (* Always Eventually Justifies Transitively Closed

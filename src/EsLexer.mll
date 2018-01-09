@@ -11,7 +11,8 @@
       ; "justifies", JUSTIFIES
       ; "labels", LABELS
       ; "order", ORDER
-      ; "reads", READS ];
+      ; "reads", READS
+      ; "sloc", SLOC];
     try Hashtbl.find table x
     with Not_found -> raise Error
 }

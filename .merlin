@@ -1,4 +1,4 @@
-PKG oUnit ppx_deriving.std ppx_deriving.show batteries
+PKG oUnit ppx_deriving.std ppx_deriving.show batteries ocamlgraph
 S src
 S test
 B _build/test/**

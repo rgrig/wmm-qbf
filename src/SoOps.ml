@@ -4,7 +4,7 @@ module U = Util
 module ArityMap = Map.Make(String)
 
 let add_rel rs (k, r) =
-  if RelMap.mem k rs then failwith "repeated relation symbol (voxdy)";
+  if RelMap.mem k rs then failwith ("repeated relation symbol " ^ k ^ " (voxdy)");
   RelMap.add k r rs
 
 let rels xs =
@@ -12,7 +12,7 @@ let rels xs =
 
 let add_specials s =
   let eq = List.map (fun x -> [x; x]) (U.range 1 s.size) in
-  { s with relations = add_rel s.relations (eq_rel, eq) }
+  { s with relations = add_rel s.relations (eq_rel, (1, eq)) }
 
 let get_arity s r =
   let arity = List.length (List.nth r 0) in
@@ -21,8 +21,8 @@ let get_arity s r =
   arity
 
 let check_arities s f =
-  let check_structure sym l arr_map =
-    let a = get_arity sym l in
+  let check_structure sym (a, l) arr_map =
+    assert (a = get_arity sym l);
     if ArityMap.mem sym arr_map
     then failwith "relation defined multiple times in SO structure";
     ArityMap.add sym a arr_map
@@ -72,7 +72,7 @@ let check_arities s f =
   ignore @@ RelMap.fold check_structure s.relations ArityMap.empty;
 
   (* Collect the arities of all of the constant relation symbols *)
-  let collect_arities = RelMap.fold (fun k v a -> ArityMap.add k (get_arity k v) a) in
+  let collect_arities = RelMap.fold (fun k (ar, _) a -> ArityMap.add k ar a) in
   ignore @@ check_formula f (collect_arities s.relations ArityMap.empty)
 
 let check_inv s f =
@@ -91,6 +91,7 @@ let so_to_qbf structure formula =
   let module ByIdx = ElementListMap in
   let module FoEnv = FoVarMap in
   let module SoEnv = SoVarMap in
+
   let fo_subst env = (function
       | Var (F v) -> (try FoEnv.find v env with Not_found -> Var (F v))
       | t -> t) in
@@ -112,9 +113,12 @@ let so_to_qbf structure formula =
   in
   let byidx_lookup cs qvars =
     try ByIdx.find cs qvars
-    with Not_found -> failwith "Could not apply relation. (sggmh)"
+    with Not_found ->
+      (* Print stack trace *)
+      Printf.printf "%s\n" (Printexc.get_callstack 100 |> Printexc.raw_backtrace_to_string);
+      failwith ("Could not apply relation " ^ (Util.map_join "_" string_of_int cs) ^ ". (sggmh)")
   in
-  
+
   let mk_fresh_qvars ?(prefix="q") a =
     let xs = Util.range 1 structure.size in
     let xss = Util.repeat a xs in
@@ -124,7 +128,7 @@ let so_to_qbf structure formula =
     List.fold_left add_one ByIdx.empty xss in
   let qvars_list qvars =
     List.map snd (ByIdx.bindings qvars) in
-  
+
   let rec fo_qs so_env fo_env v f =
     let add_sub c = FoEnv.add v (Const c) fo_env in
     let go' fo_env' = go so_env fo_env' f in
@@ -135,7 +139,7 @@ let so_to_qbf structure formula =
       | CRel (r,ts) ->
         let ts = List.map (fo_subst fo_env) ts in
         let cs = List.map from_const ts in
-        let r' = structure_lookup r in
+        let _, r' = structure_lookup r in
         if List.mem cs r' then Qbf.mk_true () else Qbf.mk_false ()
 
       | QRel (S sym,ts) ->
@@ -194,13 +198,13 @@ let model_check s f =
   | Some (Config.SolveSO) ->
     holds s f
   | None -> failwith "Solver disabled."
-  
+
 let mk_implies prems conclusion =
   Or (conclusion :: List.map (fun p -> Not p) prems)
 
 let mk_eq a b =
   CRel (eq_rel, [a; b])
-    
+
 let subset a b =
   let y = mk_fresh_fv () in
   FoAll (y, mk_implies [QRel (a, [Var y])] (QRel (b, [Var y])))
@@ -233,7 +237,7 @@ let union z a b =
     v,
     And [
       mk_implies
-        [ Or 
+        [ Or
             [ QRel (a, [Var v])
             ; QRel (b, [Var v])
             ]
@@ -249,7 +253,21 @@ let union z a b =
     ]
   )
 
-  
+let iff ps qs =
+  And [
+    mk_implies ps (And qs)
+  ; mk_implies qs (And ps)
+  ]
+
 let eq a b =
   And [subset a b; subset b a]
 
+let eq_crel a n =
+  let x = mk_fresh_fv ~prefix:"eq_crel" () in
+  FoAll (
+    x,
+    And [
+      mk_implies [QRel (a, [Var x])] (CRel (n, [Var x]))
+    ; mk_implies [CRel (n, [Var x])] (QRel (a, [Var x]))
+    ]
+  )

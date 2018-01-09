@@ -12,7 +12,9 @@ let available_models =
   ; "pes-follows", PESFollows.do_decide
   ; "pes-make-promise", PESMakePromise.do_decide
   ; "pes-promise-read", PESPromiseRead.do_decide
-  ; "pes-transitions", PESTransitions.do_decide ]
+  ; "pes-transitions", PESTransitions.do_decide
+  ; "cat-so", CatSO.do_decide
+  ]
 
 let run_on_es filename ch =
   Config.set_current_file filename;
@@ -32,7 +34,10 @@ let run_on_file run filename =
 
 let () =
   Config.parse_args available_models;
-  if Config.verbose () then Config.print_options ();
+  if Config.verbose () then (
+    Config.print_options ();
+    flush stderr;
+  );
   List.iter (run_on_file run_on_es) (Config.es_files ());
   List.iter (run_on_file run_on_lisa) (Config.lisa_files ())
 

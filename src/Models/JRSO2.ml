@@ -11,12 +11,12 @@ let build_so_structure es goal =
   let reads = List.map f es.E.reads in
   let target = List.map f goal in
   SoOps.rels [
-    ("order", order)
-  ; ("conflict", conflict)
-  ; ("justifies", justifies)
-  ; ("reads", reads)
-  ; ("target", target)
-  ; ("empty_set", [])
+    ("order", (2, order))
+  ; ("conflict", (2, conflict))
+  ; ("justifies", (2, justifies))
+  ; ("reads", (1, reads))
+  ; ("target", (1, target))
+  ; ("empty_set", (1, []))
   ]
 
 (* Configuration justifies *)
@@ -82,6 +82,8 @@ let always_eventually_justifies n a b =
   let y = mk_fresh_sv () in
   And
     [ subset a b
+    ; valid a
+    ; valid b
     ; SoAll (x, 1,
         mk_implies
           [ always_justifies_tc n a x ]
@@ -95,15 +97,6 @@ let true_reln n a b =
 
 let aej_tc m = tc 1 (always_eventually_justifies m)
 (* let aej_tc m = tc 1 (true_reln m) *)
-
-let eq_crel a n =
-  let x = mk_fresh_fv ~prefix:"eq_crel" () in
-  FoAll (x,
-         And [
-           mk_implies [QRel (a, [Var x])] (CRel (n, [Var x]))
-         ; mk_implies [CRel (n, [Var x])] (QRel (a, [Var x]))
-         ]
-        )
 
 let do_decide es target =
   let size = es.E.events_number in

@@ -17,6 +17,7 @@
 %token EVENTS
 %token EXECUTION
 %token JUSTIFIES
+%token SLOC
 %token LABELS
 %token NL
 %token ORDER
@@ -33,16 +34,30 @@ top:
 
 event_structure:
   e=events
+  s=option(sloc)
   r=reads
   _=option(labels)
   j=justifies
   c=conflicts
   o=order
   { ES.check
-    { ES.events_number=e; justifies=j; conflicts=c; order=o; reads=r } }
+    { ES.events_number=e
+    ; justifies=j
+    ; conflicts=c
+    ; order=o
+    ; reads=r
+    ; sloc=(
+      match s with
+        None -> []
+      | Some s -> s
+      )
+    ;
+    }
+  }
 ;
 
 events: v=delimited(EVENTS, INT, NL*) { v };
+sloc: v=nl_list(SLOC,nonempty_list(INT),NL+) { flatten_order v };
 conflicts: v=nl_list(CONFLICTS,pair(INT,INT),NL*) { v };
 justifies: v=nl_list(JUSTIFIES,pair(INT,INT),NL*) { v };
 labels: nl_list(LABELS,pair(INT, QUOTED_STRING),NL*) {};

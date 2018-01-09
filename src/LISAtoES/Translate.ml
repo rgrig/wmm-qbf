@@ -433,8 +433,11 @@ let translate
     (* Beware, not all writes now correspond to events! Don't use it calculate number of events. *)
     events_number = !next_id - 1;
     (* TODO: Why do I have to specify the types here to get this to compile? *)
+    (*  - A: because the .id record is ambiguous between read and write types. *)
     reads = List.map (fun (read : read) -> read.id) events.reads;
     justifies = justifies;
     conflicts = events.conflict;
     order = events.order;
+    (* TODO *)
+    sloc = []
   }
