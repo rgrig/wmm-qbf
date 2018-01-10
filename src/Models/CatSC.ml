@@ -69,46 +69,6 @@ let build_so_structure es goal =
   ; ("my_rf", (2, [[8;2]]))    
   ]
 
-let eq r r' =
-  let x = mk_fresh_fv () in
-  let y = mk_fresh_fv () in
-  FoAll (x, (
-      FoAll (y,
-             And [
-               mk_implies [r x y] (r' x y)
-             ; mk_implies [r' x y] (r x y)
-             ]
-            )
-    )
-    )
-
-let invert r a b = r b a
-
-let sequence r1 r2 x z = 
-  let y = mk_fresh_fv () in
-  FoAny (y, And [
-      r1 x (Var y)
-    ; r2 (Var y) z
-    ])
-
-let rel_union r1 r2 x y =
-  Or [r1 x y; r2 x y]
-
-let rel_intersect r1 r2 x y =
-  And [r1 x y; r2 x y]
-    
-let rel_subset r1 r2 =
-  let x = mk_fresh_fv () in
-  let y = mk_fresh_fv () in
-  FoAll (
-    x,
-    FoAll (
-      y,
-      mk_implies
-        [r1 (Var x) (Var y)]
-        (r2 (Var x) (Var y))
-    )
-  )
 
 let rf_constrain rf jst =
   let rf_rf_inv = sequence rf (invert rf) in
@@ -128,85 +88,6 @@ let rf_constrain rf jst =
         )
     )
   ]
-  
-let eq a b =
-  And [rel_subset a b; rel_subset b a]
-
-(* Bounded reflexive transitive closure, up to n steps *)
-let rec r_tc n f (a: term) (b:term) =
-  let x = mk_fresh_fv ~prefix:"r_tc_x" () in
-  let step = match n with
-      0 -> mk_eq
-    | _ -> r_tc (n-1) f
-  in
-  Or [
-    mk_eq a b
-  ; FoAny (x, And [f a (Var x); step (Var x) b])
-  ]
-    
-(* Bounded transitive closure *)
-(* f+ a b ≜ f a b ∨ (∃x. f a x ∧ f+ x b) *)
-let rec tc n f a b =
-  let x = mk_fresh_fv ~prefix:"tc_x" () in
-  let step = match n with
-      1 -> f
-    | _ -> tc (n-1) f
-  in
-  Or [
-    f a b
-  ; FoAny (x, And [f a (Var x); step (Var x) b])
-  ]
-
-let mk_fresh_reln ?prefix:(prefix="F") () =
-  let r_id = mk_fresh_sv ~prefix:prefix () in
-  let r i j = QRel (r_id, [i; j]) in
-  (r_id, r)
-
-(* Query: is there a better way to represent the empty relation *)
-(* i.e. ∀x,y. (x,y) ∉ r *)
-let empty_reln r =
-  let x = mk_fresh_fv () in
-  let y = mk_fresh_fv () in
-  FoAll (
-    x,
-    FoAll (
-      y,
-      Not (r (Var x) (Var y))
-    )
-  )
-
-let transitive r =
-  let a = mk_fresh_fv () in
-  let b = mk_fresh_fv () in
-  let c = mk_fresh_fv () in
-  FoAll (
-    a,
-    FoAll (
-      b,
-      FoAll (
-        c,
-        mk_implies
-          [ r (Var a) (Var b)
-          ; r (Var b) (Var c)]
-          (r (Var a) (Var c))
-      )
-    )
-  )
-
-let irreflexive r = 
-  let x = mk_fresh_fv ~prefix:"irrefl_" () in
-  FoAll (x, Not (r (Var x) (Var x)))
-    
-let acyclic e =
-  let r_id, r = mk_fresh_reln ~prefix:"tc1_acycl_" () in
-  SoAny (
-    r_id, 2,
-    And [
-      irreflexive r
-    ; rel_subset (sequence r r) r
-    ; rel_subset e r
-    ]
-  )
 
 let co_constrain co =
   let a = mk_fresh_fv () in
