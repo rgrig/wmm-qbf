@@ -33,3 +33,5 @@ let _ = List.iter (fun (a, b) -> Printf.printf "  %d %d\n" a b) events.conflicts
 let _ = Printf.printf "order\n"
 let _ = List.iter (fun (a, b) -> Printf.printf "  %d %d\n" a b) events.order
 let _ = Printf.printf "execution\n"
+let _ = Printf.printf "sloc\n"
+let _ = List.iter (fun (a, b) -> Printf.printf "  %d %d\n" a b) events.sloc

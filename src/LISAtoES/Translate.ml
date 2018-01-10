@@ -149,8 +149,6 @@ let product (a : events) (b : events) : events =
 let prefix_event (events : events) (event : event) : events =
   (* TODO: Check I understood the notation properly. *)
   (* This should be equivalent to "≤0 ∪ ({⊥} × E)" but without (⊥, ⊥). *)
-  (* TODO: Why do I have to specify the types here to get this to compile? *)
-  (* It isn't because the variables are named the same as the types, I've tried `r` and `w`. *)
   let read_order = List.map (fun (read : read) -> (event, read.id)) events.reads in
   let write_order = List.map (fun (write : write) -> (event, write.id)) events.writes in
   {
@@ -207,9 +205,7 @@ let find_label (instructions : BellBase.parsedPseudo array) (label : string) : i
 
 (* Return true if a write has the same address and value as a read. *)
 let write_justifies_read (write : write) (read : read) : bool =
-  read.from.global = write.into.global &&
-  read.from.offset = write.into.offset &&
-  read.value = write.value
+  read.from = write.into && read.value = write.value
 
 (* Returns a list of writes justified by the init event specified. *)
 let writes_from_init (init : MiscParser.state) (event_id : event) : write list =
@@ -230,7 +226,7 @@ let writes_from_init (init : MiscParser.state) (event_id : event) : write list =
     (* TODO: This means that some of the JCTC LISA tests are broken because they use arrays in init. *)
     | Location_deref(Symbolic name, offset) -> (* { global = name; offset = offset; } *) assert false
     | Location_global(Concrete _)
-	(* TODO: This is what a[0] actually seems to match. *)
+    (* TODO: This is what a[0] actually seems to match. *)
     | Location_deref(Concrete _, _) -> assert false (* Meaningless. *)
     in
 
@@ -326,10 +322,10 @@ and translate_instruction
     !events
   | Pst(Addr_op_atom(Rega destination), source, labels) ->
     (* Special case for writing to a register, doesn't create any events directly. *)
-	let destination = unwrap_reg destination in
+    let destination = unwrap_reg destination in
     let value = value_from_reg_or_imm store source in
-	let program_counter = program_counter + 1 in
-	let store = Store.update store destination value in
+    let program_counter = program_counter + 1 in
+    let store = Store.update store destination value in
 
     Printf.printf "TODO HACK Register write r%d = %d\n" destination value;
 
@@ -351,7 +347,7 @@ and translate_instruction
 
     Printf.printf "TODO HACK Branch %s if r%d (currently %d)\n" destination test value;
 
-    (* TODO: What means true? *)
+    (* TODO: Check this definition of true is correct for LISA. *)
     let next = if value != 0 then find_label instructions destination else program_counter + 1 in
     translate_instructions instructions next store values next_id depth
   | Pbranch(None, destination, labels) ->
@@ -386,6 +382,30 @@ and translate_instruction
     translate_instructions instructions program_counter store values next_id depth
   | _ -> assert false (* TODO: Other instructions. *)
 
+(* Generate the justifies relation. *)
+(* In this case, "justifies" pairs reads and writes of the same variable and value. *)
+let justify_reads (reads : read list) (writes : write list) : relation =
+  List.fold_left (fun accumulator read ->
+    List.fold_left (fun accumulator write ->
+      if write_justifies_read write read then (write.id, read.id) :: accumulator else accumulator
+    ) accumulator writes
+  ) [] reads
+
+(* Return a list of pairs of events that read or write the same global. *)
+let match_locations (reads : read list) (writes : write list) : relation =
+  (* Make one big list of all events and the global they touch. *)
+  (* Type explicitly stated because inference fails here. *)
+  let read_addresses = List.map (fun (read : read) -> (read.id, read.from)) reads in
+  let write_addresses = List.map (fun write -> (write.id, write.into)) writes in
+  let event_addresses = List.append read_addresses write_addresses in
+
+  (* Find pairs with the same source/destination. *)
+  List.fold_left (fun accumulator (a_event, a_global) ->
+    List.fold_left (fun accumulator (b_event, b_global) ->
+      if a_event != b_event && a_global = b_global then (a_event, b_event) :: accumulator else accumulator
+    ) accumulator event_addresses
+  ) [] event_addresses
+
 (* Translate a program AST into an event structure, this is the entrypoint into the module. *)
 (* `init` gives the initial values for global variables, letting the init event justify non-zero reads. *)
 (* `program` gives the multi-threaded program AST from LISAParser. *)
@@ -412,7 +432,10 @@ let translate
   (* Add the order relations for the init event. *)
   let events = prefix_event events init_id in
 
-  (* Add writes that are justified by init. *)
+  (* Generate the same location relation. *)
+  let same_location = match_locations events.reads events.writes in
+
+  (* Add virtual writes tied to init with all the values in the initialisation list. *)
   let events = {
     reads = events.reads;
     writes = (writes_from_init init init_id) @ events.writes;
@@ -421,23 +444,15 @@ let translate
   } in
 
   (* Generate the justifies relation. *)
-  (* In this case, "justifies" pairs reads and writes of the same variable and value. *)
-  let justifies = List.fold_left (fun accumulator read ->
-    List.fold_left (fun accumulator write ->
-      if write_justifies_read write read then (write.id, read.id) :: accumulator else accumulator
-    ) accumulator events.writes
-  ) [] events.reads in
+  let justifies = justify_reads events.reads events.writes in
 
   (* Convert from intermediate representation to final event structure. *)
   {
     (* Beware, not all writes now correspond to events! Don't use it calculate number of events. *)
     events_number = !next_id - 1;
-    (* TODO: Why do I have to specify the types here to get this to compile? *)
-    (*  - A: because the .id record is ambiguous between read and write types. *)
     reads = List.map (fun (read : read) -> read.id) events.reads;
     justifies = justifies;
     conflicts = events.conflict;
     order = events.order;
-    (* TODO *)
-    sloc = []
+    sloc = same_location;
   }
