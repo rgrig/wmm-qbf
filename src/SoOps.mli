@@ -8,6 +8,7 @@ val check_inv : structure -> formula -> unit
 val model_check : structure -> formula -> bool
 
 val so_to_qbf : structure -> formula -> Qbf.t
+val dump: structure -> formula -> unit
 
 (* [mk_implies [p1;p2] q] is (p₁ ∧ p₂) → q *)
 val mk_implies : formula list -> formula -> formula
