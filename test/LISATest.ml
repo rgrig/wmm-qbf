@@ -20,7 +20,7 @@ let _ = Printf.printf "Dumping input...\n\n%s\n" source
 let litmus = Wrapper.load_litmus source
 let _ = Wrapper.print_litmus litmus
 let (init, _, program, _) = litmus
-let events = Translate.translate init program { minimum = 0; maximum = 1; }
+let events = Translate.translate init program 0 1
 let _ = Printf.printf "events %d\n" events.events_number
 let reads_string = List.map (fun read -> string_of_int read) events.reads
 let _ = Printf.printf "reads %s\n" (String.concat " " reads_string)
@@ -33,3 +33,5 @@ let _ = List.iter (fun (a, b) -> Printf.printf "  %d %d\n" a b) events.conflicts
 let _ = Printf.printf "order\n"
 let _ = List.iter (fun (a, b) -> Printf.printf "  %d %d\n" a b) events.order
 let _ = Printf.printf "execution\n"
+let _ = Printf.printf "sloc\n"
+let _ = List.iter (fun (a, b) -> Printf.printf "  %d %d\n" a b) events.sloc
