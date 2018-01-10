@@ -26,6 +26,18 @@ let use_solver () = !use_solver_val
 let use_lisa_val = ref false
 let use_lisa () = !use_lisa_val
 
+let vals_val = ref (0,1)
+let vals () = !vals_val
+let set_vals s =
+  let exception Values_parse of string in
+  match (String.split_on_char ',' s) with
+    l::h::_ ->
+    vals_val := (int_of_string l, int_of_string h)
+  | _ ->
+    raise (Values_parse ("could not parse value range '"^s^"'."))
+let show_vals (l, h) =
+  Printf.sprintf "(%d, %d)" l h
+
 let verbose_val = ref false
 let verbose () = !verbose_val
 
@@ -85,6 +97,8 @@ let command_spec available_models =
     "  set the path to the SO solver binary"  
   ; "--solver", Arg.String choose_solver,
     "  pick the solver type to use. (default: " ^ (show_solver default_solver) ^ ")"
+  ; "--values", Arg.String set_vals,
+    "  use this range of values to build event structures. (default: " ^ (show_vals !vals_val) ^ ")"
   ; "--verbose", Arg.Set verbose_val,
     "  print aditional status information during execution"]
 

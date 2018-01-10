@@ -27,9 +27,7 @@ let run_on_lisa filename ch =
   let ast = Wrapper.load_litmus source in
   (if Config.dump_lisa () then Wrapper.print_litmus ast);
   let (init, _, program, _) = ast in
-  (* TODO: Get range of values instead of hardcoding something random. *)
-  let min = 0 in
-  let max = 1 in
+  let min, max = Config.vals () in
   let es = Translate.translate init program min max in
   (* TODO: A switch to dump the ES is some useful format. *)
   (* TODO: Find target executions. *)
