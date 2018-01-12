@@ -14,6 +14,7 @@ let available_models =
   ; "pes-promise-read", PESPromiseRead.do_decide
   ; "pes-transitions", PESTransitions.do_decide
   ; "cat-sc", CatSC.do_decide
+  ; "cat-ra", CatRA.do_decide
   ]
 
 let run_on_es filename ch =

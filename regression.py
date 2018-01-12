@@ -65,7 +65,8 @@ TESTS = get_suite(argv, get_skip(argv, [
     ("data/jctc", "j+r-so2", "qbf"),
     
 #    ("data/jctc-lisa", "cat-so", "so"),
-    ("data/mark-sc-tests", "cat-sc", "so")
+    ("data/mark-sc-tests", "cat-sc", "so"),
+    ("data/mark-ra-tests", "cat-ra", "so")
 
 ]))
 
