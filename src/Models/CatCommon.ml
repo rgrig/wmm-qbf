@@ -13,10 +13,7 @@ let rf_constrain rf jst =
       r,
       mk_implies
         [CRel ("reads", [Var r])]
-        (FoAny (w,
-                rf (Var w) (Var r)
-               )
-        )
+        (FoAny (w, rf (Var w) (Var r)))
     )
   ]
 

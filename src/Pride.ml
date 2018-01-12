@@ -15,6 +15,7 @@ let available_models =
   ; "pes-transitions", PESTransitions.do_decide
   ; "cat-sc", CatSC.do_decide
   ; "cat-ra", CatRA.do_decide
+  ; "cat-cpp", CatCPP.do_decide
   ]
 
 let run_on_es filename ch =
