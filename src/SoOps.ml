@@ -378,3 +378,17 @@ let acyclic e =
     ; rel_subset e r
     ]
   )
+
+let eq_crel2 a n =
+  let x = mk_fresh_fv ~prefix:"eq_crel2_x" () in
+  let y = mk_fresh_fv ~prefix:"eq_crel2_y" () in
+  FoAll (
+    x,
+    FoAll (
+      y,
+      And [
+        mk_implies [QRel (a, [Var x; Var y])] (CRel (n, [Var x; Var y]))
+      ; mk_implies [CRel (n, [Var x; Var y])] (QRel (a, [Var x; Var y]))
+      ]
+    )
+  )

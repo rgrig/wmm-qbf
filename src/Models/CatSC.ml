@@ -1,5 +1,6 @@
 module E = EventStructure
 module GH = GraphHelpers
+open CatCommon
 open SO
 open SoOps
 
@@ -61,75 +62,10 @@ let build_so_structure es goal =
   ; ("reads", (1, reads))
   ; ("writes", (1, writes))
   ; ("empty_set", (1, []))
-
-  ; ("co", (2, [[2;3]]))
-  ; ("rf", (2, [[3;7];[1;8]]))
-  ; ("my_po", (2, [[7;8]]))
-  ; ("my_fr", (2, [[8;3]]))
-  ; ("my_rf", (2, [[8;2]]))    
   ]
-
-
-let rf_constrain rf jst =
-  let rf_rf_inv = sequence rf (invert rf) in
-  let r = mk_fresh_fv ~prefix:"rf_r" () in
-  let w = mk_fresh_fv ~prefix:"rf_w" () in
-  And [
-    rel_subset rf_rf_inv mk_eq
-  (* justification ∈ (W × R) *) 
-  ; rel_subset rf jst 
-  ; FoAll (
-      r,
-      mk_implies
-        [CRel ("reads", [Var r])]
-        (FoAny (w,
-                rf (Var w) (Var r)
-               )
-        )
-    )
-  ]
-
-let co_constrain co =
-  let a = mk_fresh_fv () in
-  let b = mk_fresh_fv () in
-  FoAll (
-    a,
-    FoAll (
-      b,
-      And [
-        iff [
-          CRel ("writes", [Var a])
-        ; CRel ("writes", [Var b])
-        ; CRel ("sloc", [Var a; Var b])
-        ] [Or [(co (Var a) (Var b)); (co (Var b) (Var a))]]
-      (* Alternatively it might be sufficient to constrain co to be
-         acyclic, rather than trancl irrefl. *)
-      ; irreflexive co
-      ; transitive co
-      ]
-    )
-  )
-
-let fr rf co = (sequence (invert rf) co)
-
-let com rf co fr = rel_union (rel_union rf co) fr
 
 let cat_constrain rf co fr po =
   acyclic (rel_union (com rf co fr) po)
-
-let eq_crel2 a n =
-  let x = mk_fresh_fv ~prefix:"eq_crel2_x" () in
-  let y = mk_fresh_fv ~prefix:"eq_crel2_y" () in
-  FoAll (
-    x,
-    FoAll (
-      y,
-      And [
-        mk_implies [QRel (a, [Var x; Var y])] (CRel (n, [Var x; Var y]))
-      ; mk_implies [CRel (n, [Var x; Var y])] (QRel (a, [Var x; Var y]))
-      ]
-    )
-  )
 
 let do_decide es target =
   let size = es.E.events_number in
@@ -142,9 +78,7 @@ let do_decide es target =
       SoAny (
         rf_id, 2,
         And [
-          rf_constrain
-            rf
-            (curry_crel "justifies")
+          rf_constrain rf (curry_crel "justifies")
         ; cat_constrain rf co (fr rf co) (curry_crel "order")
         ; co_constrain co 
         ]

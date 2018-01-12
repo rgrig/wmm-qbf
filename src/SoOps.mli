@@ -37,3 +37,4 @@ val transitive: (term -> term -> formula) -> formula
 val irreflexive: (term -> term -> formula) -> formula
 val acyclic: (term -> term -> formula) -> formula
 
+val eq_crel2: SO.so_var -> string -> SO.formula
