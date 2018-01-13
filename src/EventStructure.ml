@@ -9,7 +9,7 @@ type t =
   ; justifies : relation
   ; conflicts : relation
   ; order : relation
-  ; sloc : relation}
+  ; sloc : relation }
 
 let empty =
   { events_number = 0

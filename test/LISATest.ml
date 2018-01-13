@@ -4,34 +4,40 @@
 open EventStructure
 open Translate
 
-let rec repeat action times =
-  action times;
-  if times <= 1 then () else repeat action (times - 1)
+let verbose = ref false
 
-let program = Array.get Sys.argv 0
-let _ = if (Array.length Sys.argv) != 2 then begin
-  Format.printf "Usage: %s filename\n" program;
-  exit 0
-end
-let filename = Array.get Sys.argv 1
-let _ = Printf.printf "Reading file %s\n" filename
-let source = Wrapper.read_to_eof (open_in filename)
-let _ = Printf.printf "Dumping input...\n\n%s\n" source
-let litmus = Wrapper.load_litmus source
-let _ = Wrapper.print_litmus litmus
-let (init, _, program, _) = litmus
-let events = Translate.translate init program 0 1
-let _ = Printf.printf "events %d\n" events.events_number
-let reads_string = List.map (fun read -> string_of_int read) events.reads
-let _ = Printf.printf "reads %s\n" (String.concat " " reads_string)
-let _ = Printf.printf "labels\n"
-let _ = repeat (fun index -> Printf.printf "  %d \"TODO\"\n" index) events.events_number
-let _ = Printf.printf "justifies\n"
-let _ = List.iter (fun (a, b) -> Printf.printf "  %d %d\n" a b) events.justifies
-let _ = Printf.printf "conflicts\n"
-let _ = List.iter (fun (a, b) -> Printf.printf "  %d %d\n" a b) events.conflicts
-let _ = Printf.printf "order\n"
-let _ = List.iter (fun (a, b) -> Printf.printf "  %d %d\n" a b) events.order
-let _ = Printf.printf "execution\n"
-let _ = Printf.printf "sloc\n"
-let _ = List.iter (fun (a, b) -> Printf.printf "  %d %d\n" a b) events.sloc
+let print_an name =
+  let open Printf in
+  let pone f = printf " %d" in
+  let plist f = printf "  %a\n" (Util.hp_list pone) in
+  printf "%s\n%a" name (Util.hp_list plist)
+
+let print_a2 name pairs =
+  print_an name @@ List.map (fun (x, y) -> [x; y]) pairs
+
+let print_a1 name elements =
+  print_an name @@ List.map (fun x -> [x]) elements
+
+let es_of_lisa lisa_filename =
+  let lisa_text = Wrapper.read_to_eof (open_in lisa_filename) in
+  let init, _, program, _ = Wrapper.load_litmus lisa_text in
+  let events = Translate.translate init program 0 1 in
+  let open Printf in
+  printf "events %d\n" events.events_number;
+  print_a2 "sloc" events.sloc;
+  print_a1 "reads" events.reads;
+  printf "labels\n";
+  for i = 1 to events.events_number do
+    printf "  %d \"TODO\"\n" i
+  done;
+  print_a2 "justifies" events.justifies;
+  print_a2 "conflicts" events.conflicts;
+  print_a2 "order" events.order;
+  printf "execution\n"
+
+let args = Arg.
+  [ "-v", Set verbose, "be verbose" ]
+
+
+let () =
+  Arg.parse args es_of_lisa "Translates LISA to event structures."
