@@ -78,28 +78,30 @@ let show_solver = function
   | None -> "no solver"
 
 let command_spec available_models =
-  Arg.align
-  [ "--use-lisa", Arg.Set use_lisa_val,
+  Arg.align Arg.
+  [ "--use-lisa", Set use_lisa_val,
     "  use LISA as input language for test"
-  ; "--dump-lisa", Arg.Set dump_lisa_val,
+  ; "--dump-lisa", Set dump_lisa_val,
     "  print the LISA AST"
-  ; "--dump-qbf", Arg.Set dump_qbf_val,
+  ; "--debug-lisa-translate", Set Translate.debug,
+    "  debug translation from LISA to EventStructure"
+  ; "--dump-qbf", Set dump_qbf_val,
     "  print QBF query before executing"
-  ; "--dump-query", Arg.Set dump_query_val,
+  ; "--dump-query", Set dump_query_val,
     "  print query before executing"
-  ; "--model", Arg.String (choose_model available_models),
+  ; "--model", String (choose_model available_models),
     "  pick a model (default: " ^ (fst (List.hd available_models)) ^ ")"
-  ; "--list-models", Arg.Unit (list_models available_models),
+  ; "--list-models", Unit (list_models available_models),
     "  print list of models"
-  ; "--qbf-solver-path", Arg.String ((:=) qbf_solver_bin_val),
+  ; "--qbf-solver-path", String ((:=) qbf_solver_bin_val),
     "  set the path to the Qbf solver binary"
-  ; "--so-solver-path", Arg.String ((:=) so_solver_bin_val),
+  ; "--so-solver-path", String ((:=) so_solver_bin_val),
     "  set the path to the SO solver binary"  
-  ; "--solver", Arg.String choose_solver,
+  ; "--solver", String choose_solver,
     "  pick the solver type to use. (default: " ^ (show_solver default_solver) ^ ")"
-  ; "--values", Arg.String set_vals,
+  ; "--values", String set_vals,
     "  use this range of values to build event structures. (default: " ^ (show_vals !vals_val) ^ ")"
-  ; "--verbose", Arg.Set verbose_val,
+  ; "--verbose", Set verbose_val,
     "  print aditional status information during execution"]
 
 let show_solver = function
