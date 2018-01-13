@@ -23,9 +23,6 @@ let so_solver_bin () = !so_solver_bin_val
 let use_solver_val = ref (Some SolveQbf)
 let use_solver () = !use_solver_val
 
-let use_lisa_val = ref false
-let use_lisa () = !use_lisa_val
-
 let vals_val = ref (0,1)
 let vals () = !vals_val
 let set_vals s =
@@ -79,9 +76,7 @@ let show_solver = function
 
 let command_spec available_models =
   Arg.align Arg.
-  [ "--use-lisa", Set use_lisa_val,
-    "  use LISA as input language for test"
-  ; "--dump-lisa", Set dump_lisa_val,
+  [ "--dump-lisa", Set dump_lisa_val,
     "  print the LISA AST"
   ; "--debug-lisa-translate", Set Translate.debug,
     "  debug translation from LISA to EventStructure"
