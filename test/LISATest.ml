@@ -30,7 +30,8 @@ let es_of_lisa lisa_filename =
   Printf.printf "execution\n"
 
 let args = Arg.
-  [ "-v", Set verbose, "be verbose" ]
+  [ "-v", Set verbose, "be verbose"
+  ; "--debug-translate", Set Translate.debug, "debug translation" ]
 
 
 let () =

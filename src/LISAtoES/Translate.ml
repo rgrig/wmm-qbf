@@ -1,14 +1,14 @@
 (* This module translates LISA program ASTs from LISAParser into event structures. *)
 
-(* TODO: Remove Printf.printf debugging output once comfortable this module actually works. *)
-
 open EventStructure
 open MiscParser
 open Constant
 open BellBase
 open MetaConst
 
-exception LISAtoESException of string;;
+exception LISAtoESException of string
+
+let debug = ref false
 
 (* Range of values to enumerate, includes minimum and maximum. *)
 type values = {
@@ -96,7 +96,7 @@ let value_from_imm_or_addr_or_reg (store : Store.t) (from : MetaConst.k imm_or_a
   | IAR_imm value -> unwrap_metaconst value
 
 let do_arithmetic (operation : op_t) (a : int) (b : int) (values : values) : int =
-  Printf.printf "Operation on %d and %d\n" a b;
+  if !debug then Printf.printf "Operation on %d and %d\n" a b;
 
   let out = match operation with
   | Add -> a + b
@@ -303,7 +303,8 @@ and translate_instruction
     let events = ref empty_events in
     let last_root = ref None in
 
-    Printf.printf "Load r%d = %s[%d]\n" destination source.global source.offset;
+    if !debug then
+      Printf.printf "Load r%d = %s[%d]\n" destination source.global source.offset;
 
     for value = values.minimum to values.maximum do
       let new_store = Store.update store destination value in
@@ -329,7 +330,8 @@ and translate_instruction
     let program_counter = program_counter + 1 in
     let store = Store.update store destination value in
 
-    Printf.printf "Register write r%d = %d\n" destination value;
+    if !debug then
+      Printf.printf "Register write r%d = %d\n" destination value;
 
     translate_instructions instructions program_counter store values next_id depth
   | Pst(destination, source, labels) ->
@@ -338,7 +340,8 @@ and translate_instruction
     let value = value_from_reg_or_imm store source in
     let program_counter = program_counter + 1 in
 
-    Printf.printf "Store %s[%d] = %d\n" destination.global destination.offset value;
+    if !debug then
+      Printf.printf "Store %s[%d] = %d\n" destination.global destination.offset value;
 
     let subtree = translate_instructions instructions program_counter store values next_id depth in
     prefix_write subtree next_id destination value
@@ -347,13 +350,15 @@ and translate_instruction
     let test = unwrap_reg test in
     let value = Store.lookup store test in
 
-    Printf.printf "Branch %s if r%d (currently %d)\n" destination test value;
+    if !debug then
+      Printf.printf "Branch %s if r%d (currently %d)\n" destination test value;
 
     (* TODO: Check this definition of true is correct for LISA. *)
     let next = if value != 0 then find_label instructions destination else program_counter + 1 in
     translate_instructions instructions next store values next_id depth
   | Pbranch(None, destination, labels) ->
-    Printf.printf "Jump %s\n" destination;
+    if !debug then
+      Printf.printf "Jump %s\n" destination;
 
     (* Unconditional jump, doesn't create any events directly. *)
     let next = find_label instructions destination in
@@ -366,7 +371,8 @@ and translate_instruction
     let program_counter = program_counter + 1 in
     let store = Store.update store destination value in
 
-    Printf.printf "Mov r%d = %d\n" destination value;
+    if !debug then
+      Printf.printf "Mov r%d = %d\n" destination value;
 
     translate_instructions instructions program_counter store values next_id depth
   | Pmov(destination, OP(operation, a, b)) ->
@@ -379,7 +385,8 @@ and translate_instruction
     let program_counter = program_counter + 1 in
     let store = Store.update store destination value in
 
-    Printf.printf "Arithmetic r%d = %d\n" destination value;
+    if !debug then
+      Printf.printf "Arithmetic r%d = %d\n" destination value;
 
     translate_instructions instructions program_counter store values next_id depth
   | _ -> assert false (* TODO: Other instructions. *)
