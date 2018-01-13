@@ -56,11 +56,13 @@ let self_justified es xs =
   List.iter arc es.justifies;
   Hashtbl.fold (fun x () a -> a && Hashtbl.mem justified x) reads true
 
-let events es = BatList.range 1 `To (es.events_number)          
+let events es = BatList.range 1 `To (es.events_number)
+let sloc es = es.sloc
 let order es = es.order
 let reads es = es.reads
 let writes es = List.filter (fun x -> not (List.mem x es.reads)) (events es)
 let justifies es = es.justifies
+let conflicts es = es.conflicts
 let events_number es = es.events_number
 
 let order_tc es = GraphHelpers.transitive_closure (order es)
