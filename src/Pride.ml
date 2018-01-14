@@ -25,9 +25,9 @@ let run_on_es filename ch =
   | es, Some target -> (Config.model ()) es target
 
 let run_on_lisa filename ch =
-  let source = Wrapper.read_to_eof ch in
-  let ast = Wrapper.load_litmus source in
-  (if Config.dump_lisa () then Wrapper.print_litmus ast);
+  let source = Lisa.read_to_eof ch in
+  let ast = Lisa.load_litmus source in
+  (if Config.dump_lisa () then Lisa.print_litmus ast);
   let (init, _, program, _) = ast in
   let min, max = Config.vals () in
   let es = Translate.translate init program min max in
