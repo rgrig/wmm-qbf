@@ -133,12 +133,12 @@ let show_iar iar = match iar with
   | IAR_imm i -> sprintf "%d" i
 
 let pp_iar f i = Format.fprintf f "%s" (show_iar i)
-               
+
 type 'k addr_op =
 | Addr_op_atom of reg_or_addr
 | Addr_op_add of reg_or_addr * 'k reg_or_imm
                                   [@@deriving show]
-               
+
 let addr_op_tr f = function
   | Addr_op_add (r,k) -> Addr_op_add (r,reg_or_imm_tr f k)
   | Addr_op_atom _ as keep -> keep
@@ -147,7 +147,7 @@ let show_addr_op a = match a with
   | Addr_op_atom roa -> string_of_reg_or_addr roa
   | Addr_op_add(roa,roi) -> sprintf "%s+%s" (string_of_reg_or_addr roa)
     (string_of_reg_or_imm roi)
-                          
+
 type op_t =
   | Add | Xor | And | Eq | Neq
 [@@deriving show]
@@ -205,7 +205,7 @@ type parsedInstruction = MetaConst.k kinstruction
 
 let pp_instruction f k = pp_kinstruction (fun f d -> Format.fprintf f "%d" d) f k
 let pp_parsedInstruction f k = pp_kinstruction MetaConst.pp_k f k
-                       
+
 (* from GPU_PTXBase *)
 
 include Pseudo.Make

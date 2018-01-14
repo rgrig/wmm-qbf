@@ -1,6 +1,3 @@
-open Splitter
-open ConstrGen
-
 (* The types below wrap the parser's return types so the caller only has to worry about one parser module. *)
 (* Initial state of the virtual machine. *)
 type init = MiscParser.state
@@ -39,8 +36,9 @@ let read_to_eof (from : in_channel) : string =
 let load_litmus (data : string) : init * int list * ast * constraints =
   (* Find the sections of the file and check it's the right architecture. *)
   let split_result = SPLITTER.split "TODO: Name" data in
-  let _ = assert split_result.is_lisa in
-  let (init_range, program_range, condition_range, _) = split_result.locs in
+  assert Splitter.(split_result.is_lisa);
+  let (init_range, program_range, condition_range, _) =
+    Splitter.(split_result.locs) in
 
   (* Parse initial state. *)
   let lexbuf = LEXUTILS.from_section_string init_range data in
@@ -82,8 +80,10 @@ let print_litmus (litmus : init * int list * ast * constraints) : unit =
   in
   let show_atom (atom : (MiscParser.location, MiscParser.maybev) ConstrGen.atom) : string =
     match atom with
-    | LL (a, b) -> Format.sprintf "LL %s, %s" (MiscParser.dump_location a) (MiscParser.dump_location b)
-    | LV (location, value) -> Format.sprintf "LV %s, %s" (MiscParser.dump_location location) (SymbConstant.show_v value)
+    | ConstrGen.LL (a, b) ->
+        Format.sprintf "LL %s, %s" (MiscParser.dump_location a) (MiscParser.dump_location b)
+    | ConstrGen.LV (location, value) ->
+        Format.sprintf "LV %s, %s" (MiscParser.dump_location location) (SymbConstant.show_v value)
   in
   let pp_prop_option (f : Format.formatter) (value : MiscParser.prop option) : unit =
     match value with

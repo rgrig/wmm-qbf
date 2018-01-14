@@ -17,7 +17,7 @@
 
 module Bell = BellBase
 open Bell
-    
+
 %}
 
 %token EOF SEMI COMMA PIPE COLON LPAR RPAR RBRAC LBRAC LBRACE RBRACE SCOPES REGIONS MOV AND ADD BRANCH EQ NEQ READ WRITE FENCE RMW CAS EXCH DOT XOR PLUS CALL
@@ -30,7 +30,7 @@ open Bell
 %token <string> MEM_ANNOT
 %token <int> PROC
 
-%type <int list * (BellBase.parsedPseudo) list list * MiscParser.extra_data > main 
+%type <int list * (BellBase.parsedPseudo) list list * MiscParser.extra_data > main
 %type <BellBase.parsedPseudo list> instr_option_seq
 %start main instr_option_seq
 
@@ -62,13 +62,13 @@ instr_option :
 instr_option_list :
   | instr_option
       {[$1]}
-  | instr_option PIPE instr_option_list 
+  | instr_option PIPE instr_option_list
       {$1::$3}
 
 instr_option_seq:
   | instr_option
       {[$1]}
-  | instr_option SEMI instr_option_seq 
+  | instr_option SEMI instr_option_seq
       {$1::$3}
 
 iol_list :
@@ -163,7 +163,7 @@ instr:
 | CALL LBRAC name RBRAC
   { Pcall $3 }
 
-| RMW annot_list_option reg operation addr_op  
+| RMW annot_list_option reg operation addr_op
   { Prmw($3,$4,$5,$2)}
 
 | BRANCH annot_list_option reg NAME
@@ -187,11 +187,11 @@ scope_tree_list:
 | scope_tree {[$1]}
 | scope_tree scope_tree_list {$1::$2}
 scope_tree:
- | LPAR NAME scope_tree_list RPAR  
+ | LPAR NAME scope_tree_list RPAR
    {
    BellInfo.Children($2,$3)
    }
- | LPAR NAME proc_list_sc RPAR 
+ | LPAR NAME proc_list_sc RPAR
    {
    BellInfo.Leaf($2,$3)
    }

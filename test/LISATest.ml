@@ -17,7 +17,7 @@ let print_a1 ?(decoration="") name elements =
 
 let es_of_lisa lisa_filename =
   let lisa_text = Wrapper.read_to_eof (open_in lisa_filename) in
-  let init, _, program, _ = Wrapper.load_litmus lisa_text in
+  let init, _, program, condition = Wrapper.load_litmus lisa_text in
   let es = Translate.translate init program 0 1 in
   let module ES = EventStructure in
   Printf.printf "events %d\n" (ES.events_number es);
