@@ -419,13 +419,8 @@ let match_locations (reads : read list) (writes : write list) : relation =
 (* `init` gives the initial values for global variables, letting the init event justify non-zero reads. *)
 (* `program` gives the multi-threaded program AST from LISAParser. *)
 (* `min` and `max` give the range of numeric values to enumerate for read events (inclusive). *)
-let translate
-  (init : MiscParser.state)
-  (program : BellBase.parsedPseudo list list)
-  (min : int)
-  (max : int)
-: EventStructure.t =
-  let values = { minimum = min; maximum = max; } in
+let translate litmus minimum maximum =
+  let values = { minimum; maximum } in
 
   (* The init event is special, and always gets the first ID number. *)
   let init_id = 1 in
@@ -439,7 +434,7 @@ let translate
     let subtree = translate_instructions instructions 0 Store.empty values next_id 0 in
     product events subtree
   in
-  let events = List.fold_left compose_threads empty_events program in
+  let events = List.fold_left compose_threads empty_events litmus.Lisa.program in
 
   (* Add the order relations for the init event. *)
   let events = prefix_event events init_id in
@@ -450,7 +445,7 @@ let translate
   (* Add virtual writes tied to init with all the values in the initialisation list. *)
   let events = {
     reads = events.reads;
-    writes = (writes_from_init init init_id) @ events.writes;
+    writes = (writes_from_init litmus.Lisa.init init_id) @ events.writes;
     conflict = events.conflict;
     order = events.order;
   } in

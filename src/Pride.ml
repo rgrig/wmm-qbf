@@ -26,11 +26,10 @@ let run_on_es filename ch =
 
 let run_on_lisa filename ch =
   let source = Lisa.read_to_eof ch in
-  let ast = Lisa.load_litmus source in
-  (if Config.dump_lisa () then Lisa.print_litmus ast);
-  let (init, _, program, _) = ast in
+  let litmus = Lisa.load_litmus source in
+  (if Config.dump_lisa () then Lisa.print_litmus litmus);
   let min, max = Config.vals () in
-  let es = Translate.translate init program min max in
+  let es = Translate.translate litmus min max in
   (* TODO: A switch to dump the ES is some useful format. *)
   (* TODO: Find target executions. *)
   ignore es

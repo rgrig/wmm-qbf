@@ -1,14 +1,17 @@
-(* The types below wrap the parser's return types so the caller only has to worry about one parser module. *)
-(* Initial state of the virtual machine. *)
-type init = MiscParser.state
-(* A list of program threads, each thread is a list of instructions. *)
-type ast = BellBase.parsedPseudo list list
-(* Constraints on result. *)
+type state = MiscParser.state
+type program = BellBase.parsedPseudo list list
+
 (* TODO: What does any of this mean? *)
 type constraints = (MiscParser.location * MiscParser.run_type) list *
   MiscParser.prop option *
   MiscParser.constr *
   (string * MiscParser.quantifier) list
+
+type litmus =
+  { init : state
+  ; threads : int list
+  ; program : program
+  ; final : constraints }
 
 module SPLITTER = Splitter.Make(Splitter.Default)
 module LEXUTILS = LexUtils.Make(LexUtils.Default)
@@ -33,7 +36,7 @@ let read_to_eof (from : in_channel) : string =
 (* Returns the initial state of the virtual machine, a list of ids for the proces threads, *)
 (* a list of single program threads (a list of instructions for each process), *)
 (* and the constraint on the result. *)
-let load_litmus (data : string) : init * int list * ast * constraints =
+let load_litmus data =
   (* Find the sections of the file and check it's the right architecture. *)
   let split_result = SPLITTER.split "TODO: Name" data in
   assert Splitter.(split_result.is_lisa);
@@ -55,22 +58,20 @@ let load_litmus (data : string) : init * int list * ast * constraints =
   let lexbuf = LEXUTILS.from_section_string condition_range data in
   let condition = StateParser.constraints STATE_LEXER.token lexbuf in
 
-  init, titles, processes, condition
+  { init; threads = titles; program = processes; final = condition }
 
 (* Dump debugging representation of a loaded litmus test. *)
-let print_litmus (litmus : init * int list * ast * constraints) : unit =
+let print_litmus litmus =
   Format.printf "\nDumping litmus test...\n\n";
 
-  let init, titles, processes, condition = litmus in
-
   (* Print inital state. *)
-  Format.printf "Init: %a\n" MiscParser.pp_state init;
+  Format.printf "Init: %a\n" MiscParser.pp_state litmus.init;
 
   (* Print the program AST. *)
   List.iter (fun (title, instructions) ->
     Format.printf "Process %d:\n" title;
     List.iter (fun instruction -> Format.printf "\t%a\n" BellBase.pp_parsedPseudo instruction) instructions
-  ) (List.combine titles processes);
+  ) (List.combine litmus.threads litmus.program);
 
   (* Print condition. *)
   let pp_locations (f : Format.formatter) (locations : (MiscParser.location * MiscParser.run_type) list) : unit =
@@ -93,7 +94,7 @@ let print_litmus (litmus : init * int list * ast * constraints) : unit =
   let pp_kinds (f : Format.formatter) (value : (string * MiscParser.quantifier) list) : unit =
     List.iter (fun (name, quantifier) -> Format.fprintf f "name,%s;" (ConstrGen.pp_kind quantifier)) value
   in
-  let (locations, filter, final, kinds) = condition in
+  let (locations, filter, final, kinds) = litmus.final in
   Format.printf "Condition: location = %a, filter = %a, final = %s, kinds = %a\n"
     pp_locations locations
     pp_prop_option filter

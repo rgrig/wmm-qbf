@@ -14,8 +14,8 @@ let print_a1 ?(decoration="") name elements =
 
 let es_of_lisa lisa_filename =
   let lisa_text = Lisa.read_to_eof (open_in lisa_filename) in
-  let init, _, program, condition = Lisa.load_litmus lisa_text in
-  let es = Translate.translate init program 0 1 in
+  let litmus = Lisa.load_litmus lisa_text in
+  let es = Translate.translate litmus 0 1 in
   let module ES = EventStructure in
   Printf.printf "events %d\n" (ES.events_number es);
   print_a2 "sloc" (ES.sloc es);
