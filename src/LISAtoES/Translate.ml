@@ -25,16 +25,16 @@ type address = {
 
 (* Information about a read event, used as intermediate storage until justification has been calculated. *)
 type read = {
-  id : event;
-  from : address;
-  value : int;
+  r_id : event;
+  r_from : address;
+  r_value : int;
 }
 
 (* Information about a write event, used as intermediate storage until justification has been calculated. *)
 type write = {
-  id : event;
-  into : address;
-  value : int;
+  w_id : event;
+  w_into : address;
+  w_value : int;
 }
 
 (* Intermediate event structure, gets translated to the final datatype before leaving this module. *)
@@ -151,8 +151,8 @@ let product (a : events) (b : events) : events =
 let prefix_event (events : events) (event : event) : events =
   (* TODO: Check I understood the notation properly. *)
   (* This should be equivalent to "≤0 ∪ ({⊥} × E)" but without (⊥, ⊥). *)
-  let read_order = List.map (fun (read : read) -> (event, read.id)) events.reads in
-  let write_order = List.map (fun (write : write) -> (event, write.id)) events.writes in
+  let read_order = List.map (fun read -> (event, read.r_id)) events.reads in
+  let write_order = List.map (fun write -> (event, write.w_id)) events.writes in
   {
     reads = events.reads;
     writes = events.writes;
@@ -161,26 +161,26 @@ let prefix_event (events : events) (event : event) : events =
   }
 
 (* Add a read event before the given events and return the result and the allocated event id. *)
-let prefix_read (events : events) (next_id : event ref) (from : address) (value : int) : events * event =
-  let id = !next_id in
+let prefix_read (events : events) (next_id : event ref) (r_from : address) (r_value : int) : events * event =
+  let r_id = !next_id in
   next_id := !next_id + 1;
-  let events = prefix_event events id in
+  let events = prefix_event events r_id in
   let events = {
-    reads = { id = id; from = from; value = value; } :: events.reads;
+    reads = { r_id; r_from; r_value } :: events.reads;
     writes = events.writes;
     conflict = events.conflict;
     order = events.order;
   } in
-  events, id
+  (events, r_id)
 
 (* Add a write event before the given events. *)
-let prefix_write (events : events) (next_id : event ref) (into : address) (value : int) : events =
-  let id = !next_id in
+let prefix_write (events : events) (next_id : event ref) (w_into : address) (w_value : int) : events =
+  let w_id = !next_id in
   next_id := !next_id + 1;
-  let events = prefix_event events id in
+  let events = prefix_event events w_id in
   {
     reads = events.reads;
-    writes = { id = id; into = into; value = value; } :: events.writes;
+    writes = { w_id; w_into; w_value } :: events.writes;
     conflict = events.conflict;
     order = events.order;
   }
@@ -207,20 +207,20 @@ let find_label (instructions : BellBase.parsedPseudo array) (label : string) : i
 
 (* Return true if a write has the same address and value as a read. *)
 let write_justifies_read (write : write) (read : read) : bool =
-  read.from = write.into && read.value = write.value
+  read.r_from = write.w_into && read.r_value = write.w_value
 
 (* Returns a list of writes justified by the init event specified. *)
-let writes_from_init (init : MiscParser.state) (event_id : event) : write list =
+let writes_from_init (init : MiscParser.state) (w_id : event) : write list =
   List.fold_left (fun accumulator init ->
     (* TODO: Assumes that run_type isn't relevant. *)
     let (location, (run_type, value)) = init in
 
-    let value = match value with
+    let w_value = match value with
     | Concrete value -> value
     | Symbolic _ -> assert false (* Meaningless. *)
     in
 
-    let address = match location with
+    let w_into = match location with
     | Location_reg _
     | Location_sreg _ -> raise (LISAtoESException "write register [value] not supported.")
     | Location_global(Symbolic name) -> { global = name; offset = 0; }
@@ -232,7 +232,7 @@ let writes_from_init (init : MiscParser.state) (event_id : event) : write list =
     | Location_deref(Concrete _, _) -> assert false (* Meaningless. *)
     in
 
-    { id = event_id; into = address; value = value; } :: accumulator
+    { w_id; w_into; w_value } :: accumulator
   ) [] init
 
 (* Translates a sequence of instructions form a single thread into an event structure. *)
@@ -396,7 +396,7 @@ and translate_instruction
 let justify_reads (reads : read list) (writes : write list) : relation =
   List.fold_left (fun accumulator read ->
     List.fold_left (fun accumulator write ->
-      if write_justifies_read write read then (write.id, read.id) :: accumulator else accumulator
+      if write_justifies_read write read then (write.w_id, read.r_id) :: accumulator else accumulator
     ) accumulator writes
   ) [] reads
 
@@ -404,8 +404,8 @@ let justify_reads (reads : read list) (writes : write list) : relation =
 let match_locations (reads : read list) (writes : write list) : relation =
   (* Make one big list of all events and the global they touch. *)
   (* Type explicitly stated because inference fails here. *)
-  let read_addresses = List.map (fun (read : read) -> (read.id, read.from)) reads in
-  let write_addresses = List.map (fun write -> (write.id, write.into)) writes in
+  let read_addresses = List.map (fun read -> (read.r_id, read.r_from)) reads in
+  let write_addresses = List.map (fun write -> (write.w_id, write.w_into)) writes in
   let event_addresses = List.append read_addresses write_addresses in
 
   (* Find pairs with the same source/destination. *)
@@ -426,7 +426,7 @@ let translate litmus minimum maximum =
   let init_id = 1 in
 
   (* This boxed counter is used to make sure all events get unique ID numbers. *)
-  let next_id = ref (init_id + 1) in
+  let next_id = ref (init_id + 1) in (* TODO: wrap in a function *)
 
   (* Translate each thread and compose the resulting event structures together. *)
   let compose_threads (events : events) (instructions : BellBase.parsedPseudo list) : events =
@@ -457,7 +457,7 @@ let translate litmus minimum maximum =
   {
     (* Beware, not all writes now correspond to events! Don't use it calculate number of events. *)
     events_number = !next_id - 1;
-    reads = List.map (fun (read : read) -> read.id) events.reads;
+    reads = List.map (fun read -> read.r_id) events.reads;
     justifies = justifies;
     conflicts = events.conflict;
     order = events.order;
