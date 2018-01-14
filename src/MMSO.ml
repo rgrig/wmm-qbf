@@ -99,13 +99,12 @@ let pre_compose x rel =
   List.map fst (List.filter (fun (l,r) -> x == r) rel)
 
 let same_label es x y =
-  (* remember that in OCaml `=' does structural equality checking and
-     `==' does reference equality checking. This was previously the
-     source of a bug. *)
-  if List.mem x (EventStructure.reads es) then
-    (pre_compose x (EventStructure.justifies es)) = pre_compose y (EventStructure.justifies es)
+  (* NOTE: do NOT use == below *)
+  let open EventStructure in
+  if List.mem x es.reads then
+    pre_compose x es.justifies = pre_compose y es.justifies
   else
-    (compose x (EventStructure.justifies es)) = compose y (EventStructure.justifies es)
+    compose x es.justifies = compose y es.justifies
        
 
 let valid_rel es x y =
@@ -130,7 +129,7 @@ let equals_set x is =
   And (List.map f (U.range 1 n))
   
 let writes es w =
-  let writes = EventStructure.writes es in
+  let writes = EventStructure.get_writes es in
   equals_set w writes
 
 let subset x y =

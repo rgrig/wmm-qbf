@@ -58,7 +58,7 @@ let allnames x =
   in
   let names = U.n_cartesian_product (lists (U.range 1 n) (x.arity)) in
   List.map (name x) names
-  
+
 let justifies es =
 (* TODO (low priority): explain this to Mark. *)
   let h = Hashtbl.create 0 in
@@ -75,7 +75,7 @@ let justifies es =
       let b = Qbf.mk_or [b; var x [j]] in (* tweak: justify only new *)
       Qbf.mk_implies [var y [j]] b in
     Qbf.mk_and @@ List.map justify_read es.E.reads)
-  
+
 let valid_conf es x =
   let downclosed =
     let f (i, j) = Qbf.mk_implies [var x [j]] (var x [i]) in
@@ -93,19 +93,17 @@ let pre_compose x rel =
   List.map fst (List.filter (fun (l,r) -> x == r) rel)
 
 let same_label es x y =
-  (* remember that in OCaml `=' does structural equality checking and
-     `==' does reference equality checking. This was previously the
-     source of a bug. *)
-  if List.mem x (EventStructure.reads es) then
-    (pre_compose x (EventStructure.justifies es)) = pre_compose y (EventStructure.justifies es)
+  let open EventStructure in
+  if List.mem x es.reads then
+    pre_compose x es.justifies = pre_compose y es.justifies
   else
-    (compose x (EventStructure.justifies es)) = compose y (EventStructure.justifies es)
-       
+    compose x es.justifies = compose y es.justifies
+
 
 let valid_rel es x y =
   Qbf.mk_and [ valid_conf es x; valid_conf es y ]
 
-let fresh_so_var = 
+let fresh_so_var =
   let n = ref 0 in
   (fun ?(prefix = "C") es a -> incr n; { prefix = sprintf "%s%d" prefix !n; arity = a; event_structure = es } )
 
@@ -114,15 +112,15 @@ let forall x a =
 
 let exists x a =
   Qbf.mk_exists (allnames x) a
-  
+
 let equals_set x is =
   let n = size_of x in
   let f i =
     if List.mem i is then var x [i] else Qbf.mk_not (var x [i]) in
   Qbf.mk_and @@ List.map f (U.range 1 n)
-  
+
 let writes es w =
-  let writes = EventStructure.writes es in
+  let writes = EventStructure.get_writes es in
   equals_set w writes
 
 let subset x y =
@@ -147,7 +145,7 @@ let set_union es x e =
         Qbf.mk_and @@ List.map f (U.range 1 n)
       ; Qbf.mk_and @@ List.map g (U.range 1 n)
       ]
-  
+
 let intersect_n ps x y =
   Qbf.mk_and @@ List.map (fun p -> p x y) ps
 let union_n ps x y =
@@ -338,7 +336,7 @@ let test_subset2 = "subset 2" >:: (fun () ->
                   ]
                ) x
   )
-                 
+
 let test_equal = "equal" >:: (fun () ->
   let x = equal sample_conf sample_conf2 in
   assert_equal (Qbf.mk_and [

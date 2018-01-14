@@ -16,14 +16,14 @@ let es_of_lisa lisa_filename =
   let lisa_text = Lisa.read_to_eof (open_in lisa_filename) in
   let litmus = Lisa.load_litmus lisa_text in
   let es = Translate.translate litmus 0 1 in
-  let module ES = EventStructure in
-  Printf.printf "events %d\n" (ES.events_number es);
-  print_a2 "sloc" (ES.sloc es);
-  print_a1 "reads" (ES.reads es);
-  print_a1 "labels" (ES.events es) ~decoration:" \"TODO\"";
-  print_a2 "justifies" (ES.justifies es);
-  print_a2 "conflicts" (ES.conflicts es);
-  print_a2 "order" (ES.order es);
+  let open EventStructure in
+  Printf.printf "events %d\n" es.events_number;
+  print_a2 "sloc" es.sloc;
+  print_a1 "reads" es.reads;
+  print_a1 "labels" (get_events es) ~decoration:" \"TODO\"";
+  print_a2 "justifies" es.justifies;
+  print_a2 "conflicts" es.conflicts;
+  print_a2 "order" es.order;
   Printf.printf "execution\n"
 
 let args = Arg.

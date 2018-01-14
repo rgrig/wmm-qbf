@@ -25,7 +25,7 @@ let maximal_conf es x =
 *)
 let certifiable es e c =
   let y = MM.fresh_so_var es 1 ~prefix:(Printf.sprintf "cert%d" e) in
-  let s_writes = List.filter (MM.same_label es e) (EventStructure.writes es) in
+  let s_writes = List.filter (MM.same_label es e) (EventStructure.get_writes es) in
   MM.forall y
     (Qbf.mk_implies
        [MM.subset c y; maximal_conf es y]
@@ -33,7 +33,7 @@ let certifiable es e c =
     )
 
 let grows_by es x y ev =
-  let events = EventStructure.events es in
+  let events = EventStructure.get_events es in
   Qbf.mk_and @@ [
     MM.subset x y
   ; MM._in [ev] y
@@ -51,7 +51,7 @@ let follows_config es c e =
       if List.mem (f, e) (EventStructure.order_tc es)
       then MM._in [f] c
       else Qbf.mk_true ()
-    ) (EventStructure.events es)
+    ) (EventStructure.get_events es)
 
 (** 
      e follows config    e∈W → e∈P    conf' = conf ∪ {e}
@@ -68,7 +68,7 @@ let promise_read es (conf, proms) (conf', proms') =
   *)
   let preconds x =
     let write_imp_prom =
-      if List.mem x (EventStructure.writes es)
+      if List.mem x (EventStructure.get_writes es)
       then MM._in [x] proms
       else Qbf.mk_true ()
     in
@@ -87,7 +87,7 @@ let promise_read es (conf, proms) (conf', proms') =
 
   (* ∃ev∈W . follows_config ev ∧ ev∈proms ∧ conf_has_e ev ∧ ev∈conf' *)
   Qbf.mk_and [
-    Qbf.mk_or (List.map preconds (EventStructure.events es))
+    Qbf.mk_or (List.map preconds (EventStructure.get_events es))
   ; MM.equal proms proms'
   ]
 
@@ -97,8 +97,8 @@ let promise_read es (conf, proms) (conf', proms') =
             <conf, proms> ––→ <conf', proms'>
 *)
 let make_promise es (conf,proms) (conf',proms') =
-  let writes = EventStructure.writes es in
-  let events = EventStructure.events es in
+  let writes = EventStructure.get_writes es in
+  let events = EventStructure.get_events es in
 
   (* e∈W ∧ certifiable e *)
   (* This is terribly named. What about 'certifiable_write' *)
@@ -147,7 +147,7 @@ let promising es conf proms goal =
     in
     MM.exists conf' @@ MM.exists proms' @@ r
   in
-  do_step (conf, proms) (EventStructure.events_number es)
+  do_step (conf, proms) (EventStructure.get_events_number es)
 
 (* Find out if these 3 are the only quantified variables. Name them
    and check the QCIR. Compare to J+R. *)

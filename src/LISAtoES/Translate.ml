@@ -1,6 +1,6 @@
 (* This module translates LISA program ASTs from LISAParser into event structures. *)
 
-open EventStructure
+(* open EventStructure *)
 open MiscParser
 open Constant
 open BellBase
@@ -25,14 +25,14 @@ type address = {
 
 (* Information about a read event, used as intermediate storage until justification has been calculated. *)
 type read = {
-  r_id : event;
+  r_id : EventStructure.event;
   r_from : address;
   r_value : int;
 }
 
 (* Information about a write event, used as intermediate storage until justification has been calculated. *)
 type write = {
-  w_id : event;
+  w_id : EventStructure.event;
   w_into : address;
   w_value : int;
 }
@@ -41,8 +41,8 @@ type write = {
 type events = {
   reads : read list;
   writes : write list;
-  conflict : relation;
-  order : relation;
+  conflict : EventStructure.relation;
+  order : EventStructure.relation;
 }
 
 let empty_events = {
@@ -122,7 +122,7 @@ let rec instruction_from_pseudo_label (pseudo : BellBase.parsedPseudo) : BellBas
 (* Sum event trees, assuming that root_a and root_b are the top of each tree. *)
 (* Only adds a conflict between the root events to save generating lots of unused conflicts. *)
 (* Assumes that the two trees use separate sets of event IDs. *)
-let sum (a : events) (b : events) (root_a : event) (root_b : event) : events =
+let sum (a : events) (b : events) (root_a : EventStructure.event) (root_b : EventStructure.event) : events =
   {
     (* "E1 ∪ E2". *)
     reads = a.reads @ b.reads;
@@ -148,7 +148,7 @@ let product (a : events) (b : events) : events =
 
 (* Add an event before the given event set, without updating lists of reads and writes. *)
 (* TODO: Avoid generating lots of unused orders. *)
-let prefix_event (events : events) (event : event) : events =
+let prefix_event (events : events) (event : EventStructure.event) : events =
   (* TODO: Check I understood the notation properly. *)
   (* This should be equivalent to "≤0 ∪ ({⊥} × E)" but without (⊥, ⊥). *)
   let read_order = List.map (fun read -> (event, read.r_id)) events.reads in
@@ -161,7 +161,7 @@ let prefix_event (events : events) (event : event) : events =
   }
 
 (* Add a read event before the given events and return the result and the allocated event id. *)
-let prefix_read (events : events) (next_id : event ref) (r_from : address) (r_value : int) : events * event =
+let prefix_read (events : events) (next_id : EventStructure.event ref) (r_from : address) (r_value : int) : events * EventStructure.event =
   let r_id = !next_id in
   next_id := !next_id + 1;
   let events = prefix_event events r_id in
@@ -174,7 +174,7 @@ let prefix_read (events : events) (next_id : event ref) (r_from : address) (r_va
   (events, r_id)
 
 (* Add a write event before the given events. *)
-let prefix_write (events : events) (next_id : event ref) (w_into : address) (w_value : int) : events =
+let prefix_write (events : events) (next_id : EventStructure.event ref) (w_into : address) (w_value : int) : events =
   let w_id = !next_id in
   next_id := !next_id + 1;
   let events = prefix_event events w_id in
@@ -210,7 +210,7 @@ let write_justifies_read (write : write) (read : read) : bool =
   read.r_from = write.w_into && read.r_value = write.w_value
 
 (* Returns a list of writes justified by the init event specified. *)
-let writes_from_init (init : MiscParser.state) (w_id : event) : write list =
+let writes_from_init (init : MiscParser.state) (w_id : EventStructure.event) : write list =
   List.fold_left (fun accumulator init ->
     (* TODO: Assumes that run_type isn't relevant. *)
     let (location, (run_type, value)) = init in
@@ -243,7 +243,7 @@ let rec translate_instructions
   (program_counter : int)
   (store : Store.t)
   (values : values)
-  (next_id : event ref)
+  (next_id : EventStructure.event ref)
   (depth : int)
 : events =
   if depth > 16 then
@@ -290,7 +290,7 @@ and translate_instruction
   (program_counter : int)
   (store : Store.t)
   (values : values)
-  (next_id : event ref)
+  (next_id : EventStructure.event ref)
   (depth : int)
   (instruction : BellBase.parsedInstruction)
 : events =
@@ -393,7 +393,7 @@ and translate_instruction
 
 (* Generate the justifies relation. *)
 (* In this case, "justifies" pairs reads and writes of the same variable and value. *)
-let justify_reads (reads : read list) (writes : write list) : relation =
+let justify_reads (reads : read list) (writes : write list) : EventStructure.relation =
   List.fold_left (fun accumulator read ->
     List.fold_left (fun accumulator write ->
       if write_justifies_read write read then (write.w_id, read.r_id) :: accumulator else accumulator
@@ -401,7 +401,7 @@ let justify_reads (reads : read list) (writes : write list) : relation =
   ) [] reads
 
 (* Return a list of pairs of events that read or write the same global. *)
-let match_locations (reads : read list) (writes : write list) : relation =
+let match_locations (reads : read list) (writes : write list) : EventStructure.relation =
   (* Make one big list of all events and the global they touch. *)
   (* Type explicitly stated because inference fails here. *)
   let read_addresses = List.map (fun read -> (read.r_id, read.r_from)) reads in
@@ -452,13 +452,14 @@ let translate litmus minimum maximum =
 
   (* Generate the justifies relation. *)
   let justifies = justify_reads events.reads events.writes in
+  let reads = List.map (fun r -> r.r_id) events.reads in
 
   (* Convert from intermediate representation to final event structure. *)
-  {
+  EventStructure.{
     (* Beware, not all writes now correspond to events! Don't use it calculate number of events. *)
     events_number = !next_id - 1;
-    reads = List.map (fun read -> read.r_id) events.reads;
-    justifies = justifies;
+    reads;
+    justifies;
     conflicts = events.conflict;
     order = events.order;
     sloc = same_location;
