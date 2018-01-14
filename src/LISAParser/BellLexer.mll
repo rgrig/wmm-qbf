@@ -38,7 +38,6 @@ rule token = parse
 | 'P' (num as x)
     { PROC (int_of_string x) }
 | ';' { SEMI  }
-| '.' { DOT   }
 | ',' { COMMA }
 | '|' { PIPE  }
 | ':' { COLON }
@@ -54,8 +53,6 @@ rule token = parse
 | "f"  { FENCE }
 | "call"   { CALL }
 | "rmw"  { RMW  }
-| "exch" { EXCH }
-| "cas"  { CAS }
 | "mov"  { MOV }
 | "add"  { ADD }
 | "and"  { AND }

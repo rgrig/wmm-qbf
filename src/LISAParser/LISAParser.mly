@@ -20,21 +20,18 @@ open Bell
 
 %}
 
-%token EOF SEMI COMMA PIPE COLON LPAR RPAR RBRAC LBRAC LBRACE RBRACE SCOPES REGIONS MOV AND ADD BRANCH EQ NEQ READ WRITE FENCE RMW CAS EXCH DOT XOR PLUS CALL
+%token EOF SEMI COMMA PIPE COLON LPAR RPAR RBRAC LBRAC LBRACE RBRACE SCOPES REGIONS MOV AND ADD BRANCH EQ NEQ READ WRITE FENCE RMW XOR PLUS CALL
 %token <BellBase.reg> REG
 %token <int> NUM
 %token <string> CODEVAR
 %token <string> NAME
 %token <string> META
 %token <BellBase.reg> SYMB_REG
-%token <string> MEM_ANNOT
 %token <int> PROC
 
 %type <int list * (BellBase.parsedPseudo) list list * MiscParser.extra_data > main
-%type <BellBase.parsedPseudo list> instr_option_seq
-%start main instr_option_seq
-
-%nonassoc SEMI
+(* %type <BellBase.parsedPseudo list> instr_option_seq *)
+%start main
 
 %type <BellInfo.test> scopes_and_memory_map
 %%
@@ -63,12 +60,6 @@ instr_option_list :
   | instr_option
       {[$1]}
   | instr_option PIPE instr_option_list
-      {$1::$3}
-
-instr_option_seq:
-  | instr_option
-      {[$1]}
-  | instr_option SEMI instr_option_seq
       {$1::$3}
 
 iol_list :

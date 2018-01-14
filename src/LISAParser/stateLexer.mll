@@ -51,7 +51,6 @@ rule token = parse
 | '=' { EQUAL }
 | "==" { EQUALEQUAL }
 | "!="|"<>" { NOTEQUAL }
-| '+' { PLUS_DISJ }
 | "=>" { IMPLIES }
  | "/\\" {AND}
 | "\\/" {OR}
@@ -62,7 +61,6 @@ rule token = parse
 | "and" { TOKAND }
 | "exists"   { EXISTS }
 | "forall"   { FORALL }
-| "cases"    { CASES }
 | "final"    { FINAL }
 | "with"     { WITH }
 | "locations" { LOCATIONS }

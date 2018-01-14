@@ -28,8 +28,8 @@ open ConstrGen
 %token <int> NUM
 
 %token TRUE FALSE
-%token EQUAL NOTEQUAL EQUALEQUAL PLUS_DISJ
-%token FINAL FORALL EXISTS OBSERVED TOKAND NOT AND OR IMPLIES CASES WITH FILTER
+%token EQUAL NOTEQUAL EQUALEQUAL
+%token FINAL FORALL EXISTS OBSERVED TOKAND NOT AND OR IMPLIES WITH FILTER
 %token LOCATIONS STAR
 %token LBRK RBRK LPAR RPAR SEMI COLON AMPER
 %token ATOMIC
@@ -39,25 +39,23 @@ open ConstrGen
 %token <string> PTX_REG_TYPE
 
 
-%left PLUS_DISJ OR
+%left OR
 %left AND
 %right IMPLIES
 %nonassoc NOT
 
 %type <MiscParser.state> init
 %start init
-%type <MiscParser.location> location
-%start location
+(* %type <MiscParser.location> location *)
+(* %start location *)
 %type <(MiscParser.location * MiscParser.run_type) list * MiscParser.prop option * MiscParser.constr * (string * MiscParser.quantifier) list> constraints
 %start constraints
-%type  <MiscParser.constr> constr
-%start constr
-%type  <MiscParser.constr> skip_loc_constr
-%start skip_loc_constr
-%type  <(MiscParser.location * MiscParser.run_type) list * MiscParser.constr> loc_constr
-%start loc_constr
-%type <MiscParser.location list> locs
-%start locs
+(* %type  <MiscParser.constr> constr *)
+(* %start constr *)
+(* %type  <MiscParser.constr> skip_loc_constr *)
+(* %start skip_loc_constr *)
+(* %type  <(MiscParser.location * MiscParser.run_type) list * MiscParser.constr> loc_constr *)
+(* %start loc_constr *)
 %%
 
 /* For initial state */
@@ -143,10 +141,6 @@ locations:
 |  LOCATIONS LBRK loc_semi_list RBRK { $3 }
 | { [] }
 
-locs:
-| { [] }
-| location locs { $1 :: $2 }
-
 filter:
 | { None }
 | FILTER prop { Some $2 }
@@ -200,13 +194,6 @@ obs:
 obsone:
 |                       { [] }
 | atom_prop SEMI obsone { $1 :: $3 }
-
-loc_constr:
-| locations constr { $1,$2 }
-
-skip_loc_constr:
-| locations constr { $2 }
-
 
 atom_prop:
 | loc_deref  EQUAL maybev {Atom (LV ($1,$3))}
