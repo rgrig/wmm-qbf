@@ -1,5 +1,8 @@
 open Printf
 module B = BatList
+module Int = struct type t = int let compare = compare end
+module IntSet = Set.Make (Int)
+module IntMap = Map.Make (Int)
 module StringSet = Set.Make (String)
 module StringMap = Map.Make (String)
 

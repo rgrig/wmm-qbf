@@ -57,6 +57,10 @@ let unwrap_reg (register : BellBase.reg) : int =
   | GPRreg number -> number
   | Symbolic_reg _ -> raise (LISAtoESException "Symbolic registers not supported")
 
+let unwrap_val = function
+  | Constant.Concrete i -> i
+  | _ -> raise (LISAtoESException "Symbolic values not supported")
+
 let unwrap_metaconst (value : MetaConst.k) : int =
   match value with
   | Int value -> value
@@ -215,10 +219,7 @@ let writes_from_init (init : MiscParser.state) (w_id : EventStructure.event) : w
     (* TODO: Assumes that run_type isn't relevant. *)
     let (location, (run_type, value)) = init in
 
-    let w_value = match value with
-    | Concrete value -> value
-    | Symbolic _ -> assert false (* Meaningless. *)
-    in
+    let w_value = unwrap_val value in
 
     let w_into = match location with
     | Location_reg _
@@ -415,6 +416,56 @@ let match_locations (reads : read list) (writes : write list) : EventStructure.r
     ) accumulator event_addresses
   ) [] event_addresses
 
+
+module RegisterMap = Util.IntMap
+
+let get_expected_results (litmus : Lisa.litmus) =
+  let module M = RegisterMap in
+  let parse_reg r = match BellBase.parse_reg r with
+    | Some (BellBase.GPRreg i) -> i
+    | _ -> assert false in
+  let rec get_from_exists_state acc = ConstrGen.(function
+    | And xs -> List.fold_left get_from_exists_state acc xs
+    | Atom (LV (MiscParser.Location_reg (thread, reg), v)) ->
+        M.add (parse_reg reg) (thread, unwrap_val v) acc
+    | _ -> failwith "not supported") in
+  let get_from_constr = function
+    | ConstrGen.ExistsState c -> get_from_exists_state M.empty c
+    | _ -> failwith "not supported" in
+  let _, _, constr, _ = litmus.Lisa.final in
+  get_from_constr constr
+
+(*
+let append_dummies
+  (thread_name : int)
+  (thread : BellBase.parsedPseudo list)
+  (expected_results : RegisterMap.t)
+: BellBase.parsedPseudo list =
+  (* TODO: Check this matches what's really in RegisterMap. *)
+  let dummies = List.fold_left (fun (thread, register) accumulator ->
+    if thread = thread_name then
+      (* TODO: Probably the wrong sort of register. *)
+      Pst (Addr_op_atom Abs Symbolic "TODO: illegal name", Regi register) :: accumulator
+    else
+      accumulator
+  ) in
+  (* TODO: Can't remember concat syntax. *)
+  thread @ dummies
+*)
+
+let add_dummy_constraint_writes litmus expected_results = 
+  (*
+  (* TODO: Function that appends dummy writes to each thread. *)
+  (* TODO: Map list of threads with appending function. *)
+  (* TODO: Reassemble the litmus record. *)
+  List.map (fun thread -> List.append??? thread Pst()) litums.???
+  *)
+  failwith "todo"
+
+let get_must_execute events expected_results =
+(*   failwith "todo" *)
+  ()
+
 (* Translate a program AST into an event structure, this is the entrypoint into the module. *)
 (* `init` gives the initial values for global variables, letting the init event justify non-zero reads. *)
 (* `program` gives the multi-threaded program AST from LISAParser. *)
@@ -427,6 +478,9 @@ let translate litmus minimum maximum =
 
   (* This boxed counter is used to make sure all events get unique ID numbers. *)
   let next_id = ref (init_id + 1) in (* TODO: wrap in a function *)
+
+  let expected_results = get_expected_results litmus in
+  let litmus = add_dummy_constraint_writes litmus expected_results in
 
   (* Translate each thread and compose the resulting event structures together. *)
   let compose_threads (events : events) (instructions : BellBase.parsedPseudo list) : events =
@@ -442,9 +496,13 @@ let translate litmus minimum maximum =
   (* Generate the same location relation. *)
   let same_location = match_locations events.reads events.writes in
 
+  let must_execute = get_must_execute events expected_results in
+
   (* Add virtual writes tied to init with all the values in the initialisation list. *)
   let events = {
     reads = events.reads;
+    (* Beware: all writes for initialization are bound to one event, namely init_id.
+    More generally, don't use the length of the following list to count events.*)
     writes = (writes_from_init litmus.Lisa.init init_id) @ events.writes;
     conflict = events.conflict;
     order = events.order;
@@ -456,7 +514,6 @@ let translate litmus minimum maximum =
 
   (* Convert from intermediate representation to final event structure. *)
   EventStructure.{
-    (* Beware, not all writes now correspond to events! Don't use it calculate number of events. *)
     events_number = !next_id - 1;
     reads;
     justifies;
