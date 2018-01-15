@@ -11,6 +11,9 @@ exception LISAtoESException of string
 
 let debug = ref false
 
+(* Special global name for dummy writes, deliberately illegal according to the parser. *)
+let dummy_global = " dummy write "
+
 (* Range of values to enumerate, includes minimum and maximum. *)
 type values = {
   minimum : int;
@@ -35,6 +38,8 @@ type read = {
 type write = {
   w_id : EventStructure.event;
   w_into : address;
+  (* Register thread and number, only given if the write came from a single register. *)
+  w_from : (int * int) option;
   w_value : int;
 }
 
@@ -179,13 +184,19 @@ let prefix_read (events : events) (next_id : EventStructure.event ref) (r_from :
   (events, r_id)
 
 (* Add a write event before the given events. *)
-let prefix_write (events : events) (next_id : EventStructure.event ref) (w_into : address) (w_value : int) : events =
+let prefix_write
+  (events : events)
+  (next_id : EventStructure.event ref)
+  (w_from : (int * int) option)
+  (w_into : address)
+  (w_value : int)
+: events =
   let w_id = !next_id in
   next_id := !next_id + 1;
   let events = prefix_event events w_id in
   {
     reads = events.reads;
-    writes = { w_id; w_into; w_value } :: events.writes;
+    writes = { w_id; w_into; w_from; w_value } :: events.writes;
     conflict = events.conflict;
     order = events.order;
   }
@@ -231,16 +242,17 @@ let writes_from_init (init : MiscParser.state) (w_id : EventStructure.event) : w
     | Location_deref(Symbolic name, offset) -> (* { global = name; offset = offset; } *) assert false
     | Location_global(Concrete _)
     (* TODO: This is what a[0] actually seems to match. *)
-    | Location_deref(Concrete _, _) -> assert false (* Meaningless. *)
+    | Location_deref(Concrete _, _) -> assert false (* This pattern should be nonsense (but isn't). *)
     in
 
-    { w_id; w_into; w_value } :: accumulator
+    { w_id; w_into; w_from = None; w_value } :: accumulator
   ) [] init
 
 (* Translates a sequence of instructions form a single thread into an event structure. *)
 (* `program_counter` gives the index of the instruction to interpret, allowing arbitrary branching. *)
 (* `depth` tracks the number of instructions interpreted to detect infinite loops. *)
 let rec translate_instructions
+  (thread_name : int)
   (instructions : BellBase.parsedPseudo array)
   (program_counter : int)
   (store : Store.t)
@@ -260,11 +272,12 @@ let rec translate_instructions
     let line = Array.get instructions program_counter in
     let depth = depth + 1 in
     match line with
-    | Nop -> translate_instructions instructions (program_counter + 1) store values next_id depth
+    | Nop -> translate_instructions thread_name instructions (program_counter + 1) store values next_id depth
     | Label(_, next_label) ->
       let instruction = instruction_from_pseudo_label next_label in
       (match instruction with
       | Some instruction -> translate_instruction
+        thread_name
         instructions
         program_counter
         store
@@ -272,8 +285,9 @@ let rec translate_instructions
         next_id
         depth
         instruction
-      | None -> translate_instructions instructions (program_counter + 1) store values next_id depth)
+      | None -> translate_instructions thread_name instructions (program_counter + 1) store values next_id depth)
     | Instruction instruction -> translate_instruction
+      thread_name
       instructions
       program_counter
       store
@@ -288,6 +302,7 @@ let rec translate_instructions
 (* This awkward recursion pattern is here because branch instructions can arbitrarily change the program *)
 (* counter, and nesting instruction decoding pattern matches would be very unpleasant. *)
 and translate_instruction
+  (thread_name : int)
   (instructions : BellBase.parsedPseudo array)
   (program_counter : int)
   (store : Store.t)
@@ -311,6 +326,7 @@ and translate_instruction
     for value = values.minimum to values.maximum do
       let new_store = Store.update store destination value in
       let subtree = translate_instructions
+        thread_name
         instructions
         program_counter
         new_store
@@ -335,18 +351,22 @@ and translate_instruction
     if !debug then
       Printf.printf "Register write r%d = %d\n" destination value;
 
-    translate_instructions instructions program_counter store values next_id depth
+    translate_instructions thread_name instructions program_counter store values next_id depth
   | Pst(destination, source, labels) ->
     (* Spawn a write event. *)
     let destination = address_from_addr_op store destination in
     let value = value_from_reg_or_imm store source in
     let program_counter = program_counter + 1 in
+    let source_register = match source with
+    | Regi GPRreg number -> Some(thread_name, number)
+    | _ -> None
+    in
 
     if !debug then
       Printf.printf "Store %s[%d] = %d\n" destination.global destination.offset value;
 
-    let subtree = translate_instructions instructions program_counter store values next_id depth in
-    prefix_write subtree next_id destination value
+    let subtree = translate_instructions thread_name instructions program_counter store values next_id depth in
+    prefix_write subtree next_id source_register destination value
   | Pbranch(Some(test), destination, labels) ->
     (* Conditional jump, doesn't create any events directly. *)
     let test = unwrap_reg test in
@@ -357,14 +377,14 @@ and translate_instruction
 
     (* TODO: Check this definition of true is correct for LISA. *)
     let next = if value != 0 then find_label instructions destination else program_counter + 1 in
-    translate_instructions instructions next store values next_id depth
+    translate_instructions thread_name instructions next store values next_id depth
   | Pbranch(None, destination, labels) ->
     if !debug then
       Printf.printf "Jump %s\n" destination;
 
     (* Unconditional jump, doesn't create any events directly. *)
     let next = find_label instructions destination in
-    translate_instructions instructions next store values next_id depth
+    translate_instructions thread_name instructions next store values next_id depth
   | Pmov(destination, (RAI source)) ->
     (* Move from register or immediate. *)
     (* TODO: Support globals as source addresses, major restructuring needed. *)
@@ -376,7 +396,7 @@ and translate_instruction
     if !debug then
       Printf.printf "Mov r%d = %d\n" destination value;
 
-    translate_instructions instructions program_counter store values next_id depth
+    translate_instructions thread_name instructions program_counter store values next_id depth
   | Pmov(destination, OP(operation, a, b)) ->
     (* Arithmetic, doesn't generate events. *)
     (* TODO: Support globals as source addresses, major restructuring needed. *)
@@ -390,7 +410,7 @@ and translate_instruction
     if !debug then
       Printf.printf "Arithmetic r%d = %d\n" destination value;
 
-    translate_instructions instructions program_counter store values next_id depth
+    translate_instructions thread_name instructions program_counter store values next_id depth
   | _ -> assert false (* TODO: Other instructions. *)
 
 (* Generate the justifies relation. *)
@@ -481,7 +501,7 @@ let append_dummy_writes
 : BellBase.parsedPseudo list =
   let writes = List.map (fun register ->
     let reg_or_imm = Regi (GPRreg register) in
-    let addr_op = Addr_op_atom(Abs(Symbolic "TODO: illegal name to search for"))in
+    let addr_op = Addr_op_atom(Abs(Symbolic dummy_global))in
     Instruction(Pst(addr_op, reg_or_imm, []))) registers
   in
   thread @ writes
@@ -500,8 +520,15 @@ let add_dummy_constraint_writes
   { init = litmus.init; threads = litmus.threads; program = program; final = litmus.final }
 
 (* Return the set of events caused by dummy write instructions that match the final condition. *)
-let get_must_execute (events : events) (expected : int RegisterMap.t) =
-  failwith "todo"
+let get_must_execute (events : events) (expected : int RegisterMap.t) : EventStructure.set =
+  let writes = List.filter (fun write ->
+    match write.w_from with
+    | Some source -> 
+      write.w_into.global = dummy_global
+      && write.w_value = (RegisterMap.find source expected)
+    | None -> false) events.writes
+  in
+  List.map (fun write -> write.w_id) writes
 
 (* Translate a program AST into an event structure, this is the entrypoint into the module. *)
 (* `init` gives the initial values for global variables, letting the init event justify non-zero reads. *)
@@ -520,12 +547,13 @@ let translate litmus minimum maximum =
   let litmus = add_dummy_constraint_writes litmus thread_to_registers in
 
   (* Translate each thread and compose the resulting event structures together. *)
-  let compose_threads (events : events) (instructions : BellBase.parsedPseudo list) : events =
+  let compose_threads (events : events) (thread_name : int) (instructions : BellBase.parsedPseudo list)
+  : events =
     let instructions = Array.of_list instructions in
-    let subtree = translate_instructions instructions 0 Store.empty values next_id 0 in
+    let subtree = translate_instructions thread_name instructions 0 Store.empty values next_id 0 in
     product events subtree
   in
-  let events = List.fold_left compose_threads empty_events litmus.program in
+  let events = List.fold_left2 compose_threads empty_events litmus.threads litmus.program in
 
   (* Add the order relations for the init event. *)
   let events = prefix_event events init_id in
@@ -551,11 +579,11 @@ let translate litmus minimum maximum =
   let reads = List.map (fun r -> r.r_id) events.reads in
 
   (* Convert from intermediate representation to final event structure. *)
-  EventStructure.{
+  (EventStructure.{
     events_number = !next_id - 1;
     reads;
     justifies;
     conflicts = events.conflict;
     order = events.order;
     sloc = same_location;
-  }
+  }, must_execute)
