@@ -5,6 +5,7 @@ open MiscParser
 open Constant
 open BellBase
 open MetaConst
+open Lisa
 
 exception LISAtoESException of string
 
@@ -416,55 +417,91 @@ let match_locations (reads : read list) (writes : write list) : EventStructure.r
     ) accumulator event_addresses
   ) [] event_addresses
 
+(* TODO: Move? *)
+(* Pretty much straight from the documentation. *)
+module IntPairs =
+  struct
+    type t = int * int
+      let compare (x0,y0) (x1,y1) =
+        match Pervasives.compare x0 x1 with
+        | 0 -> Pervasives.compare y0 y1
+        | c -> c
+  end
+module IntPairsMap = Map.Make(IntPairs)
+(* Aliases to help readability. *)
+module RegisterMap = IntPairsMap
+module ThreadMap = Util.IntMap
 
-module RegisterMap = Util.IntMap
+(* Parse a string register name into a register number. *)
+let parse_register (name : string) : int =
+  match BellBase.parse_reg name with
+  | Some (BellBase.GPRreg i) -> i
+  | _ -> raise (LISAtoESException "Failed to parse register name")
 
-let get_expected_results (litmus : Lisa.litmus) =
-  let module M = RegisterMap in
-  let parse_reg r = match BellBase.parse_reg r with
-    | Some (BellBase.GPRreg i) -> i
-    | _ -> assert false in
-  let rec get_from_exists_state acc = ConstrGen.(function
-    | And xs -> List.fold_left get_from_exists_state acc xs
-    | Atom (LV (MiscParser.Location_reg (thread, reg), v)) ->
-        M.add (parse_reg reg) (thread, unwrap_val v) acc
-    | _ -> failwith "not supported") in
-  let get_from_constr = function
-    | ConstrGen.ExistsState c -> get_from_exists_state M.empty c
-    | _ -> failwith "not supported" in
-  let _, _, constr, _ = litmus.Lisa.final in
-  get_from_constr constr
+(* Translate conjunctions (only) into maps. *)
+let rec parse_condition_expression
+  ((values, registers) : int RegisterMap.t * int list ThreadMap.t)
+  (expression : MiscParser.prop)
+: int RegisterMap.t * int list ThreadMap.t = match expression with
+  | ConstrGen.And expressions -> List.fold_left parse_condition_expression (values, registers) expressions
+  | ConstrGen.Atom (ConstrGen.LV (MiscParser.Location_reg (thread, register), value)) ->
+    let register = parse_register register in
+    let value = unwrap_val value in
+    let values = RegisterMap.add (thread, register) value values in
+    (* Avoiding Map.update to retain compatibility with Ocaml < 4.06.0. *)
+    (* TODO: Switch to update to save second traversal of map, if possible. *)
+    (* TODO: Check that register only gets added once? *)
+    let register_list = try
+      register :: ThreadMap.find thread registers
+    with
+    | Not_found -> [register]
+    in
+    let registers = ThreadMap.add thread register_list registers in
+    (values, registers)
+  | _ -> failwith "not supported"
 
-(*
-let append_dummies
-  (thread_name : int)
+(* Parse final condition and return two maps: *)
+(* - Unique register identification (thread number, register number) to expected value. *)
+(* - Thread number to registers found in that thread mentioned in the condition. *)
+let parse_condition (litmus : Lisa.litmus) : int RegisterMap.t * int list ThreadMap.t =
+  let _, _, condition, _ = litmus.final in
+
+  (* Check this is an exists expression and get the enclosed logic. *)
+  let expression = match condition with
+  | ConstrGen.ExistsState expression -> expression
+  | _ -> failwith "not supported"
+  in
+
+  parse_condition_expression (RegisterMap.empty, ThreadMap.empty) expression
+
+(* Return a thread with write instructions (to a dummy location) for a set of registers appended. *)
+let append_dummy_writes
   (thread : BellBase.parsedPseudo list)
-  (expected_results : RegisterMap.t)
+  (registers : int list)
 : BellBase.parsedPseudo list =
-  (* TODO: Check this matches what's really in RegisterMap. *)
-  let dummies = List.fold_left (fun (thread, register) accumulator ->
-    if thread = thread_name then
-      (* TODO: Probably the wrong sort of register. *)
-      Pst (Addr_op_atom Abs Symbolic "TODO: illegal name", Regi register) :: accumulator
-    else
-      accumulator
-  ) in
-  (* TODO: Can't remember concat syntax. *)
-  thread @ dummies
-*)
+  let writes = List.map (fun register ->
+    let reg_or_imm = Regi (GPRreg register) in
+    let addr_op = Addr_op_atom(Abs(Symbolic "TODO: illegal name to search for"))in
+    Instruction(Pst(addr_op, reg_or_imm, []))) registers
+  in
+  thread @ writes
 
-let add_dummy_constraint_writes litmus expected_results = 
-  (*
-  (* TODO: Function that appends dummy writes to each thread. *)
-  (* TODO: Map list of threads with appending function. *)
-  (* TODO: Reassemble the litmus record. *)
-  List.map (fun thread -> List.append??? thread Pst()) litums.???
-  *)
+(* Return litmus with extra write instructions appended. *)
+(* The extra writes are from registers mentioned in the constraint to a dummy location. *)
+(* The resulting write events are found later and used to indentify useful parts of the event structure. *)
+let add_dummy_constraint_writes
+  (litmus : Lisa.litmus)
+  (thread_to_registers : int list ThreadMap.t)
+: Lisa.litmus =
+  let program = List.map2 (fun thread_name thread ->
+    let registers = ThreadMap.find thread_name thread_to_registers in
+    append_dummy_writes thread registers) litmus.threads litmus.program
+  in
+  { init = litmus.init; threads = litmus.threads; program = program; final = litmus.final }
+
+(* Return the set of events caused by dummy write instructions that match the final condition. *)
+let get_must_execute (events : events) (expected : int RegisterMap.t) =
   failwith "todo"
-
-let get_must_execute events expected_results =
-(*   failwith "todo" *)
-  ()
 
 (* Translate a program AST into an event structure, this is the entrypoint into the module. *)
 (* `init` gives the initial values for global variables, letting the init event justify non-zero reads. *)
@@ -479,8 +516,8 @@ let translate litmus minimum maximum =
   (* This boxed counter is used to make sure all events get unique ID numbers. *)
   let next_id = ref (init_id + 1) in (* TODO: wrap in a function *)
 
-  let expected_results = get_expected_results litmus in
-  let litmus = add_dummy_constraint_writes litmus expected_results in
+  let (register_to_value, thread_to_registers) = parse_condition litmus in
+  let litmus = add_dummy_constraint_writes litmus thread_to_registers in
 
   (* Translate each thread and compose the resulting event structures together. *)
   let compose_threads (events : events) (instructions : BellBase.parsedPseudo list) : events =
@@ -488,7 +525,7 @@ let translate litmus minimum maximum =
     let subtree = translate_instructions instructions 0 Store.empty values next_id 0 in
     product events subtree
   in
-  let events = List.fold_left compose_threads empty_events litmus.Lisa.program in
+  let events = List.fold_left compose_threads empty_events litmus.program in
 
   (* Add the order relations for the init event. *)
   let events = prefix_event events init_id in
@@ -496,14 +533,15 @@ let translate litmus minimum maximum =
   (* Generate the same location relation. *)
   let same_location = match_locations events.reads events.writes in
 
-  let must_execute = get_must_execute events expected_results in
+  (* Build set of write events that match the end condition. *)
+  let must_execute = get_must_execute events register_to_value in
 
   (* Add virtual writes tied to init with all the values in the initialisation list. *)
   let events = {
     reads = events.reads;
     (* Beware: all writes for initialization are bound to one event, namely init_id.
     More generally, don't use the length of the following list to count events.*)
-    writes = (writes_from_init litmus.Lisa.init init_id) @ events.writes;
+    writes = (writes_from_init litmus.init init_id) @ events.writes;
     conflict = events.conflict;
     order = events.order;
   } in
