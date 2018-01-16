@@ -1,11 +1,9 @@
 (* This module translates LISA program ASTs from LISAParser into event structures. *)
 
-(* open EventStructure *)
 open MiscParser
 open Constant
 open BellBase
 open MetaConst
-open Lisa
 
 exception LISAtoESException of string
 
@@ -484,7 +482,7 @@ let rec parse_condition_expression
 (* - Unique register identification (thread number, register number) to expected value. *)
 (* - Thread number to registers found in that thread mentioned in the condition. *)
 let parse_condition (litmus : Lisa.litmus) : int RegisterMap.t * int list ThreadMap.t =
-  let _, _, condition, _ = litmus.final in
+  let _, _, condition, _ = litmus.Lisa.final in
 
   (* Check this is an exists expression and get the enclosed logic. *)
   let expression = match condition with
@@ -515,9 +513,9 @@ let add_dummy_constraint_writes
 : Lisa.litmus =
   let program = List.map2 (fun thread_name thread ->
     let registers = ThreadMap.find thread_name thread_to_registers in
-    append_dummy_writes thread registers) litmus.threads litmus.program
+    append_dummy_writes thread registers) litmus.Lisa.threads litmus.Lisa.program
   in
-  { init = litmus.init; threads = litmus.threads; program = program; final = litmus.final }
+  Lisa.{ litmus with program }
 
 (* Return the set of events caused by dummy write instructions that match the final condition. *)
 let get_must_execute (events : events) (expected : int RegisterMap.t) : EventStructure.set =
@@ -553,7 +551,7 @@ let translate litmus minimum maximum =
     let subtree = translate_instructions thread_name instructions 0 Store.empty values next_id 0 in
     product events subtree
   in
-  let events = List.fold_left2 compose_threads empty_events litmus.threads litmus.program in
+  let events = List.fold_left2 compose_threads empty_events litmus.Lisa.threads litmus.Lisa.program in
 
   (* Add the order relations for the init event. *)
   let events = prefix_event events init_id in
