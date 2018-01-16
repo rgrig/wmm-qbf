@@ -100,6 +100,36 @@ let true_reln n a b =
 let aej_tc m = tc 1 (always_eventually_justifies m)
 (* let aej_tc m = tc 1 (true_reln m) *)
 
+let conflict_free c =
+  let x = mk_fresh_fv () in
+  let y = mk_fresh_fv () in
+  FoAll (
+    x,
+    FoAll (
+      y,
+      (mk_implies [
+          QRel (c, [Var x])
+        ; QRel (c, [Var y])
+        ] (Not (Or [
+          CRel ("conflict", [Var x; Var y])
+        ; CRel ("conflict", [Var x; Var y])
+        ]
+        ))
+      )
+    )
+  )
+
+let maximal c =
+  let c' = mk_fresh_sv () in
+  SoAny (
+    c', 1,
+    mk_implies [
+      conflict_free c
+    ; conflict_free c'
+    ; subset c c'
+    ] (subset c' c)
+  )
+
 let do_decide es can must =
   let size = es.E.events_number in
   let x = mk_fresh_sv () in
@@ -118,6 +148,7 @@ let do_decide es can must =
                    eq_crel x "empty_set"
                  ; eq_crel can_s "can"
                  ; eq_crel must_s "must"
+                 ; maximal y
                  ; subset y can_s
                  ; subset must_s y
                  ; aej_tc size size x y ]
