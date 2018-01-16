@@ -25,8 +25,8 @@ let es_of_lisa lisa_filename =
   print_a2 "justifies" es.justifies;
   print_a2 "conflicts" es.conflicts;
   print_a2 "order" es.order;
-  print_a1 "must_execute" must_execute;
-  Printf.printf "execution\n"
+  print_a1 "mustExecute" must_execute;
+  print_a1 "canExecute" (get_events es)
 
 let args = Arg.
   [ "-v", Set verbose, "be verbose"
