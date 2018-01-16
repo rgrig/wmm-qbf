@@ -15,7 +15,6 @@
 %token CONFLICTS
 %token EOF
 %token EVENTS
-%token EXECUTION
 %token JUSTIFIES
 %token SLOC
 %token LABELS
@@ -23,13 +22,16 @@
 %token ORDER
 %token READS
 %token QUOTED_STRING
+%token CAN
+%token MUST
 
-%start <EventStructure.t * EventStructure.set option> top
+%start <EventStructure.t * EventStructure.set * EventStructure.set> top
 
 %%
 
 top:
-  es=event_structure t=target? EOF { (es, t) }
+  es=event_structure mustExecute=mustExec canExecute=canExec EOF
+  { es, canExecute, mustExecute }
 ;
 
 event_structure:
@@ -51,7 +53,6 @@ event_structure:
         None -> []
       | Some s -> s
       )
-    ;
     }
   }
 ;
@@ -63,7 +64,8 @@ justifies: v=nl_list(JUSTIFIES,pair(INT,INT),NL*) { v };
 labels: nl_list(LABELS,pair(INT, QUOTED_STRING),NL*) {};
 order: v=nl_list(ORDER,nonempty_list(INT),NL+) { flatten_order v };
 reads: v=nl_list(READS,INT,NL*) { v };
-target: v=nl_list(EXECUTION,INT,NL*) { v };
+mustExec: v=nl_list(MUST,INT,NL*) { v };
+canExec: v=nl_list(CAN,INT,NL*) { v };
 
 nl_list(a,element,b): v=preceded(pair(a,NL*),list(terminated(element,b))) { v };
 

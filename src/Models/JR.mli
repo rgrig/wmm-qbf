@@ -4,4 +4,4 @@ val always_eventually_justifies : EventStructure.t -> MM.relation
 val always_eventually_justifies_tc : EventStructure.t -> MM.relation
 
 val do_enum: string -> EventStructure.t -> EventStructure.set option -> unit
-val do_decide: EventStructure.t -> EventStructure.set -> unit
+val do_decide: EventStructure.t -> EventStructure.set -> EventStructure.set -> unit

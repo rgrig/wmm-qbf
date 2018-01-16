@@ -563,7 +563,10 @@ let translate litmus minimum maximum =
 
   (* Build set of write events that match the end condition. *)
   let must_execute = get_must_execute events register_to_value in
-
+  
+  (* TODO: can_execute should be more clever than this *)
+  let can_execute = Util.range 1 (!next_id - 1) in
+  
   (* Add virtual writes tied to init with all the values in the initialisation list. *)
   let events = {
     reads = events.reads;
@@ -586,4 +589,4 @@ let translate litmus minimum maximum =
     conflicts = events.conflict;
     order = events.order;
     sloc = same_location;
-  }, must_execute)
+  }, can_execute, must_execute)

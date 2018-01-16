@@ -35,38 +35,9 @@ def get_passthrough_args(args):
     return []
 
 TESTS = get_suite(argv, get_skip(argv, [
-    # -- PES Regression Tests --
-    ("data/pes-regression", "pes", "qbf"),
-    ("data/pes-regression/certifies", "pes-certifies", "qbf"),
-    # Control. We should check that the data represents a test that
-    # actually passes
-    ("data/pes-regression/transitions", "j+r", "qbf"),
-    ("data/pes-regression/transitions", "pes-transitions", "qbf"),
-    ("data/pes-regression/transitions/make-promise", "pes-make-promise", "qbf"),
-    ("data/pes-regression/transitions/promise-read", "pes-promise-read", "qbf"),
-    ("data/pes-regression/transitions/follows", "pes-follows", "qbf"),
-
-    # -- Common Model Validation --
-    ("data/common-regression/valid-conf", "common-valid-conf", "qbf"),
-    ("data/common-regression/valid-conf", "j+r-so2-valid-conf", "qbf"),
-    ("data/common-regression/valid-conf", "j+r-so2-valid-conf", "so"),
-    
-    # -- Java Causaility Test Cases --
-    ("data", "j+r", "qbf"),
-    ("data/jctc", "j+r", "qbf"),
-    ("data", "j+r-acyclic", "qbf"),
-    ("data/jctc", "j+r-acyclic", "qbf"),
-    ("data/jctc", "pes", "qbf"),
-
     ("data/jctc", "j+r-so", "so"),
     ("data/jctc", "j+r-so", "qbf"),
     
-    ("data/jctc", "j+r-so2", "so"),
-    ("data/jctc", "j+r-so2", "qbf"),
-    
-#    ("data/jctc-lisa", "cat-so", "so"),
-    ("data/mark-sc-tests", "cat-sc", "so"),
-    ("data/mark-ra-tests", "cat-ra", "so")
 
 ]))
 

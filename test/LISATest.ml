@@ -16,7 +16,7 @@ let es_of_lisa lisa_filename =
   let lisa_text = Lisa.read_to_eof (open_in lisa_filename) in
   let litmus = Lisa.load_litmus lisa_text in
   if !verbose then Lisa.print_litmus litmus;
-  let es, must_execute = Translate.translate litmus 0 1 in
+  let es, can_execute, must_execute = Translate.translate litmus 0 1 in
   let open EventStructure in
   Printf.printf "events %d\n" es.events_number;
   print_a2 "sloc" es.sloc;

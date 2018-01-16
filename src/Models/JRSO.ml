@@ -1,76 +1,132 @@
 module E = EventStructure
-module U = Util
-
-open Printf
 open SO
 open SoOps
 
-(* TODO: optimize validity checks; think sequence, and correctness. *)
-         
-(* Always Justifies *)
-let always_justifies es = MMSO.intersect_n [ MMSO.subset; MMSO.justifies es; MMSO.valid_rel es ]
+let build_so_structure es can must =
+  let f (x,y) = [x;y] in
+  let order = List.map f es.E.order in
+  let conflict = List.map f es.E.conflicts in
+  let justifies = List.map f es.E.justifies in
+  let f x = [x] in
+  let reads = List.map f es.E.reads in
+  let can = List.map f can in
+  let must = List.map f must in
+  rels [
+    ("order", (2, order))
+  ; ("conflict", (2, conflict))
+  ; ("justifies", (2, justifies))
+  ; ("reads", (1, reads))
+  ; ("can", (1, can))
+  ; ("must", (1, must))
+  ; ("empty_set", (1, []))
+  ]
 
+(* Configuration justifies *)
+(* ∀y∈(b-a). (∃x∈a . x ⊢ y) *)
+let justify a b =
+  let x = mk_fresh_fv () in
+  let y = mk_fresh_fv () in
+  FoAll (y,
+         (mk_implies
+            [
+              Not (QRel (a, [Var y]))
+            ; QRel (b, [Var y])
+            ; CRel ("reads", [Var y])
+            ] (* only justify new stuff *)
+            (FoAny (x,
+                    And [
+                      QRel (a, [Var x]);
+                      CRel ("justifies", [Var x; Var y])
+                    ]
+                   )
+            )
+         )
+        )
 
-(* Always Justifies*
+let valid a =
+  let x = mk_fresh_fv () in
+  let y = mk_fresh_fv () in
+  let x' = mk_fresh_fv () in
+  let y' = mk_fresh_fv () in
+  And [
+      FoAll (x, (FoAll (y,
+        mk_implies
+          [ QRel (a, [Var x])
+          ; QRel (a, [Var y])
+          ; CRel ("conflict", [Var x; Var y]) ]
+          (mk_eq (Var x) (Var y)))))
+    ; FoAll (y',
+                 mk_implies [QRel (a, [Var y'])]
+                   (FoAll (x', mk_implies
+                             [CRel ("order", [Var x'; Var y'])]
+                             (QRel (a, [Var x']))
+                          )
+                   )
+    )]
 
-   There is a proof burden to show that applying that relation n times
-   gives totality to the model.
- *)
-let always_justifies_tc es = MMSO.at_most_n es es.E.events_number (always_justifies es)
+(* Bounded reflexive transitive closure, up to n steps *)
+let rec tc arity f n a b =
+  let x = mk_fresh_sv () in
+  match n with
+    0 -> eq a b
+  | _ -> Or [
+    eq a b
+  ; SoAny (x, arity, And [f a x; tc arity f (n-1) x b])
+  ]
 
-(* Always Eventually Justifies 
+let always_justifies a b =
+  And [justify a b; subset a b; valid a; valid b]
 
-   This relation contains always_justifies which is applied n times.
- *)
-let always_eventually_justifies es =
-  let justifies = MMSO.justifies es in
-  let aj_tc = always_justifies_tc es in
-  let sequence = MMSO.sequence es in
-  let ae_justifies =
-    (fun x y ->
-      let z = MMSO.fresh_so_var es 1 in
-      MMSO.forall z
-        (mk_implies
-          [aj_tc x z]
-          (sequence aj_tc justifies z y))) in
-  (* Query: in the doc, we do not check valid_rel here. *)
-  MMSO.intersect_n [ MMSO.subset; ae_justifies; MMSO.valid_rel es ]
+let always_justifies_tc = tc 1 always_justifies
 
-(* Always Eventually Justifies Transitively Closed
-   
-   Similar to Always Justifies there is a proof burden to show that
-   appling the relation n times is total.
- *)
-let always_eventually_justifies_tc es = MMSO.at_most_n es es.E.events_number (always_eventually_justifies es)
+let always_eventually_justifies n a b =
+  let x = mk_fresh_sv () in
+  let y = mk_fresh_sv () in
+  And
+    [ subset a b
+    ; valid a
+    ; valid b
+    ; SoAll (x, 1,
+        mk_implies
+          [ always_justifies_tc n a x ]
+          ( SoAny (y, 1,
+              And
+                [ always_justifies_tc n x y; justify y b ] ) ) ) ]
 
-(* Comment: the division between the description of the model given here and the
-    built-in functions seems less than ideal right now.
+let true_reln n a b =
+  let x = mk_fresh_sv () in
+  SoAny (x, 1, subset x x)
 
-     - Do we have to have the model writer ask for a fresh configuration, or could that be
-        within the MM.forall function.
+let aej_tc m = tc 1 (always_eventually_justifies m)
+(* let aej_tc m = tc 1 (true_reln m) *)
 
-     - Also, there are bits buried in MM.ml that the model writer might want to have their
-        hands on: we can't write the distinction between bug-fixed J+R and paper J+R at
-        the moment.
-
-    Query: Where is the goal represented?
-     - In JRCheck.ml
- *)
-
-
-let do_decide es target =
-  let x = MMSO.fresh_so_var es 1 in
-  let y = MMSO.fresh_so_var es 1 in
-  let f = And
-    [ MMSO.equals_set x []
-    ; MMSO.equals_set y target
-    ; always_eventually_justifies_tc es x y ] in
-  let f = MMSO.exists x (MMSO.exists y f) in
-  let s = { size = (es.E.events_number) ; relations = SoOps.rels [] } in
-  match Config.use_solver () with
-    Some (Config.SolveQbf) ->
-    printf "result: %b\n" (Qbf.holds (SoOps.so_to_qbf s f))
-  | Some (Config.SolveSO) ->
-    printf "result: %b\n" (SoOps.model_check s f)
-  | None -> ()
+let do_decide es can must =
+  let size = es.E.events_number in
+  let x = mk_fresh_sv () in
+  let y = mk_fresh_sv () in
+  let can_s = mk_fresh_sv () in
+  let must_s = mk_fresh_sv () in
+  let f =
+    SoAny (
+      can_s, 1,
+      SoAny (
+        must_s, 1,
+        SoAny (
+          x, 1,
+          SoAny (y, 1,
+                 And [
+                   eq_crel x "empty_set"
+                 ; eq_crel can_s "can"
+                 ; eq_crel must_s "must"
+                 ; subset y can_s
+                 ; subset must_s y
+                 ; aej_tc size size x y ]
+                )
+        )
+      )
+    )
+  in
+  let s = { size = size; relations = build_so_structure es can must } in
+  if Config.dump_query () then dump s f;
+  Printf.printf "result: %b\n" (SoOps.model_check s f)
 

@@ -1,5 +1,5 @@
 open OUnit
-open JRSO2 
+open JRSO
 open SO
 open SoOps
     

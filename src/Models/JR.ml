@@ -105,12 +105,12 @@ let step es fn now =
   let q = MM.exists x (MM.exists y q) in
   List.map (MM.set_of_model y) (Qbf.models q)
 
-let do_decide es target =
+let do_decide es can must =
   let x = MM.fresh_so_var es 1 in
   let y = MM.fresh_so_var es 1 in
   let q = Qbf.mk_and
     [ MM.equals_set x []
-    ; MM.equals_set y target
+    ; MM.equals_set y must
     ; always_eventually_justifies_tc es x y ] in
   let q = MM.exists x (MM.exists y q) in
   match Config.use_solver () with

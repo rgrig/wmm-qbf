@@ -2,37 +2,31 @@
 let available_models =
   ("j+r", JR.do_decide) (* default *)
   ::
-  [ "common-valid-conf", ValidConf.do_decide
+  [
+    "j+r-so", JRSO.do_decide
+    (*"common-valid-conf", ValidConf.do_decide
 (* TODO  ; "j+r-enum", JR.do_enum *)
   ; "j+r-so", JRSO.do_decide
-  ; "j+r-so2", JRSO2.do_decide
-  ; "j+r-so2-valid-conf", JRSO2ValidConf.do_decide
-  ; "pes", PES.do_decide
-  ; "pes-certifies", PESCertifies.do_decide
-  ; "pes-follows", PESFollows.do_decide
-  ; "pes-make-promise", PESMakePromise.do_decide
-  ; "pes-promise-read", PESPromiseRead.do_decide
-  ; "pes-transitions", PESTransitions.do_decide
   ; "cat-sc", CatSC.do_decide
-  ; "cat-ra", CatRA.do_decide
+      ; "cat-ra", CatRA.do_decide *)
   ; "cat-cpp", CatCPP.do_decide
   ]
 
 let run_on_es filename ch =
   Config.set_current_file filename;
-  match EsOps.parse filename ch with
-  | _, None -> Printf.eprintf "W: no target execution: skipping %s" filename
-  | es, Some target -> (Config.model ()) es target
+  let es, can, must = EsOps.parse filename ch in
+  (Config.model ()) es can must
 
 let run_on_lisa filename ch =
+  Config.set_current_file filename;
   let source = Lisa.read_to_eof ch in
   let litmus = Lisa.load_litmus source in
   (if Config.dump_lisa () then Lisa.print_litmus litmus);
   let min, max = Config.vals () in
-  let es = Translate.translate litmus min max in
+  let es, can, must = Translate.translate litmus min max in
   (* TODO: A switch to dump the ES is some useful format. *)
   (* TODO: Find target executions. *)
-  ignore es
+  (Config.model ()) es can must
 
 let run_on_file run filename =
   (match Util.on_channel filename (run filename) with
