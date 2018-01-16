@@ -24,14 +24,23 @@
 %token QUOTED_STRING
 %token CAN
 %token MUST
+%token EXECUTION
 
 %start <EventStructure.t * EventStructure.set * EventStructure.set> top
 
 %%
 
 top:
-  es=event_structure mustExecute=mustExec canExecute=canExec EOF
-  { es, canExecute, mustExecute }
+  es=event_structure
+  mustExecute=option(mustExec)
+  canExecute=option(canExec)
+  target=option(target)
+  EOF
+  {
+  match target with
+    None -> es, Util.from_some canExecute, Util.from_some mustExecute
+  | Some t -> es, t, t
+  }
 ;
 
 event_structure:
@@ -66,6 +75,7 @@ order: v=nl_list(ORDER,nonempty_list(INT),NL+) { flatten_order v };
 reads: v=nl_list(READS,INT,NL*) { v };
 mustExec: v=nl_list(MUST,INT,NL*) { v };
 canExec: v=nl_list(CAN,INT,NL*) { v };
+target: v=nl_list(EXECUTION,INT,NL*) { v };
 
 nl_list(a,element,b): v=preceded(pair(a,NL*),list(terminated(element,b))) { v };
 

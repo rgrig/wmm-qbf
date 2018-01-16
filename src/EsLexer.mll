@@ -9,6 +9,7 @@
       ; "events", EVENTS
       ; "canExecute", CAN
       ; "mustExecute", MUST
+      ; "execution", EXECUTION
       ; "justifies", JUSTIFIES
       ; "labels", LABELS
       ; "order", ORDER
