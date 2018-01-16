@@ -130,6 +130,16 @@ let maximal c =
     ] (subset c' c)
   )
 
+let constrain_goal g =
+  let x = mk_fresh_fv () in
+  FoAll (
+    x,
+    And [
+      mk_implies [CRel ("can", [Var x])] (QRel (g, [Var x]))
+    ; mk_implies [QRel (g, [Var x])] (CRel ("must", [Var x]))
+    ]
+  )
+
 let do_decide es can must =
   let size = es.E.events_number in
   let x = mk_fresh_sv () in
@@ -146,11 +156,8 @@ let do_decide es can must =
           SoAny (y, 1,
                  And [
                    eq_crel x "empty_set"
-                 ; eq_crel can_s "can"
-                 ; eq_crel must_s "must"
                  ; maximal y
-                 ; subset y can_s
-                 ; subset must_s y
+                 ; constrain_goal y
                  ; aej_tc size size x y ]
                 )
         )
