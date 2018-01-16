@@ -512,7 +512,9 @@ let add_dummy_constraint_writes
   (thread_to_registers : int list ThreadMap.t)
 : Lisa.litmus =
   let program = List.map2 (fun thread_name thread ->
-    let registers = ThreadMap.find thread_name thread_to_registers in
+    let registers =
+      try ThreadMap.find thread_name thread_to_registers
+      with Not_found -> [] in
     append_dummy_writes thread registers) litmus.Lisa.threads litmus.Lisa.program
   in
   Lisa.{ litmus with program }
@@ -567,7 +569,7 @@ let translate litmus minimum maximum =
     reads = events.reads;
     (* Beware: all writes for initialization are bound to one event, namely init_id.
     More generally, don't use the length of the following list to count events.*)
-    writes = (writes_from_init litmus.init init_id) @ events.writes;
+    writes = (writes_from_init litmus.Lisa.init init_id) @ events.writes;
     conflict = events.conflict;
     order = events.order;
   } in
