@@ -9,7 +9,14 @@ type t =
   ; justifies : relation
   ; conflicts : relation
   ; order : relation
-  ; sloc : relation }
+  ; sloc : relation
+  ; na : set
+  ; sc : set
+  ; rel : set
+  ; acq : set
+  ; consume : set
+  ; fences : set
+  ; ext : relation }
 
 let empty =
   { events_number = 0
@@ -17,7 +24,14 @@ let empty =
   ; justifies = []
   ; conflicts = []
   ; order = []
-  ; sloc = [] }
+  ; sloc = []
+  ; na = []
+  ; sc = []
+  ; rel = []
+  ; acq = []
+  ; consume = []
+  ; fences = []
+  ; ext = [] }
 
 exception Bad_count of int
 exception Bad_event of int

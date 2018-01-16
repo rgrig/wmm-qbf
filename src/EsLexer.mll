@@ -14,6 +14,13 @@
       ; "labels", LABELS
       ; "order", ORDER
       ; "reads", READS
+      ; "sc", SEQUENTIALLY_CONSISTENT
+      ; "rel", RELEASE
+      ; "acq", ACQUIRE
+      ; "consume", CONSUME
+      ; "na", NON_ATOMIC
+      ; "fence", FENCE
+      ; "ext", EXT
       ; "sloc", SLOC];
     try Hashtbl.find table x
     with Not_found -> raise Error

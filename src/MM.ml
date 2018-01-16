@@ -231,7 +231,14 @@ let sample_conf = { prefix = "C01"
                                         justifies = [];
                                         conflicts = [];
                                         order = [];
-                                        sloc = [] }
+                                        sloc = [];
+                                        na = [];
+                                        sc = [];
+                                        rel = [];
+                                        acq = [];
+                                        consume = [];
+                                        fences = [];
+                                        ext = [] }
                   }
 
 let sample_rel = { prefix = "C02"
@@ -241,12 +248,19 @@ let sample_rel = { prefix = "C02"
                                         justifies = [];
                                         conflicts = [];
                                         order = [];
-                                        sloc = [] }
+                                        sloc = [];
+                                        na = [];
+                                        sc = [];
+                                        rel = [];
+                                        acq = [];
+                                        consume = [];
+                                        fences = [];
+                                        ext = [] }
                   }
 
 let test_sizeof = "size of empty ES" >:: (fun () ->
-    let x = fresh_so_var { events_number = 4; reads = []; justifies = []; conflicts = []; order = []; sloc = [] } 1 in
-    let y = fresh_so_var { events_number = 0; reads = []; justifies = []; conflicts = []; order = []; sloc = [] } 1 in
+    let x = fresh_so_var sample_rel.event_structure 1 in
+    let y = fresh_so_var { sample_rel.event_structure with events_number = 0 } 1 in
 
     assert_equal 4 (size_of x);
     assert_equal 0 (size_of y);
@@ -322,7 +336,14 @@ let sample_conf2 = { prefix = "C03"
                                         justifies = [];
                                         conflicts = [];
                                         order = [];
-                                        sloc = [] }
+                                        sloc = [];
+                                        na = [];
+                                        sc = [];
+                                        rel = [];
+                                        acq = [];
+                                        consume = [];
+                                        fences = [];
+                                        ext = []}
                   }
 
 let test_subset2 = "subset 2" >:: (fun () ->
@@ -373,7 +394,14 @@ let test_same_label = "same_label" >:: (fun () ->
                justifies = [(2,3); (2,5); (4,3); (4,5)];
                conflicts = [(2,4)];
                order = [(1,2);(2,3);(1,4);(4,5)];
-               sloc = [] }
+               sloc = [];
+               na = [];
+               sc = [];
+               rel = [];
+               acq = [];
+               consume = [];
+               fences = [];
+               ext = [] }
     in
     assert_bool "same_label" (same_label es 1 1);
     assert_bool "same label" (same_label es 2 4);

@@ -589,4 +589,11 @@ let translate litmus minimum maximum =
     conflicts = events.conflict;
     order = events.order;
     sloc = same_location;
+    na = [];
+    sc = [];
+    rel = [];
+    acq = [];
+    consume = [];
+    fences = [];
+    ext = []
   }, can_execute, must_execute)

@@ -9,6 +9,10 @@
       | [] -> []
       | x :: xs -> g [] x xs in
     List.concat @@ List.map f xss
+
+  let some_or_empty = function
+    Some l -> l
+  | None -> []
 %}
 
 %token <int> INT
@@ -25,6 +29,13 @@
 %token CAN
 %token MUST
 %token EXECUTION
+%token SEQUENTIALLY_CONSISTENT
+%token RELEASE
+%token ACQUIRE
+%token CONSUME
+%token NON_ATOMIC
+%token FENCE
+%token EXT
 
 %start <EventStructure.t * EventStructure.set * EventStructure.set> top
 
@@ -47,6 +58,13 @@ event_structure:
   e=events
   s=option(sloc)
   r=reads
+  nas=option(na)
+  scs=option(sc)
+  rels=option(rel)
+  acqs=option(acq)
+  consumes=option(consume)
+  fences=option(fence)
+  exts=option(ext)
   _=option(labels)
   j=justifies
   c=conflicts
@@ -57,11 +75,14 @@ event_structure:
     ; conflicts=c
     ; order=o
     ; reads=r
-    ; sloc=(
-      match s with
-        None -> []
-      | Some s -> s
-      )
+    ; sloc=(some_or_empty s)
+    ; na=(some_or_empty nas)
+    ; sc=(some_or_empty scs)
+    ; rel=(some_or_empty rels)
+    ; acq=(some_or_empty acqs)
+    ; consume=(some_or_empty consumes)
+    ; fences=(some_or_empty fences)
+    ; ext=(some_or_empty exts)
     }
   }
 ;
@@ -76,6 +97,15 @@ reads: v=nl_list(READS,INT,NL*) { v };
 mustExec: v=nl_list(MUST,INT,NL*) { v };
 canExec: v=nl_list(CAN,INT,NL*) { v };
 target: v=nl_list(EXECUTION,INT,NL*) { v };
+na: v=nl_list(NON_ATOMIC,INT,NL*) { v };
+sc: v=nl_list(EXECUTION,INT,NL*) { v };
+rel: v=nl_list(RELEASE,INT,NL*) { v };
+acq: v=nl_list(ACQUIRE,INT,NL*) { v };
+consume: v=nl_list(CONSUME,INT,NL*) { v };
+fence: v=nl_list(FENCE,INT,NL*) { v };
+ext: v=nl_list(EXT,nonempty_list(INT),NL+) { flatten_order v };
+
+
 
 nl_list(a,element,b): v=preceded(pair(a,NL*),list(terminated(element,b))) { v };
 
