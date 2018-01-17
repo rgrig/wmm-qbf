@@ -7,4 +7,5 @@ mov r4 (ne r1 r2)       |                         |                         ;
 b[] r4 ENDIF            |                         |                         ;
 w[] y 1                 |                         |                         ;
 ENDIF:                  |                         |                         ;
+(* Expected result: true. *)
 exists P0:r1 = 1 /\ P0:r2 = 1 /\ P1:r3 = 1

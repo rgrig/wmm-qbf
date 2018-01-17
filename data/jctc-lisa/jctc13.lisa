@@ -6,4 +6,5 @@ mov r3 (ne r1 1)        | mov r4 (ne r2 1)        ;
 b[] r3 ENDIF            | b[] r4 ENDIF            ;
 w[] y 1                 | w[] x 1                 ;
 ENDIF:                  | ENDIF:                  ;
+(* Expected result: true. *)
 exists P0:r1 = 0 /\ P1:r2 = 0

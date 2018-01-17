@@ -5,4 +5,5 @@ r[] r1 z                | r[] r4 w                ;
 w[] w r1                | r[] r3 y                ;
 r[] r2 x                | w[] z r3                ;
 w[] y r2                | w[] x 1                 ;
+(* Expected result: true. *)
 exists P0:r1 = 1 /\ P0:r2 = 1 /\ P1:r3 = 1 /\ P1:r4 = 1

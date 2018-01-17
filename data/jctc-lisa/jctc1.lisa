@@ -8,4 +8,5 @@ mov r3 (and r3 r4)      |                         ;
 b[] r3 ENDIF            |                         ;
 w[] y 1                 |                         ;
 ENDIF:                  |                         ;
+(* Expected result: true. *)
 exists P0:r1 = 1 /\ P1:r2 = 1

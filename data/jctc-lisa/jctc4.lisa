@@ -3,5 +3,5 @@ LISA JCTC4
 P0                      | P1                      ;
 r[] r1 x                | r[] r2 y                ;
 w[] y r1                | w[] x r2                ;
-(* TODO: Using "not exists" breaks the parser. *)
-~exists P0:r1 = 1 /\ P1:r2 = 1
+(* Expected result: false. *)
+exists P0:r1 = 1 /\ P1:r2 = 1

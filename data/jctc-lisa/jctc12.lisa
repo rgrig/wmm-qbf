@@ -6,4 +6,5 @@ r[] r1 x                | r[] r3 y                ;
 w[] a + r1 0            | w[] x r3                ;
 r[] r2 a + 0            |                         ;
 w[] y r2                |                         ;
-~exists P0:r1 = 1 /\ P0:r2 = 1 /\ P1:r3 = 1
+(* Expected result: false. *)
+exists P0:r1 = 1 /\ P0:r2 = 1 /\ P1:r3 = 1
