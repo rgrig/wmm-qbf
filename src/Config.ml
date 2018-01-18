@@ -1,6 +1,9 @@
 type worker = EventStructure.t -> EventStructure.set -> EventStructure.set -> unit
 type solver = SolveQbf | SolveSO
 
+let dump_es_val = ref false
+let dump_es () = !dump_es_val
+
 let dump_qbf_val = ref false
 let dump_qbf () = !dump_qbf_val
 
@@ -80,6 +83,8 @@ let command_spec available_models =
     "  print the LISA AST"
   ; "--debug-lisa-translate", Set Translate.debug,
     "  debug translation from LISA to EventStructure"
+  ; "--dump-es", Set dump_es_val,
+    "  print event structure file before executing"
   ; "--dump-qbf", Set dump_qbf_val,
     "  print QBF query before executing"
   ; "--dump-query", Set dump_query_val,

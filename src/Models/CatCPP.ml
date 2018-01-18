@@ -1,69 +1,11 @@
+(** 
+ * Based on Repairing C++ Sequential Consistency (Ori Lahav et. al.)
+ *)
+
 module E = EventStructure
 module GH = GraphHelpers
 open SO
 open SoOps
-open CatCommon
-
-(** 
- * Based on Repairing C++ Sequential Consistency (Ori Lahav et. al.)
-*)
-let build_so_structure es goal =
-  let intersect a b =
-    List.filter (fun x -> List.mem x a) b
-  in
-  (* 
-     Each of the relations in the SO structure is represented as a
-     list of lists. A set is a list of singletons, a binary relation
-     is a list of lists of length 2, a tenary relation is a list of
-     lists of length 3, etc. 
-     
-     {(3, 4), (1, 2)} = [[3;4]; [1;2]]
-     {4,6,2,1} = [[4]; [6]; [2]; [1]]
-  *)
-  (* Turn single elements into singleton lists *)
-  let f x = [x] in
-  let target = List.map f goal in
-  let reads = List.map f (intersect es.E.reads goal) in
-  let writes = 
-    List.map f
-      (intersect (List.filter
-         (fun f -> not (List.mem f es.E.reads))
-         (Util.range 1 (es.E.events_number))
-      ) goal)
-  in
-
-  (* Turn pairs into a list of two elements *)
-  let f (x,y) = [x;y] in
-  
-  (* We'll take the symmetric closure of the transitive closure for
-     the same location relation *)
-  let sloc' = GH.symmetric_closure (GH.transitive_closure es.E.sloc) in
-  let sloc = List.map f sloc' in
-  let xs = Util.range 2 es.E.events_number in
-  let sloc_extra = List.map (fun x -> [1;x]) xs in
-  let sloc = sloc @ sloc_extra in
-  
-  let order = List.map f es.E.order in
-  let justifies = List.map f es.E.justifies in
-
-  let filter (xss: E.event list list) = List.filter (fun xs ->
-      List.for_all (fun x -> List.mem x goal) xs
-    ) xss
-  in
-  
-  let sloc = filter sloc in
-  let order = filter order in
-  let justifies = filter justifies in
-  
-  SoOps.rels [
-    ("target", (1, target))
-  ; ("sloc", (2, sloc))
-  ; ("order", (2, order))
-  ; ("justifies", (2, justifies))
-  ; ("reads", (1, reads))
-  ; ("writes", (1, writes))
-  ; ("empty_set", (1, []))
-  ]
 
 let cross a b x y =
   And [a x; b y]
@@ -152,8 +94,6 @@ let eco rf mo fr =
 let coh_constrain hb eco =
   irreflexive (sequence hb eco)
 
-
-
 let atomic1_constrain eco =
   irreflexive eco
     
@@ -220,18 +160,20 @@ let conflict writes universe sloc =
     )
     sloc
 
+let mo nas co =
+  sequence
+    (set_to_reln (complement nas))
+    (sequence co (set_to_reln (complement nas)))
+
 let race ext conflict hb atomics =
   rel_intersect
     ext
     (rel_minus
-       conflict
        (rel_minus
-          hb
-          (rel_minus
-             (invert hb)
-             (cross atomics atomics)
-          )
+          conflict
+          (rel_union hb (invert hb))
        )
+       (cross atomics atomics)
     )
 
 let racy_constrain race =
@@ -239,6 +181,7 @@ let racy_constrain race =
   rel_eq race (curry_crel "empty_set")
 
 let cat_constrain n rf mo po reads writes rel acq_rel acq sc sloc nas i m f =
+  (* Observation: Our po = sb anyway *)
   let sb = sb po i m in
   let rs = rs n writes nas sloc sb rf in
   let sw = sw reads nas rel acq_rel acq sc f rf sb rs in
@@ -259,31 +202,105 @@ let cat_constrain n rf mo po reads writes rel acq_rel acq sc sloc nas i m f =
   ; sc_constrain psc
   ]
 
-let do_decide es target =
+let do_decide es can must =
   let size = es.E.events_number in
   let curry_crel name a b = CRel (name, [a; b]) in
+  let curry_cset name a = CRel (name, [a]) in
   let rf_id, rf = mk_fresh_reln ~prefix:"do_decide_rf" () in
   let co_id, co = mk_fresh_reln ~prefix:"do_decide_co" () in
-  let f =
+  let f_consistent =
     SoAny (
       co_id, 2,
       SoAny (
         rf_id, 2,
         And [
-          rf_constrain rf (curry_crel "justifies")
-        ; co_constrain co
-          (*; cat_constrain rf co (fr rf co) (curry_crel "order")*)
+          CatCommon.rf_constrain rf (curry_crel "justifies")
+        ; CatCommon.co_constrain co
+        ; cat_constrain 0 rf
+            (mo (curry_cset "na") co)
+            (curry_crel "order")
+            (curry_cset "reads")
+            (curry_cset "writes")
+            (curry_cset "rel")
+            (intersect (curry_cset "rel") (curry_cset "acq"))
+            (curry_cset "acq")
+            (curry_cset "sc")
+            (curry_crel "sloc")
+            (curry_cset "nas")
+            (curry_cset "init")
+            (curry_cset "universe")
+            (curry_cset "fences")
         ]
       )
     )
   in
 
+  let rf_id, rf = mk_fresh_reln ~prefix:"do_decide_rf" () in
+  let co_id, co = mk_fresh_reln ~prefix:"do_decide_co" () in
+  let mo = mo (curry_cset "na") co in
+  let sb = sb (curry_crel "order") (curry_cset "init") (curry_cset "universe") in
+  let rs = rs 1
+      (curry_cset "writes")
+      (curry_cset "na")
+      (curry_crel "sloc")
+      sb rf
+  in
+  let sw = sw (curry_cset "reads")
+      (curry_cset "na")
+      (curry_cset "rel")
+      (intersect (curry_cset "acq") (curry_cset "rel"))
+      (curry_cset "acq")
+      (curry_cset "sc")
+      (curry_cset "fences")
+      rf sb rs
+  in
+
+  let f_race =
+    SoAny (
+      co_id, 2,
+      SoAny (
+        rf_id, 2,
+        And [
+          CatCommon.rf_constrain rf (curry_crel "justifies")
+        ; CatCommon.co_constrain co
+        ; cat_constrain 1 rf
+            mo
+            (curry_crel "order")
+            (curry_cset "reads")
+            (curry_cset "writes")
+            (curry_cset "rel")
+            (intersect (curry_cset "rel") (curry_cset "acq"))
+            (curry_cset "acq")
+            (curry_cset "sc")
+            (curry_crel "sloc")
+            (curry_cset "na")
+            (curry_cset "init")
+            (curry_cset "universe")
+            (curry_cset "fences")
+        ; Not (
+            racy_constrain
+              (race
+                 (curry_crel "ext")
+                 (conflict
+                    (curry_cset "writes")
+                    (curry_cset "universe")
+                    (curry_crel "sloc")
+                 )
+                 (hb 1 sb sw)
+                 (set_minus (curry_cset "universe") (curry_cset "na"))
+              )
+          )
+        ]
+      )
+    )
+  in
+  
   let s = {
       size = size;
-      relations = build_so_structure es target
+      relations = CatCommon.build_so_structure es
     }
   in
 
-  (* Debug stuff *)
+  let f = Or [f_consistent; f_race] in
   if Config.dump_query () then SoOps.dump s f;
   Printf.printf "result: %b\n" (SoOps.model_check s f)

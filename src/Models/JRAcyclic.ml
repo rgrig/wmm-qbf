@@ -7,7 +7,7 @@ let acyclic_just es x y =
   ; MM.valid_conf es y
   ]
     
-let do_decide es target solver_opts =
+let do_decide es can must solver_opts =
   let x = MM.fresh_so_var es 1 in
   let y = MM.fresh_so_var es 1 in
 

@@ -2,6 +2,7 @@ type worker = EventStructure.t -> EventStructure.set -> EventStructure.set -> un
 type solver = SolveQbf | SolveSO
 
 val model : unit -> worker
+val dump_es : unit -> bool
 val dump_qbf : unit -> bool
 val dump_query : unit -> bool
 val dump_lisa : unit -> bool
