@@ -110,11 +110,11 @@ let conflict_free c =
       (mk_implies [
           QRel (c, [Var x])
         ; QRel (c, [Var y])
-        ] (Not (Or [
-          CRel ("conflict", [Var x; Var y])
-        ; CRel ("conflict", [Var x; Var y])
-        ]
-        ))
+        ] (
+          (* Conflict is symmetric so we only need to check one
+             direction *)
+          Not (CRel ("conflict", [Var x; Var y]))
+        )
       )
     )
   )
@@ -135,8 +135,8 @@ let constrain_goal g =
   FoAll (
     x,
     And [
-      mk_implies [CRel ("can", [Var x])] (QRel (g, [Var x]))
-    ; mk_implies [QRel (g, [Var x])] (CRel ("must", [Var x]))
+      mk_implies [CRel ("must", [Var x])] (QRel (g, [Var x]))
+    ; mk_implies [QRel (g, [Var x])] (CRel ("can", [Var x]))
     ]
   )
 
