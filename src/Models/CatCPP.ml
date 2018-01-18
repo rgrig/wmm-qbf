@@ -216,7 +216,7 @@ let do_decide es can must =
         And [
           CatCommon.rf_constrain rf (curry_crel "justifies")
         ; CatCommon.co_constrain co
-        ; cat_constrain 0 rf
+        ; cat_constrain size rf
             (mo (curry_cset "na") co)
             (curry_crel "order")
             (curry_cset "reads")
@@ -239,7 +239,7 @@ let do_decide es can must =
   let co_id, co = mk_fresh_reln ~prefix:"do_decide_co" () in
   let mo = mo (curry_cset "na") co in
   let sb = sb (curry_crel "order") (curry_cset "init") (curry_cset "universe") in
-  let rs = rs 1
+  let rs = rs size
       (curry_cset "writes")
       (curry_cset "na")
       (curry_crel "sloc")
@@ -263,7 +263,7 @@ let do_decide es can must =
         And [
           CatCommon.rf_constrain rf (curry_crel "justifies")
         ; CatCommon.co_constrain co
-        ; cat_constrain 1 rf
+        ; cat_constrain size rf
             mo
             (curry_crel "order")
             (curry_cset "reads")
@@ -286,7 +286,7 @@ let do_decide es can must =
                     (curry_cset "universe")
                     (curry_crel "sloc")
                  )
-                 (hb 1 sb sw)
+                 (hb size sb sw)
                  (set_minus (curry_cset "universe") (curry_cset "na"))
               )
           )
