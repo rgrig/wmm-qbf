@@ -16,4 +16,5 @@ b[] ENDIF1              |                         |                         ;
 THEN1:                  |                         |                         ;
 w[] y 1                 |                         |                         ;
 ENDIF1:                 |                         |                         ;
-~exists P0:r0 = 1 /\ P0:r1 = 1 /\ P1:r3 = 1 /\ P1:r2 = 0
+(* Expected result: false. *)
+exists P0:r0 = 1 /\ P0:r1 = 1 /\ P1:r3 = 1 /\ P1:r2 = 0

@@ -10,4 +10,5 @@ ENDIF:                  | ENDIF0:                 ;
 				        | b[] r4 ENDIF1           ;
 				        | w[] A 1                 ;
 				        | ENDIF1:                 ;
+(* Expected result: true. *)
 exists P0:r1 = 1 /\ P1:r2 = 1

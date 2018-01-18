@@ -9,4 +9,5 @@ b[] ENDIF               | mov r5 (eq r5 0)        ;
 THEN:                   | b[] r5 DO               ;
 w[] y 1                 | w[] a 1                 ;
 ENDIF:                  |                         ;
-~exists P0:r1 = 1 /\ P1:r3 = 1 /\ P1:r2 = 0
+(* Expected result: false. *)
+exists P0:r1 = 1 /\ P1:r3 = 1 /\ P1:r2 = 0

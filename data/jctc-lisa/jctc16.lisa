@@ -3,4 +3,5 @@ LISA JCTC16
 P0                      | P1                      ;
 r[] r1 x                | r[] r2 x                ;
 w[] x 1                 | w[] x 2                 ;
+(* Expected result: true. *)
 exists P0:r1 = 2 /\ P1:r2 = 1
