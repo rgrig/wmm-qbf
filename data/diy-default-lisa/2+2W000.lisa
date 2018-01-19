@@ -1,0 +1,18 @@
+LISA 2+2W000
+"PodWW Wse PodWW PodWW PodWW Wse"
+Cycle=Wse PodWW Wse PodWW PodWW PodWW
+Relax=PodWW
+Safe=Wse
+Generator=diy.native (version 7.47+2)
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Ws Ws
+Orig=PodWW Wse PodWW PodWW PodWW Wse
+{
+}
+ P0      | P1      ;
+ w[] x 2 | w[] y 2 ;
+ w[] y 1 | w[] z 1 ;
+         | w[] a 1 ;
+         | w[] x 1 ;
+exists
+(x=2 /\ y=2)
