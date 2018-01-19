@@ -16,5 +16,6 @@ b[] ENDIF1              |                         |                         ;
 THEN1:                  |                         |                         ;
 w[] y 1                 |                         |                         ;
 ENDIF1:                 |                         |                         ;
+(* TODO: Fails due to a branch that loops for too long, this is an issue with unrolling. *)
 (* Expected result: false. *)
 exists P0:r0 = 1 /\ P0:r1 = 1 /\ P1:r3 = 1 /\ P1:r2 = 0
