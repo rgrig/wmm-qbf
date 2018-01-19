@@ -4,6 +4,8 @@ open SO
 open SoOps
 
 
+let name_final i = Printf.sprintf "final%d" i
+
 (* Each of the relations in the SO structure is represented as a list
    of lists. A set is a list of singletons, a binary relation is a list
    of lists of length 2, a tenary relation is a list of lists of length
@@ -12,7 +14,9 @@ open SoOps
      {(3, 4), (1, 2)} = [[3;4]; [1;2]]
      {4,6,2,1} = [[4]; [6]; [2]; [1]]
 *)
-let build_so_structure es  =  
+let build_so_structure es accept =
+  let final_id = ref 0 in
+
   (* Turn single elements into singleton lists *)
   let f x = [x] in
   let reads = List.map f es.E.reads in
@@ -46,7 +50,7 @@ let build_so_structure es  =
   let justifies = List.map f es.E.justifies in
   let ext = List.map f es.E.ext in
 
-  SoOps.rels [
+  SoOps.rels ([
     ("sloc", (2, sloc))
   ; ("order", (2, order))
   ; ("justifies", (2, justifies))
@@ -62,7 +66,12 @@ let build_so_structure es  =
   ; ("acq", (1, acq))
   ; ("con", (1, con))
   ; ("fences", (1, fences))
-  ]
+  ] @
+      List.map (fun fin ->
+          (name_final (incr final_id; !final_id)),
+          (1, List.map (fun f -> [f]) fin)
+        ) accept
+    )
 
 let rf_constrain rf jst =
   let rf_rf_inv = sequence rf (invert rf) in

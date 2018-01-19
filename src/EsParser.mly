@@ -26,8 +26,7 @@
 %token ORDER
 %token READS
 %token QUOTED_STRING
-%token CAN
-%token MUST
+%token FINAL
 %token EXECUTION
 %token SEQUENTIALLY_CONSISTENT
 %token RELEASE
@@ -37,20 +36,19 @@
 %token FENCE
 %token EXT
 
-%start <EventStructure.t * EventStructure.set * EventStructure.set> top
+%start <EventStructure.t * EventStructure.set list> top
 
 %%
 
 top:
   es=event_structure
-  mustExecute=option(mustExec)
-  canExecute=option(canExec)
+  final=option(final)
   target=option(target)
   EOF
   {
   match target with
-    None -> es, Util.from_some canExecute, Util.from_some mustExecute
-  | Some t -> es, t, t
+    None -> es, Util.from_some final
+  | Some t -> es, (List.map (fun f -> [f]) t)
   }
 ;
 
@@ -89,13 +87,12 @@ event_structure:
 
 events: v=delimited(EVENTS, INT, NL*) { v };
 sloc: v=nl_list(SLOC,nonempty_list(INT),NL+) { flatten_order v };
+final: v=nl_list(FINAL,nonempty_list(INT),NL+) { v };
 conflicts: v=nl_list(CONFLICTS,pair(INT,INT),NL*) { v };
 justifies: v=nl_list(JUSTIFIES,pair(INT,INT),NL*) { v };
 labels: nl_list(LABELS,pair(INT, QUOTED_STRING),NL*) {};
 order: v=nl_list(ORDER,nonempty_list(INT),NL+) { flatten_order v };
 reads: v=nl_list(READS,INT,NL*) { v };
-mustExec: v=nl_list(MUST,INT,NL*) { v };
-canExec: v=nl_list(CAN,INT,NL*) { v };
 target: v=nl_list(EXECUTION,INT,NL*) { v };
 na: v=nl_list(NON_ATOMIC,INT,NL*) { v };
 sc: v=nl_list(EXECUTION,INT,NL*) { v };

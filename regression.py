@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from functools import reduce
+from natsort import natsorted
 from os import listdir
 from os.path import isfile, join
 from subprocess import check_output, CalledProcessError
@@ -35,10 +36,10 @@ def get_passthrough_args(args):
     return []
 
 TESTS = get_suite(argv, get_skip(argv, [
-    ("data/jctc", "j+r-so", "so"),
-    ("data/jctc", "j+r-so", "qbf"),
-    
-
+#    ("data/jctc", "j+r-so", "so"),
+    ("data/jctc-lisa", "j+r-so", "so"),
+#    ("data/jctc", "j+r-so", "qbf"),
+#    ("data/jctc-lisa", "j+r-so", "qbf")
 ]))
 
 
@@ -60,6 +61,7 @@ aditional_args = get_passthrough_args(argv)
     
 for directory, model, solver in TESTS:
     files = [path for path in listdir(directory) if (isfile(join(directory, path)) and (".es" in path or ".lisa" in path))]
+    files = natsorted(files)
     for test in files:
         try:
             start_time = time.time()

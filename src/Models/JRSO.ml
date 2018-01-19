@@ -2,24 +2,26 @@ module E = EventStructure
 open SO
 open SoOps
 
-let build_so_structure es can must =
+let build_so_structure es accept =
+  let final_id = ref 0 in
   let f (x,y) = [x;y] in
   let order = List.map f es.E.order in
   let conflict = List.map f es.E.conflicts in
   let justifies = List.map f es.E.justifies in
   let f x = [x] in
   let reads = List.map f es.E.reads in
-  let can = List.map f can in
-  let must = List.map f must in
-  rels [
+  rels ([
     ("order", (2, order))
   ; ("conflict", (2, conflict))
   ; ("justifies", (2, justifies))
   ; ("reads", (1, reads))
-  ; ("can", (1, can))
-  ; ("must", (1, must))
   ; ("empty_set", (1, []))
-  ]
+  ] @
+      List.map (fun fin ->
+          (Printf.sprintf "final%d" (incr final_id; !final_id)),
+          (1, List.map f fin)
+        ) accept
+    )
 
 (* Configuration justifies *)
 (* ∀y∈(b-a). (∃x∈a . x ⊢ y) *)
@@ -130,17 +132,22 @@ let maximal c =
     ] (subset c' c)
   )
 
-let constrain_goal g =
-  let x = mk_fresh_fv () in
-  FoAll (
-    x,
-    And [
-      mk_implies [CRel ("must", [Var x])] (QRel (g, [Var x]))
-    ; mk_implies [QRel (g, [Var x])] (CRel ("can", [Var x]))
-    ]
-  )
+let final_constraint accept x =
+  let final_id = ref 0 in
+  And (
+    List.map (fun a ->
+        let e = mk_fresh_fv () in
+        FoAny (e,
+          And [
+            QRel (x, [Var e])
+          ; CRel (CatCommon.name_final (incr final_id; !final_id), [Var e])
+          ]
+        )
+      )
+      accept
+    )
 
-let do_decide es can must =
+let do_decide es accept =
   let size = es.E.events_number in
   let x = mk_fresh_sv () in
   let y = mk_fresh_sv () in
@@ -157,14 +164,15 @@ let do_decide es can must =
                  And [
                    eq_crel x "empty_set"
                  ; maximal y
-                 ; constrain_goal y
-                 ; aej_tc size size x y ]
+                 ; aej_tc size size x y
+                 ; final_constraint accept y
+                 ]
                 )
         )
       )
     )
   in
-  let s = { size = size; relations = build_so_structure es can must } in
+  let s = { size = size; relations = build_so_structure es accept } in
   if Config.dump_query () then dump s f;
   Printf.printf "result: %b\n" (SoOps.model_check s f)
 

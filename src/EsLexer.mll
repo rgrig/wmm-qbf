@@ -7,8 +7,7 @@
     List.iter (fun (k, v) -> Hashtbl.add table k v)
       [ "conflicts", CONFLICTS
       ; "events", EVENTS
-      ; "canExecute", CAN
-      ; "mustExecute", MUST
+      ; "final", FINAL
       ; "execution", EXECUTION
       ; "justifies", JUSTIFIES
       ; "labels", LABELS

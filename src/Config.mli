@@ -1,4 +1,4 @@
-type worker = EventStructure.t -> EventStructure.set -> EventStructure.set -> unit
+type worker = EventStructure.t -> EventStructure.set list -> unit
 type solver = SolveQbf | SolveSO
 
 val model : unit -> worker

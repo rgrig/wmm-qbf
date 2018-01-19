@@ -12,11 +12,14 @@ let print_a2 name pairs =
 let print_a1 ?(decoration="") name elements =
   print_an ~decoration name @@ List.map (fun x -> [x]) elements
 
+let print_sets name sets =
+  print_an name sets
+
 let es_of_lisa lisa_filename =
   let lisa_text = Lisa.read_to_eof (open_in lisa_filename) in
   let litmus = Lisa.load_litmus lisa_text in
   if !verbose then Lisa.print_litmus litmus;
-  let es, can_execute, must_execute = Translate.translate litmus 0 1 in
+  let es, accept = Translate.translate litmus 0 1 in
   let open EventStructure in
   Printf.printf "events %d\n" es.events_number;
   print_a2 "sloc" es.sloc;
@@ -25,8 +28,8 @@ let es_of_lisa lisa_filename =
   print_a2 "justifies" es.justifies;
   print_a2 "conflicts" es.conflicts;
   print_a2 "order" es.order;
-  print_a1 "mustExecute" must_execute;
-  print_a1 "canExecute" (get_events es)
+  (* TODO: Sensible name. *)
+  print_sets "accept" accept
 
 let args = Arg.
   [ "-v", Set verbose, "be verbose"
