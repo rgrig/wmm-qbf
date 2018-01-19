@@ -587,7 +587,7 @@ let translate litmus minimum maximum =
     let instructions = Array.of_list instructions in
     let program_counter = 0 in
     let depth = 0 in
-    let thread_condition = ThreadMap.find thread_name condition in
+    let thread_condition = try ThreadMap.find thread_name condition with Not_found -> [] in
     let subtree, subaccept = translate_instructions
       thread_name
       instructions
