@@ -2,11 +2,11 @@ LISA JCTC17
 { x = 0; y = 0; }
 P0                      | P1                      ;
 r[] r3 x                | r[] r2 y                ;
-mov r4 (eq r3 42)       | w[] x r2                ;
+mov r4 (eq r3 2)        | w[] x r2                ;
 b[] r4 ENDIF            |                         ;
-w[] x 42                |                         ;
+w[] x 2                 |                         ;
 ENDIF:                  |                         ;
 r[] r1 x                |                         ;
 w[] y r1                |                         ;
 (* Expected result: true. *)
-exists P0:r1 = 42 /\ P1:r2 = 42 /\ P0:r3 = 42
+exists P0:r1 = 2 /\ P1:r2 = 2 /\ P0:r3 = 2
