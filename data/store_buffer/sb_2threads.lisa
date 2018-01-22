@@ -1,0 +1,7 @@
+LISA store buffer with 2 threads
+{ x0=0; x1=0;}
+P0        | P1        ;
+w[] x1 1  | w[] x0 1  ;
+r[] r0 x0 | r[] r1 x1 ;
+(* Nonsense condition; this isn't meant to be tested. *)
+exists P0:r0=42

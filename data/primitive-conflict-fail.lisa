@@ -1,0 +1,13 @@
+LISA primtive conflict bug check
+{ x=0; y=0 }
+P0               ;
+r[] r1 y         ;
+mov r3 (ne r1 1) ;
+b[] r3 ELSE      ;
+w[] x 1          ;
+b[] ENDIF        ;
+ELSE:            ;
+r[] r2 x         ;
+ENDIF:           ;
+(* Expected to return false. *)
+exists P0:r2=1

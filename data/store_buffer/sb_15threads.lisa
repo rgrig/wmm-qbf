@@ -1,0 +1,7 @@
+LISA store buffer with 15 threads
+{ x0=0; x1=0; x2=0; x3=0; x4=0; x5=0; x6=0; x7=0; x8=0; x9=0; x10=0; x11=0; x12=0; x13=0; x14=0;}
+P0        | P1        | P2        | P3        | P4        | P5        | P6        | P7        | P8        | P9        | P10        | P11        | P12        | P13        | P14        ;
+w[] x1 1  | w[] x2 1  | w[] x3 1  | w[] x4 1  | w[] x5 1  | w[] x6 1  | w[] x7 1  | w[] x8 1  | w[] x9 1  | w[] x10 1  | w[] x11 1  | w[] x12 1  | w[] x13 1  | w[] x14 1  | w[] x0 1  ;
+r[] r0 x0 | r[] r1 x1 | r[] r2 x2 | r[] r3 x3 | r[] r4 x4 | r[] r5 x5 | r[] r6 x6 | r[] r7 x7 | r[] r8 x8 | r[] r9 x9 | r[] r10 x10 | r[] r11 x11 | r[] r12 x12 | r[] r13 x13 | r[] r14 x14 ;
+(* Nonsense condition; this isn't meant to be tested. *)
+exists P0:r0=42
