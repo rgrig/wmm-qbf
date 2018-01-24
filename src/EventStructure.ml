@@ -108,6 +108,25 @@ let apply_axioms es =
   check_confusion_free es'';
   es''
 
+let dump es accept =
+  let open Printf in
+  let list l = String.concat " " (List.map string_of_int l) in
+  let pairs = List.iter (fun (a, b) -> printf "  %d %d\n" a b) in
+  let groups = List.iter (fun g -> printf "  %s\n" (list g)) in
+  printf "ES dump:\n";
+  printf "events %d\n" es.events_number;
+  printf "reads %s\n" (list es.reads);
+  printf "justifies\n";
+  pairs es.justifies;
+  printf "conflicts\n";
+  pairs es.conflicts;
+  printf "order\n";
+  pairs es.order;
+  printf "sloc\n";
+  pairs es.sloc;
+  printf "accept\n";
+  groups accept
+
 let get_events es = BatList.range 1 `To (es.events_number)
 let get_sloc es = es.sloc
 let get_order es = es.order

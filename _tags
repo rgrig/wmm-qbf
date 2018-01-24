@@ -7,3 +7,4 @@ true: use_menhir
 true: debug
 #true: profile
 true: annot
+true: bin_annot
