@@ -1,5 +1,4 @@
-#!/usr/bin/python
-# (This is Python 3)
+#!/usr/bin/env python3
 
 import sys
 

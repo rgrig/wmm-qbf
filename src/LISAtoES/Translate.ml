@@ -1,14 +1,5 @@
 (* This module translates LISA program ASTs from LISAParser into event structures. *)
 
-(* TODO
- * + Parse condition into map thread -> (register * value) list
- * + Make prefix event always take id
- * + Track parent event
- * + Check registers match at branch end and return list of accepted end events
- * + Merge list of events when spawning branches
- * + Generate set of sets when composing final tree
- *)
-
 open MiscParser
 open Constant
 open BellBase
@@ -19,9 +10,6 @@ module ThreadMap = Util.IntMap
 exception LISAtoESException of string
 
 let debug = ref false
-
-(* Special global name for dummy writes, deliberately illegal according to the parser. *)
-let dummy_global = " dummy write "
 
 (* Range of values to enumerate, includes minimum and maximum. *)
 type values = {
@@ -171,7 +159,6 @@ let get_id (next_id : EventStructure.event ref) : EventStructure.event =
   id
 
 (* Add an event before the given event set, without updating lists of reads and writes. *)
-(* TODO: Avoid generating lots of unused orders. *)
 let prefix_event (events : events) (event : EventStructure.event) : events =
   let read_order = List.map (fun read -> (event, read.r_id)) events.reads in
   let write_order = List.map (fun write -> (event, write.w_id)) events.writes in
@@ -241,7 +228,6 @@ let write_justifies_read (write : write) (read : read) : bool =
 (* Returns a list of writes justified by the init event whose id is given. *)
 let writes_from_init (init : MiscParser.state) (w_id : EventStructure.event) : write list =
   List.fold_left (fun accumulator init ->
-    (* TODO: Assumes that run_type isn't relevant. *)
     let (location, (run_type, value)) = init in
 
     let w_value = unwrap_val value in
