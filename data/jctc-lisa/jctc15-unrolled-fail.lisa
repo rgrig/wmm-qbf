@@ -1,0 +1,21 @@
+LISA JCTC15 manually unrolled
+{ a = 0; b = 0; x = 0; y = 0; }
+P0                      | P1                      | P2                      ;
+r[] r0 x                | r[] r2 y                | w[] x 1                 ;
+mov r4 (eq r0 1)        | r[] r3 b                |                         ;
+b[] r4 THEN0            | mov r5 (add r2 r3)      |                         ;
+w[] r1 0                | mov r5 (eq r5 0)        |                         ;
+b[] ENDIF0              | b[] r5 ENDIF            |                         ;
+THEN0:                  | w[] a 1                 |                         ;
+r[] r1 a                | ENDIF:                  |                         ;
+ENDIF0:                 |                         |                         ;
+mov r4 (eq r1 0)        |                         |                         ;
+b[] r4 THEN1            |                         |                         ;
+w[] b 1                 |                         |                         ;
+b[] ENDIF1              |                         |                         ;
+THEN1:                  |                         |                         ;
+w[] y 1                 |                         |                         ;
+ENDIF1:                 |                         |                         ;
+(* TODO: Fails due to a branch that loops for too long, this is an issue with unrolling. *)
+(* Expected result: false. *)
+exists P0:r0 = 1 /\ P0:r1 = 1 /\ P1:r3 = 1 /\ P1:r2 = 0
