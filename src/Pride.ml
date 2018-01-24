@@ -35,9 +35,8 @@ let run_on_lisa filename ch =
   let min, max = Config.vals () in
   let es, accept = Translate.translate litmus min max in
   let es = EventStructure.apply_axioms es in
+  (if Config.dump_es () then EventStructure.dump es accept);
   if (Config.verbose ()) then print_accept accept;
-  (* TODO: A switch to dump the ES is some useful format. *)
-  (* TODO: Find target executions. *)
   (Config.model ()) es accept
 
 let run_on_file run filename =
