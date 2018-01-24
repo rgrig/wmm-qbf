@@ -22,6 +22,7 @@ let print_accept accept =
 let run_on_es filename ch =
   Config.set_current_file filename;
   let es, accept = EsOps.parse filename ch in
+  let es = EventStructure.apply_axioms es in
   if (Config.verbose ()) then print_accept accept;
 
   (Config.model ()) es accept
@@ -33,6 +34,7 @@ let run_on_lisa filename ch =
   (if Config.dump_lisa () then Lisa.print_litmus litmus);
   let min, max = Config.vals () in
   let es, accept = Translate.translate litmus min max in
+  let es = EventStructure.apply_axioms es in
   if (Config.verbose ()) then print_accept accept;
   (* TODO: A switch to dump the ES is some useful format. *)
   (* TODO: Find target executions. *)

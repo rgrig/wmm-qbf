@@ -70,6 +70,44 @@ let self_justified es xs =
   List.iter arc es.justifies;
   Hashtbl.fold (fun x () a -> a && Hashtbl.mem justified x) reads true
 
+let check_confusion_free es =
+  let ord_flip = List.map (fun (x,y) -> (y,x)) es.order in
+  List.iter (fun (a,b) ->
+      (* For all pairs in conflict, there should be a mutual predecessor *)
+      let pred r = List.filter (fun (p,q) -> p = r) ord_flip in
+      let pred_a = List.map snd (pred a) in
+      let pred_b = List.map snd (pred b) in
+      let mutual = List.filter (fun r -> List.mem r pred_a) pred_b in
+      assert (mutual <> [])
+    ) es.conflicts
+
+let saturate_conflict es =
+  let pc = es.conflicts in
+  let later x = List.filter (fun (y,z) -> z = x) es.order in
+  (* For all conflict pairs, their "later" conflict pairs are also in conflict *)
+  let conflict = List.flatten
+      (List.map (fun (x, y) ->
+           [(x,y)]
+           @ List.map (fun (_,a) -> (x, a)) (later y)
+           @ (List.map (fun (_,a) -> (y, a)) (later x))
+         ) pc
+      )
+  in
+  (* Symmetric close *)
+  let conflict = Util.symmetric_closure conflict in
+  (* Remove refl edges *)
+  let conflict = List.filter (fun (x, y) -> x <> y) conflict in
+  { es with conflicts = conflict }
+
+let transitive_order es =
+  { es with order = (Util.rtransitive_closure es.order) }
+
+let apply_axioms es =
+  let es' = transitive_order es in
+  let es'' = saturate_conflict es' in
+  check_confusion_free es'';
+  es''
+
 let get_events es = BatList.range 1 `To (es.events_number)
 let get_sloc es = es.sloc
 let get_order es = es.order
