@@ -3,6 +3,7 @@ from functools import reduce
 from natsort import natsorted
 from os import listdir
 from os.path import isfile, join
+import signal
 from subprocess import check_output, CalledProcessError
 from sys import argv
 import sys
@@ -12,6 +13,7 @@ PRIDE_BIN = "./bin/Pride"
 QUIET = "-q" in argv or "--quiet" in argv
 USE_COLORS = sys.stdout.isatty()
 TTY_RESET = "\033[0m"
+TTY_RED = "\033[31m"
 TTY_BLUE = "\033[34m"
 TTY_ORANGE = "\033[33m"
 
@@ -37,7 +39,12 @@ def get_passthrough_args(args):
 
 TESTS = get_suite(argv, get_skip(argv, [
 #    ("data/jctc", "j+r-so", "so"),
+#    ("data/store_buffer", "cat-cpp", "so"),
+    ("data/mark-sc-tests", "cat-cpp", "so"),
     ("data/jctc-lisa", "j+r-so", "so"),
+#    ("data/store_buffer", "cat-cpp", "qbf"),
+    ("data/jctc-lisa", "j+r-so", "qbf"),
+
 #    ("data/jctc", "j+r-so", "qbf"),
 #    ("data/jctc-lisa", "j+r-so", "qbf")
 ]))
@@ -58,17 +65,42 @@ def colorise(color, text):
         return text
 
 aditional_args = get_passthrough_args(argv)
-    
+
+
+def interrupt(signal, frame):
+    print("\nExecution interrupted.")
+    passed = [p for p in results if result_to_bool(p)]
+    total_time = reduce((lambda x,y: x + y[3]), results, 0)
+    print(
+        "Passed: {} of {}. {:.1f}% in {:.1f}s\n".format(
+            len(passed),
+            len(results),
+            len(passed)/len(results) * 100.0,
+            total_time
+        )
+    )
+    sys.exit()
+
+signal.signal(signal.SIGINT, interrupt)
+
+
 for directory, model, solver in TESTS:
     files = [path for path in listdir(directory) if (isfile(join(directory, path)) and (".es" in path or ".lisa" in path))]
     files = natsorted(files)
     for test in files:
+        vals = ["--values", "0,1"]
         try:
             start_time = time.time()
+            if "vals" in test:
+                index = test.split("-").index("vals")
+                vals = ["--values", test.split("-")[index+1]]
+            
             if not QUIET:
-                sys.stdout.write("{:6s}: {:20s} {:3s}         {}\r".format("...", model, solver, join(directory, test)))
+                low = int(vals[1].split(',')[0]) or 0
+                high = int(vals[1].split(',')[1]) or 1
+                sys.stdout.write("{:6s}: {:20s} {:3s} {:d}-{:d}     {}\r".format("...", model, solver, low, high, join(directory, test)))
             output = check_output(
-                [PRIDE_BIN, "--model", model, join(directory, test), "--solver", solver] + aditional_args
+                [PRIDE_BIN, "--model", model, join(directory, test), "--solver", solver] + vals + aditional_args
             )
             elapsed_time = time.time() - start_time
             qbf_result = b"true" in output
@@ -79,6 +111,8 @@ for directory, model, solver in TESTS:
             result = False
             elapsed_time = time.time() - start_time
             results.append((model, test, result, elapsed_time))
+            result_string = colorise(TTY_RED, "Except")
+            print("{}: {:20s} {:3s} {:6.02f}s {}".format(result_string, model, solver, elapsed_time, join(directory, test)))
             continue
             
         if not QUIET:
@@ -89,7 +123,7 @@ for directory, model, solver in TESTS:
 passed = [p for p in results if result_to_bool(p)]
 total_time = reduce((lambda x,y: x + y[3]), results, 0)
 print(
-    "Passed: {} of {}. {:.1f}% in {:.1f}s".format(
+    "\nPassed: {} of {}. {:.1f}% in {:.1f}s".format(
         len(passed),
         len(results),
         len(passed)/len(results) * 100.0,

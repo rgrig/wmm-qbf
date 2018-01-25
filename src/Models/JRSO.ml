@@ -81,53 +81,39 @@ let always_justifies a b =
 
 let always_justifies_tc = tc 1 always_justifies
 
-let always_eventually_justifies n a b =
-  let x = mk_fresh_sv () in
-  let y = mk_fresh_sv () in
+let always_eventually_justifies n c d =
+  let c' = mk_fresh_sv () in
+  let c'' = mk_fresh_sv () in
   And
-    [ subset a b
-    ; valid a
-    ; valid b
-    ; SoAll (x, 1,
-        mk_implies
-          [ always_justifies_tc n a x ]
-          ( SoAny (y, 1,
-              And
-                [ always_justifies_tc n x y; justify y b ] ) ) ) ]
+    [ subset c d
+    ; valid c
+    ; valid d
+    ; SoAll (c', 1,
+             mk_implies
+               [ valid c'; always_justifies_tc n c c' ]
+               ( SoAny (c'', 1,
+                        And
+                          [
+                            always_justifies_tc n c' c''
+                          ; justify c'' d
+                          ; valid c''
+                          ]
+                       )
+               )
+            )
+    ]
 
-let true_reln n a b =
-  let x = mk_fresh_sv () in
-  SoAny (x, 1, subset x x)
 
 let aej_tc m = tc 1 (always_eventually_justifies m)
 (* let aej_tc m = tc 1 (true_reln m) *)
-
-let conflict_free c =
-  let x = mk_fresh_fv () in
-  let y = mk_fresh_fv () in
-  FoAll (
-    x,
-    FoAll (
-      y,
-      (mk_implies [
-          QRel (c, [Var x])
-        ; QRel (c, [Var y])
-        ] (
-          (* Conflict is symmetric so we only need to check one
-             direction *)
-          Not (CRel ("conflict", [Var x; Var y]))
-        )
-      )
-    )
-  )
 
 let maximal c =
   let c' = mk_fresh_sv () in
   SoAny (
     c', 1,
     mk_implies [
-      conflict_free c
-    ; conflict_free c'
+      valid c
+    ; valid c'
     ; subset c c'
     ] (subset c' c)
   )
@@ -151,25 +137,17 @@ let do_decide es accept =
   let size = es.E.events_number in
   let x = mk_fresh_sv () in
   let y = mk_fresh_sv () in
-  let can_s = mk_fresh_sv () in
-  let must_s = mk_fresh_sv () in
   let f =
     SoAny (
-      can_s, 1,
-      SoAny (
-        must_s, 1,
-        SoAny (
-          x, 1,
-          SoAny (y, 1,
-                 And [
-                   eq_crel x "empty_set"
-                 ; maximal y
-                 ; aej_tc size size x y
-                 ; final_constraint accept y
-                 ]
-                )
-        )
-      )
+      x, 1,
+      SoAny (y, 1,
+             And [
+               eq_crel x "empty_set"
+             ; maximal y
+             ; aej_tc size size x y
+             ; final_constraint accept y
+             ]
+            )
     )
   in
   let s = { size = size; relations = build_so_structure es accept } in

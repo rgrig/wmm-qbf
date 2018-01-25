@@ -332,7 +332,7 @@ let rec r_tc n f a b =
     mk_eq a b
   ; FoAny (x, And [f a (Var x); step (Var x) b])
   ]
-    
+  
 (* Bounded transitive closure *)
 (* f+ a b ≜ f a b ∨ (∃x. f a x ∧ f+ x b) *)
 let rec tc n f a b =

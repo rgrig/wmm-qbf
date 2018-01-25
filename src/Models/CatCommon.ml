@@ -23,7 +23,7 @@ let build_so_structure es accept =
   let writes =
     List.map f
       (List.filter
-         (fun f -> not (List.mem f es.E.reads))
+         (fun f -> not ((List.mem f es.E.reads) || (List.mem f es.E.fences)))
          (Util.range 1 (es.E.events_number))
       )
   in
@@ -48,10 +48,12 @@ let build_so_structure es accept =
 
   let order = List.map f es.E.order in
   let justifies = List.map f es.E.justifies in
+  let conflict = List.map f es.E.conflicts in
   let ext = List.map f es.E.ext in
 
   SoOps.rels ([
     ("sloc", (2, sloc))
+  ; ("conflict", (2,conflict))
   ; ("order", (2, order))
   ; ("justifies", (2, justifies))
   ; ("ext", (2, ext))

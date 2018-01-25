@@ -93,7 +93,7 @@ let saturate_conflict es =
          ) pc
       )
   in
-  (* Symmetric close *)
+  let conflict = Util.transitive_closure conflict in
   let conflict = Util.symmetric_closure conflict in
   (* Remove refl edges *)
   let conflict = List.filter (fun (x, y) -> x <> y) conflict in
@@ -108,24 +108,27 @@ let apply_axioms es =
   check_confusion_free es'';
   es''
 
-let dump es accept =
+let dump filename es accept =
   let open Printf in
+  let basename = Filename.remove_extension filename in
+  let f_c = open_out (basename ^ ".es") in
   let list l = String.concat " " (List.map string_of_int l) in
-  let pairs = List.iter (fun (a, b) -> printf "  %d %d\n" a b) in
-  let groups = List.iter (fun g -> printf "  %s\n" (list g)) in
-  printf "ES dump:\n";
-  printf "events %d\n" es.events_number;
-  printf "reads %s\n" (list es.reads);
-  printf "justifies\n";
+  let pairs = List.iter (fun (a, b) -> fprintf f_c "  %d %d\n" a b) in
+  let groups = List.iter (fun g -> fprintf f_c "  %s\n" (list g)) in  
+  fprintf f_c "ES dump:\n";
+  fprintf f_c "events %d\n" es.events_number;
+  fprintf f_c "reads %s\n" (list es.reads);
+  fprintf f_c "justifies\n";
   pairs es.justifies;
-  printf "conflicts\n";
+  fprintf f_c "conflicts\n";
   pairs es.conflicts;
-  printf "order\n";
+  fprintf f_c "order\n";
   pairs es.order;
-  printf "sloc\n";
+  fprintf f_c "sloc\n";
   pairs es.sloc;
-  printf "accept\n";
-  groups accept
+  fprintf f_c "accept\n";
+  groups accept;
+  close_out f_c
 
 let get_events es = BatList.range 1 `To (es.events_number)
 let get_sloc es = es.sloc

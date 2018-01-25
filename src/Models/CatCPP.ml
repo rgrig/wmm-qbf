@@ -10,7 +10,7 @@ open SoOps
 let cross a b x y =
   And [a x; b y]
 
-let set_minus a b (x:term) =
+let set_minus a b x =
   And [a x; Not (b x)]
 
 let set_eq a b =
@@ -202,6 +202,52 @@ let cat_constrain n rf mo po reads writes rel acq_rel acq sc sloc nas i m f =
   ; sc_constrain psc
   ]
 
+let conflict_free c =
+  let x = mk_fresh_fv () in
+  let y = mk_fresh_fv () in
+  FoAll (
+    x,
+    FoAll (
+      y,
+      (mk_implies [
+          QRel (c, [Var x])
+        ; QRel (c, [Var y])
+        ] (
+          (* Conflict is symmetric so we only need to check one
+             direction *)
+          Not (CRel ("conflict", [Var x; Var y]))
+        )
+      )
+    )
+  )
+
+let maximal x =
+  let c' = mk_fresh_sv () in
+  SoAll (
+    c', 1,
+    mk_implies [
+      conflict_free x
+    ; conflict_free c'
+    ; subset x c'
+    ] (subset c' x)
+  )
+
+let final_constraint accept x =
+  let final_id = ref 0 in
+  And (
+    List.map (fun a ->
+        let e = mk_fresh_fv () in
+        FoAny (e,
+          And [
+            QRel (x, [Var e])
+          ; CRel (CatCommon.name_final (incr final_id; !final_id), [Var e])
+          ]
+        )
+      )
+      accept
+    )
+
+
 let do_decide es accept =
   let size = es.E.events_number in
   let curry_crel name a b = CRel (name, [a; b]) in
@@ -214,57 +260,10 @@ let do_decide es accept =
       SoAny (
         rf_id, 2,
         And [
-          CatCommon.rf_constrain rf (curry_crel "justifies")
-        ; CatCommon.co_constrain co
+          CatCommon.rf_constrain rf (curry_crel "justifies") 
+        ; CatCommon.co_constrain co 
         ; cat_constrain size rf
             (mo (curry_cset "na") co)
-            (curry_crel "order")
-            (curry_cset "reads")
-            (curry_cset "writes")
-            (curry_cset "rel")
-            (intersect (curry_cset "rel") (curry_cset "acq"))
-            (curry_cset "acq")
-            (curry_cset "sc")
-            (curry_crel "sloc")
-            (curry_cset "nas")
-            (curry_cset "init")
-            (curry_cset "universe")
-            (curry_cset "fences")
-        ]
-      )
-    )
-  in
-
-  let rf_id, rf = mk_fresh_reln ~prefix:"do_decide_rf" () in
-  let co_id, co = mk_fresh_reln ~prefix:"do_decide_co" () in
-  let mo = mo (curry_cset "na") co in
-  let sb = sb (curry_crel "order") (curry_cset "init") (curry_cset "universe") in
-  let rs = rs size
-      (curry_cset "writes")
-      (curry_cset "na")
-      (curry_crel "sloc")
-      sb rf
-  in
-  let sw = sw (curry_cset "reads")
-      (curry_cset "na")
-      (curry_cset "rel")
-      (intersect (curry_cset "acq") (curry_cset "rel"))
-      (curry_cset "acq")
-      (curry_cset "sc")
-      (curry_cset "fences")
-      rf sb rs
-  in
-
-  let f_race =
-    SoAny (
-      co_id, 2,
-      SoAny (
-        rf_id, 2,
-        And [
-          CatCommon.rf_constrain rf (curry_crel "justifies")
-        ; CatCommon.co_constrain co
-        ; cat_constrain size rf
-            mo
             (curry_crel "order")
             (curry_cset "reads")
             (curry_cset "writes")
@@ -277,17 +276,47 @@ let do_decide es accept =
             (curry_cset "init")
             (curry_cset "universe")
             (curry_cset "fences")
+        ]
+      )
+    )
+  in
+
+  let rf_id, rf = mk_fresh_reln ~prefix:"do_decide_rf" () in
+  let co_id, co = mk_fresh_reln ~prefix:"do_decide_co" () in
+  let exec_id = mk_fresh_sv () in
+  let exec x = QRel (exec_id, [x]) in
+  let order = (rel_intersect (curry_crel "order") (cross exec exec)) in
+  let sloc = (rel_intersect (curry_crel "sloc") (cross exec exec)) in
+  let ext = (rel_intersect (curry_crel "ext") (cross exec exec)) in
+
+  let na = intersect (curry_cset "na") exec in
+  let writes = intersect (curry_cset "writes") exec in
+  let reads = intersect (curry_cset "reads") exec in
+  let rel = intersect (curry_cset "rel") exec in
+  let rel_acq = intersect (intersect (curry_cset "acq") (curry_cset "rel")) exec in
+  let acq = intersect (curry_cset "acq") exec in
+  let sc = intersect (curry_cset "sc") exec in
+  let fences = intersect (curry_cset "fences") exec in
+  
+  let mo = mo na co in
+  let sb = sb order (curry_cset "init") exec in
+  let rs = rs size writes na sloc sb rf in 
+  let sw = sw reads na rel rel_acq acq sc fences rf sb rs in
+  let conflict = conflict writes exec sloc in
+  
+  let f_race =
+    SoAny (
+      co_id, 2,
+      SoAny (
+        rf_id, 2,
+        And [
+          CatCommon.rf_constrain rf (curry_crel "justifies")
+        ; CatCommon.co_constrain co
+        ; cat_constrain size rf mo order reads writes rel rel_acq acq sc sloc na (curry_cset "init") exec fences
         ; Not (
             racy_constrain
-              (race
-                 (curry_crel "ext")
-                 (conflict
-                    (curry_cset "writes")
-                    (curry_cset "universe")
-                    (curry_crel "sloc")
-                 )
-                 (hb size sb sw)
-                 (set_minus (curry_cset "universe") (curry_cset "na"))
+              (race ext conflict (hb size sb sw)
+                (set_minus exec  na)
               )
           )
         ]
@@ -301,6 +330,14 @@ let do_decide es accept =
     }
   in
 
-  let f = Or [f_consistent; f_race] in
+  let f = SoAny (
+      exec_id, 1,
+      And [
+        Or [f_consistent; f_race]
+      ; maximal exec_id
+      ; final_constraint accept exec_id
+      ] 
+    )
+  in
   if Config.dump_query () then SoOps.dump s f;
   Printf.printf "result: %b\n" (SoOps.model_check s f)
