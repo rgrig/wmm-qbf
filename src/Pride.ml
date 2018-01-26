@@ -3,15 +3,8 @@ let available_models =
   ("j+r-so", JRSO.do_decide) (* default *)
   ::
   [
-    (* "j+r", JR.do_decide*)
-  (*
-  "common-valid-conf", ValidConf.do_decide
-  (* TODO  ; "j+r-enum", JR.do_enum *)
-  ; "j+r-so", JRSO.do_decide
+    "cat-cpp", CatCPP.do_decide
   ; "cat-sc", CatSC.do_decide
-  ; "cat-ra", CatRA.do_decide 
-  *)
-    ("cat-cpp", CatCPP.do_decide)
   ]
 
 let print_accept accept =
