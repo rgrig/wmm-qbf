@@ -88,19 +88,12 @@ let always_eventually_justifies n c d =
     [ subset c d
     ; valid c
     ; valid d
-    ; SoAll (c', 1,
-             mk_implies
-               [ valid c'; always_justifies_tc n c c' ]
-               ( SoAny (c'', 1,
-                        And
-                          [
-                            always_justifies_tc n c' c''
-                          ; justify c'' d
-                          ; valid c''
-                          ]
-                       )
-               )
-            )
+    ; SoAll (
+        c', 1,
+        mk_implies
+          [ always_justifies_tc n c c' ]
+          (SoAny (c'', 1, And [always_justifies_tc n c' c''; justify c'' d ]))
+      )
     ]
 
 
@@ -118,34 +111,19 @@ let maximal c =
     ] (subset c' c)
   )
 
-let final_constraint accept x =
-  let final_id = ref 0 in
-  And (
-    List.map (fun a ->
-        let e = mk_fresh_fv () in
-        FoAny (e,
-          And [
-            QRel (x, [Var e])
-          ; CRel (CatCommon.name_final (incr final_id; !final_id), [Var e])
-          ]
-        )
-      )
-      accept
-    )
 
 let do_decide es accept =
   let size = es.E.events_number in
   let x = mk_fresh_sv () in
   let y = mk_fresh_sv () in
   let f =
-    SoAny (
-      x, 1,
+    SoAny (x, 1,
       SoAny (y, 1,
              And [
                eq_crel x "empty_set"
              ; maximal y
              ; aej_tc size size x y
-             ; final_constraint accept y
+             ; CatCommon.goal_constrain accept y
              ]
             )
     )

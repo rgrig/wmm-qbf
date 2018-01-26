@@ -112,3 +112,47 @@ let co_constrain co =
     )
   )
 
+let conflict_free c =
+  let x = mk_fresh_fv () in
+  let y = mk_fresh_fv () in
+  FoAll (
+    x,
+    FoAll (
+      y,
+      (mk_implies [
+          QRel (c, [Var x])
+        ; QRel (c, [Var y])
+        ] (
+          (* Conflict is symmetric so we only need to check one
+             direction *)
+          Not (CRel ("conflict", [Var x; Var y]))
+        )
+      )
+    )
+  )
+
+let maximal x =
+  let c' = mk_fresh_sv () in
+  SoAll (
+    c', 1,
+    mk_implies [
+      conflict_free x
+    ; conflict_free c'
+    ; subset x c'
+    ] (subset c' x)
+  )
+
+let goal_constrain accept g =
+  let final_id = ref 0 in
+  And (
+    List.map (fun a ->
+        let e = mk_fresh_fv () in
+        FoAny (e,
+          And [
+            QRel (g, [Var e])
+          ; CRel (name_final (incr final_id; !final_id), [Var e])
+          ]
+        )
+      )
+      accept
+    )
