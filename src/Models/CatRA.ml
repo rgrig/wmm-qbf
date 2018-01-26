@@ -21,7 +21,7 @@ let cat_constrain rf co fr po =
   ; acyclic (rel_union po rf)
   ]
 
-let do_decide es can must =
+let do_decide es accept =
   let size = es.E.events_number in
   let curry_crel name a b = CRel (name, [a; b]) in
   let rf_id, rf = mk_fresh_reln ~prefix:"do_decide_rf" () in
@@ -44,7 +44,7 @@ let do_decide es can must =
 
   let s = {
       size = size;
-      relations = CatCommon.build_so_structure es can must
+      relations = CatCommon.build_so_structure es accept
     }
   in
 

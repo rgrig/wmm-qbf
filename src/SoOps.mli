@@ -38,3 +38,8 @@ val irreflexive: (term -> term -> formula) -> formula
 val acyclic: (term -> term -> formula) -> formula
 
 val eq_crel2: SO.so_var -> string -> SO.formula
+
+val rel_minus: (term -> term -> formula) ->
+  (term -> term -> formula) -> term -> term -> formula
+
+val cross: (term -> formula) -> (term -> formula) -> term -> term -> formula

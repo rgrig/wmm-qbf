@@ -27,7 +27,7 @@ let build_so_structure es accept =
          (Util.range 1 (es.E.events_number))
       )
   in
-  let na = List.map f es.E.na in
+  (*  let na = List.map f es.E.na in*)
   let sc = List.map f es.E.sc in
   let rel = List.map f es.E.rel in
   let acq = List.map f es.E.acq in
@@ -44,7 +44,8 @@ let build_so_structure es accept =
   let sloc = List.map f sloc' in
   let xs = Util.range 2 es.E.events_number in
   let sloc_extra = List.map (fun x -> [1;x]) xs in
-  let sloc = sloc @ sloc_extra in
+  let sloc_extra' = List.map (fun x -> [x;1]) xs in
+  let sloc = sloc @ sloc_extra @ sloc_extra' in
 
   let order = List.map f es.E.order in
   let justifies = List.map f es.E.justifies in
@@ -62,12 +63,15 @@ let build_so_structure es accept =
   ; ("init", (1, [[1]]))
   ; ("reads", (1, reads))
   ; ("writes", (1, writes))
-  ; ("na", (1, na))
+  ; ("na", (1, universe)) (*TODO: The parser needs to emit these sets!*)
   ; ("sc", (1, sc))
   ; ("rel", (1, rel))
   ; ("acq", (1, acq))
   ; ("con", (1, con))
   ; ("fences", (1, fences))
+
+  ; ("my_co", (2, [[1;2]; [1;5]]))
+  ; ("my_rf", (2, [[2;7]; [5;4]]))
   ] @
       List.map (fun fin ->
           (name_final (incr final_id; !final_id)),
@@ -75,18 +79,18 @@ let build_so_structure es accept =
         ) accept
     )
 
-let rf_constrain rf jst =
+let rf_constrain g rf jst =
   let rf_rf_inv = sequence rf (invert rf) in
   let r = mk_fresh_fv ~prefix:"rf_r" () in
   let w = mk_fresh_fv ~prefix:"rf_w" () in
   And [
     rel_subset rf_rf_inv mk_eq
   (* justification ∈ (W × R) *) 
-  ; rel_subset rf jst 
+  ; rel_subset rf jst
   ; FoAll (
       r,
       mk_implies
-        [CRel ("reads", [Var r])]
+        [CRel ("reads", [Var r]); g (Var r)]
         (FoAny (w, rf (Var w) (Var r)))
     )
   ]
@@ -99,11 +103,13 @@ let co_constrain co =
     FoAll (
       b,
       And [
-        iff [
-          CRel ("writes", [Var a])
-        ; CRel ("writes", [Var b])
-        ; CRel ("sloc", [Var a; Var b])
-        ] [Or [(co (Var a) (Var b)); (co (Var b) (Var a))]]
+        iff [Or [(co (Var a) (Var b)); (co (Var b) (Var a))]]
+          [
+            CRel ("writes", [Var a])
+          ; CRel ("writes", [Var b])
+          ; (rel_minus (fun a b -> CRel ("sloc", [a; b])) mk_eq) (Var a) (Var b)
+          ]
+
       (* Alternatively it might be sufficient to constrain co to be
          acyclic, rather than trancl irrefl. *)
       ; irreflexive co

@@ -7,9 +7,6 @@ module GH = GraphHelpers
 open SO
 open SoOps
 
-let cross a b x y =
-  And [a x; b y]
-
 let set_minus a b x =
   And [a x; Not (b x)]
 
@@ -202,56 +199,13 @@ let cat_constrain n rf mo po reads writes rel acq_rel acq sc sloc nas i m f =
   ; sc_constrain psc
   ]
 
-let conflict_free c =
-  let x = mk_fresh_fv () in
-  let y = mk_fresh_fv () in
-  FoAll (
-    x,
-    FoAll (
-      y,
-      (mk_implies [
-          QRel (c, [Var x])
-        ; QRel (c, [Var y])
-        ] (
-          (* Conflict is symmetric so we only need to check one
-             direction *)
-          Not (CRel ("conflict", [Var x; Var y]))
-        )
-      )
-    )
-  )
-
-let maximal x =
-  let c' = mk_fresh_sv () in
-  SoAll (
-    c', 1,
-    mk_implies [
-      conflict_free x
-    ; conflict_free c'
-    ; subset x c'
-    ] (subset c' x)
-  )
-
-let final_constraint accept x =
-  let final_id = ref 0 in
-  And (
-    List.map (fun a ->
-        let e = mk_fresh_fv () in
-        FoAny (e,
-          And [
-            QRel (x, [Var e])
-          ; CRel (CatCommon.name_final (incr final_id; !final_id), [Var e])
-          ]
-        )
-      )
-      accept
-    )
-
 
 let do_decide es accept =
   let size = es.E.events_number in
   let curry_crel name a b = CRel (name, [a; b]) in
   let curry_cset name a = CRel (name, [a]) in
+  let g_id = mk_fresh_sv () in
+  let g x = QRel (g_id, [x]) in
   let rf_id, rf = mk_fresh_reln ~prefix:"do_decide_rf" () in
   let co_id, co = mk_fresh_reln ~prefix:"do_decide_co" () in
   let f_consistent =
@@ -260,7 +214,7 @@ let do_decide es accept =
       SoAny (
         rf_id, 2,
         And [
-          CatCommon.rf_constrain rf (curry_crel "justifies") 
+          CatCommon.rf_constrain g rf (curry_crel "justifies") 
         ; CatCommon.co_constrain co 
         ; cat_constrain size rf
             (mo (curry_cset "na") co)
@@ -310,7 +264,7 @@ let do_decide es accept =
       SoAny (
         rf_id, 2,
         And [
-          CatCommon.rf_constrain rf (curry_crel "justifies")
+          CatCommon.rf_constrain g rf (curry_crel "justifies")
         ; CatCommon.co_constrain co
         ; cat_constrain size rf mo order reads writes rel rel_acq acq sc sloc na (curry_cset "init") exec fences
         ; Not (
@@ -334,8 +288,8 @@ let do_decide es accept =
       exec_id, 1,
       And [
         Or [f_consistent; f_race]
-      ; maximal exec_id
-      ; final_constraint accept exec_id
+      ; CatCommon.maximal exec_id
+      ; CatCommon.goal_constrain accept exec_id
       ] 
     )
   in

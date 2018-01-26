@@ -281,16 +281,17 @@ let iff ps qs =
 let eq a b =
   And [subset a b; subset b a]
 
+(* ∀x . (x∈a ⇒ x∈n) ∧ (x∈n ⇒ x∈a) *)
 let eq_crel a n =
   let x = mk_fresh_fv ~prefix:"eq_crel" () in
   FoAll (
     x,
     And [
-      mk_implies [QRel (a, [Var x])] (CRel (n, [Var x]))
-    ; mk_implies [CRel (n, [Var x])] (QRel (a, [Var x]))
-    ]
+       mk_implies [QRel (a, [Var x])] (CRel (n, [Var x])) 
+     ; mk_implies [CRel (n, [Var x])] (QRel (a, [Var x]))
+     ] 
   )
-
+    
 let invert r a b = r b a
 
 let sequence r1 r2 x z = 
@@ -392,3 +393,9 @@ let eq_crel2 a n =
       ]
     )
   )
+    
+let rel_minus a b x y =
+  And [a x y; Not (b x y)]
+
+let cross a b x y =
+  And [a x; b y]
