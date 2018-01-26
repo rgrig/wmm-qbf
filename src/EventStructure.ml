@@ -115,8 +115,9 @@ let dump filename es accept =
   let list l = String.concat " " (List.map string_of_int l) in
   let pairs = List.iter (fun (a, b) -> fprintf f_c "  %d %d\n" a b) in
   let groups = List.iter (fun g -> fprintf f_c "  %s\n" (list g)) in  
-  fprintf f_c "ES dump:\n";
   fprintf f_c "events %d\n" es.events_number;
+  fprintf f_c "sloc\n";
+  pairs es.sloc;
   fprintf f_c "reads %s\n" (list es.reads);
   fprintf f_c "justifies\n";
   pairs es.justifies;
@@ -124,9 +125,7 @@ let dump filename es accept =
   pairs es.conflicts;
   fprintf f_c "order\n";
   pairs es.order;
-  fprintf f_c "sloc\n";
-  pairs es.sloc;
-  fprintf f_c "accept\n";
+  fprintf f_c "final\n";
   groups accept;
   close_out f_c
 
