@@ -40,7 +40,7 @@ let fresh_var =
     incr n;
     sprintf "%s_%d" prefix !n
 
-                   
+
 (* TODO: add small simplifications in these constructors *)
 (* Do we need these functions? Is it really better than having the
    constructors? *)

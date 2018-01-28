@@ -38,15 +38,16 @@ def get_passthrough_args(args):
     return []
 
 TESTS = get_suite(argv, get_skip(argv, [
-#    ("data/jctc", "j+r-so", "so"),
-#    ("data/store_buffer", "cat-cpp", "so"),
     ("data/mark-sc-tests", "cat-cpp", "so"),
+
     ("data/jctc-lisa", "j+r-so", "so"),
-#    ("data/store_buffer", "cat-cpp", "qbf"),
     ("data/jctc-lisa", "j+r-so", "qbf"),
 
-#    ("data/jctc", "j+r-so", "qbf"),
-#    ("data/jctc-lisa", "j+r-so", "qbf")
+    ("data/ra", "cat-ra", "qbf"),
+    
+    ("data/sc", "cat-sc", "qbf"),
+#    ("data/mark-sc-tests", "cat-sc", "so"),
+#    ("data/store_buffer", "cat-sc", "so")
 ]))
 
 

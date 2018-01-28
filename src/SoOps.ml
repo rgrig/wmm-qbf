@@ -124,6 +124,7 @@ let so_to_qbf structure formula =
     let xss = Util.repeat a xs in
     let xss = Util.n_cartesian_product xss in
     let add_one acc xs =
+      let prefix = Printf.sprintf "%s_%s" prefix (Util.map_join "_" string_of_int xs) in
       ByIdx.add xs (Qbf.fresh_var ~prefix ()) acc in
     List.fold_left add_one ByIdx.empty xss in
   let qvars_list qvars =

@@ -204,7 +204,7 @@ let do_decide es accept =
   let size = es.E.events_number in
   let curry_crel name a b = CRel (name, [a; b]) in
   let curry_cset name a = CRel (name, [a]) in
-  let g_id = mk_fresh_sv () in
+  let g_id = mk_fresh_sv ~prefix:"execution" () in
   let g x = QRel (g_id, [x]) in
   let rf_id, rf = mk_fresh_reln ~prefix:"do_decide_rf" () in
   let co_id, co = mk_fresh_reln ~prefix:"do_decide_co" () in
@@ -215,7 +215,7 @@ let do_decide es accept =
         rf_id, 2,
         And [
           CatCommon.rf_constrain g rf (curry_crel "justifies") 
-        ; CatCommon.co_constrain co 
+        ; CatCommon.co_constrain g co 
         ; cat_constrain size rf
             (mo (curry_cset "na") co)
             (curry_crel "order")
@@ -251,13 +251,13 @@ let do_decide es accept =
   let acq = intersect (curry_cset "acq") exec in
   let sc = intersect (curry_cset "sc") exec in
   let fences = intersect (curry_cset "fences") exec in
-  
+
   let mo = mo na co in
   let sb = sb order (curry_cset "init") exec in
   let rs = rs size writes na sloc sb rf in 
   let sw = sw reads na rel rel_acq acq sc fences rf sb rs in
   let conflict = conflict writes exec sloc in
-  
+
   let f_race =
     SoAny (
       co_id, 2,
@@ -265,23 +265,23 @@ let do_decide es accept =
         rf_id, 2,
         And [
           CatCommon.rf_constrain g rf (curry_crel "justifies")
-        ; CatCommon.co_constrain co
+        ; CatCommon.co_constrain g co
         ; cat_constrain size rf mo order reads writes rel rel_acq acq sc sloc na (curry_cset "init") exec fences
         ; Not (
             racy_constrain
               (race ext conflict (hb size sb sw)
-                (set_minus exec  na)
+                 (set_minus exec  na)
               )
           )
         ]
       )
     )
   in
-  
+
   let s = {
-      size = size;
-      relations = CatCommon.build_so_structure es accept
-    }
+    size = size;
+    relations = CatCommon.build_so_structure es accept
+  }
   in
 
   let f = SoAny (

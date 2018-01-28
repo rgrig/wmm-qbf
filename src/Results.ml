@@ -39,8 +39,15 @@ let parse_models data =
   find_models 0 []
 
 
+let run_also program data =
+  RunSolver.run_program program [||] data
+
 let re_yes_answer = Str.regexp "^s cnf 1"
 let parse_answer data =
+  (match (Config.run_also ()) with
+     "" -> ()
+   | p -> Printf.eprintf "%s:\n%s\n" p (run_also p data)
+  );
   try
     ignore (Str.search_forward re_yes_answer data 0);
     true
@@ -51,4 +58,3 @@ let parse_answer data =
         true
       with Not_found -> false
     )
-    

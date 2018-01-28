@@ -42,10 +42,6 @@ let build_so_structure es accept =
      the same location relation *)
   let sloc' = GH.symmetric_closure (GH.transitive_closure es.E.sloc) in
   let sloc = List.map f sloc' in
-  let xs = Util.range 2 es.E.events_number in
-  let sloc_extra = List.map (fun x -> [1;x]) xs in
-  let sloc_extra' = List.map (fun x -> [x;1]) xs in
-  let sloc = sloc @ sloc_extra @ sloc_extra' in
 
   let order = List.map f es.E.order in
   let justifies = List.map f es.E.justifies in
@@ -69,9 +65,6 @@ let build_so_structure es accept =
   ; ("acq", (1, acq))
   ; ("con", (1, con))
   ; ("fences", (1, fences))
-
-  ; ("my_co", (2, [[1;2]; [1;5]]))
-  ; ("my_rf", (2, [[2;7]; [5;4]]))
   ] @
       List.map (fun fin ->
           (name_final (incr final_id; !final_id)),
@@ -84,18 +77,21 @@ let rf_constrain g rf jst =
   let r = mk_fresh_fv ~prefix:"rf_r" () in
   let w = mk_fresh_fv ~prefix:"rf_w" () in
   And [
+    (* Each read has at most one incoming rf edge *)
     rel_subset rf_rf_inv mk_eq
-  (* justification ∈ (W × R) *) 
   ; rel_subset rf jst
   ; FoAll (
       r,
       mk_implies
         [CRel ("reads", [Var r]); g (Var r)]
-        (FoAny (w, rf (Var w) (Var r)))
+        (FoAny (w, And [
+             rf (Var w) (Var r)
+           ; CRel ("writes", [Var w])
+           ]))
     )
   ]
 
-let co_constrain co =
+let co_constrain g co =
   let a = mk_fresh_fv () in
   let b = mk_fresh_fv () in
   FoAll (
@@ -103,12 +99,14 @@ let co_constrain co =
     FoAll (
       b,
       And [
-        iff [Or [(co (Var a) (Var b)); (co (Var b) (Var a))]]
-          [
+        iff [
             CRel ("writes", [Var a])
           ; CRel ("writes", [Var b])
+          ; g (Var a)
+          ; g (Var b)
           ; (rel_minus (fun a b -> CRel ("sloc", [a; b])) mk_eq) (Var a) (Var b)
           ]
+          [Or [(co (Var a) (Var b)); (co (Var b) (Var a))]]
 
       (* Alternatively it might be sufficient to constrain co to be
          acyclic, rather than trancl irrefl. *)

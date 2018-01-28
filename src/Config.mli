@@ -9,6 +9,7 @@ val dump_lisa : unit -> bool
 val filename : unit -> string
 val use_solver : unit -> solver option
 val qbf_solver_bin : unit -> string
+val run_also : unit -> string
 val so_solver_bin : unit -> string
 val verbose : unit -> bool
 val vals : unit -> int * int

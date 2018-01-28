@@ -1,0 +1,6 @@
+LISA R
+{ x = 0; y = 0; }
+ P0      | P1       ;
+ w[] x 1 | w[] y 2  ;
+ w[] y 1 | r[] r1 x ;
+exists (P1:r1=0)

@@ -10,6 +10,13 @@ module ThreadMap = Util.IntMap
 exception LISAtoESException of string
 
 let debug = ref false
+type strength =
+  Non_atomic
+| Release
+| Acquire
+| Release_acquire
+| Consume
+| Relaxed
 
 (* Range of values to enumerate, includes minimum and maximum. *)
 type values = {
@@ -29,6 +36,7 @@ type read = {
   r_id : EventStructure.event;
   r_from : address;
   r_value : int;
+  r_strength: strength;
 }
 
 (* Information about a write event, used as intermediate storage until justification has been calculated. *)
@@ -38,6 +46,7 @@ type write = {
   (* Register thread and number, only given if the write came from a single register. *)
   w_from : (int * int) option;
   w_value : int;
+  w_strength: strength;
 }
 
 (* Intermediate event structure, gets translated to the final datatype before leaving this module. *)
@@ -162,41 +171,22 @@ let get_id (next_id : EventStructure.event ref) : EventStructure.event =
 let prefix_event (events : events) (event : EventStructure.event) : events =
   let read_order = List.map (fun read -> (event, read.r_id)) events.reads in
   let write_order = List.map (fun write -> (event, write.w_id)) events.writes in
-  {
-    reads = events.reads;
-    writes = events.writes;
-    conflict = events.conflict;
-    order = events.order @ read_order @ write_order;
-  }
+  { events with order = events.order @ read_order @ write_order; }
 
 (* Add a read event before the given events. *)
-let prefix_read
-  (events : events)
-  (r_id : EventStructure.event)
-  (r_from : address)
-  (r_value : int)
-: events =
+let prefix_read events r_id r_from r_value r_strength =
   let events = prefix_event events r_id in
-  let events = {
-    reads = { r_id; r_from; r_value } :: events.reads;
-    writes = events.writes;
-    conflict = events.conflict;
-    order = events.order;
-  } in
-  events
+  {
+    events with
+    reads = { r_id; r_from; r_value; r_strength } :: events.reads;
+  }
 
 (* Add a write event before the given events. *)
-let prefix_write
-  (events : events)
-  (w_id : EventStructure.event)
-  (w_from : (int * int) option)
-  (w_into : address)
-  (w_value : int)
-: events =
+let prefix_write events w_id w_from w_into w_value w_strength =
   let events = prefix_event events w_id in
   {
     reads = events.reads;
-    writes = { w_id; w_into; w_from; w_value } :: events.writes;
+    writes = { w_id; w_into; w_from; w_value; w_strength } :: events.writes;
     conflict = events.conflict;
     order = events.order;
   }
@@ -226,8 +216,8 @@ let write_justifies_read (write : write) (read : read) : bool =
   read.r_from = write.w_into && read.r_value = write.w_value
 
 (* Returns a list of writes justified by the init event whose id is given. *)
-let writes_from_init (init : MiscParser.state) (w_id : EventStructure.event) : write list =
-  List.fold_left (fun accumulator init ->
+let writes_from_init init w_id =
+  List.fold_left (fun (id, accumulator) init ->
     let (location, (run_type, value)) = init in
 
     let w_value = unwrap_val value in
@@ -244,8 +234,8 @@ let writes_from_init (init : MiscParser.state) (w_id : EventStructure.event) : w
     | Location_deref(Concrete _, _) -> assert false (* This pattern should be nonsense (but isn't). *)
     in
 
-    { w_id; w_into; w_from = None; w_value } :: accumulator
-  ) [] init
+    id+1, { w_id=id; w_into; w_from = None; w_value; w_strength=Relaxed } :: accumulator
+    ) (w_id, []) init
 
 (* Returns true if the state of all registers in the thread match the values in the condition. *)
 let condition_met (store : Store.t) (condition : (int * int) list) : bool =
@@ -374,7 +364,7 @@ and translate_instruction
         read_id
         depth
       in
-      let subtree = prefix_read subtree read_id source value in
+      let subtree = prefix_read subtree read_id source value Relaxed in
       accept := !accept @ subaccept;
       match !last_root with
       | Some last_id -> (events := sum !events subtree last_id read_id)
@@ -427,7 +417,7 @@ and translate_instruction
       write_id
       depth
     in
-    let events = prefix_write subtree write_id source_register destination value in
+    let events = prefix_write subtree write_id source_register destination value Relaxed in
     events, accept
   | Pbranch(Some(test), destination, labels) ->
     (* Conditional jump, doesn't create any events directly. *)
@@ -587,25 +577,26 @@ let translate litmus minimum maximum =
     in
     (product events subtree), subaccept :: accept
   in
+  
+  let n_id, inits = writes_from_init litmus.Lisa.init init_id in
+  next_id := n_id;
+
+  (* Interpret and compose the program threads *)
   let events, accept = List.fold_left2
     compose_threads (empty_events, []) litmus.Lisa.threads litmus.Lisa.program
   in
 
-  (* Add the order relations for the init event. *)
-  let events = prefix_event events init_id in
+  (* Prefix the init events *)
+  let events =
+    List.fold_left
+      (fun es ev ->
+         prefix_write es ev.w_id ev.w_from ev.w_into ev.w_value ev.w_strength
+      )
+      events inits
+  in
 
   (* Generate the same location relation. *)
-  let same_location = match_locations events.reads events.writes in
-
-  (* Add virtual writes tied to init with all the values in the initialisation list. *)
-  let events = {
-    reads = events.reads;
-    (* Beware: all writes for initialization are bound to one event, namely init_id.
-    More generally, don't use the length of the following list to count events.*)
-    writes = (writes_from_init litmus.Lisa.init init_id) @ events.writes;
-    conflict = events.conflict;
-    order = events.order;
-  } in
+  let same_location = match_locations events.reads (events.writes @ inits) in
 
   (* Generate the justifies relation. *)
   let justifies = justify_reads events.reads events.writes in

@@ -20,6 +20,9 @@ let model () = Util.from_some !model_val
 let qbf_solver_bin_val = ref "qfun-enum"
 let qbf_solver_bin () = !qbf_solver_bin_val
 
+let run_also_val = ref ""
+let run_also () = !run_also_val
+
 let so_solver_bin_val = ref "qfm"
 let so_solver_bin () = !so_solver_bin_val
 
@@ -95,6 +98,8 @@ let command_spec available_models =
     "  print list of models"
   ; "--qbf-solver-path", String ((:=) qbf_solver_bin_val),
     "  set the path to the Qbf solver binary"
+  ; "--run-also", String ((:=) run_also_val),
+    "  run this program on the solver output"
   ; "--so-solver-path", String ((:=) so_solver_bin_val),
     "  set the path to the SO solver binary"  
   ; "--solver", String choose_solver,
