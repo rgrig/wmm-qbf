@@ -19,5 +19,8 @@ print("{ " + " ".join(map(lambda x: "x{}=0;".format(x), numbers)) + "}")
 print(" | ".join(map(lambda x: "P{}       ".format(x), numbers)) + " ;")
 print(" | ".join(map(lambda x: "w[] x{} 1 ".format((x + 1) % no_threads), numbers)) + " ;")
 print(" | ".join(map(lambda x: "r[] r{} x{}".format(x, x), numbers)) + " ;")
-print("(* Nonsense condition; this isn't meant to be tested. *)")
-print("exists P0:r0=2")
+print()
+print("exists " + " /\\ ".join(
+        ["P{}:r{} = 0".format(x,x) for x in numbers]
+    )
+)

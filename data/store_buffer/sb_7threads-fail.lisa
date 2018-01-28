@@ -3,5 +3,5 @@ LISA store buffer with 7 threads
 P0        | P1        | P2        | P3        | P4        | P5        | P6        ;
 w[] x1 1  | w[] x2 1  | w[] x3 1  | w[] x4 1  | w[] x5 1  | w[] x6 1  | w[] x0 1  ;
 r[] r0 x0 | r[] r1 x1 | r[] r2 x2 | r[] r3 x3 | r[] r4 x4 | r[] r5 x5 | r[] r6 x6 ;
-(* Nonsense condition; this isn't meant to be tested. *)
-exists P0:r0=2
+
+exists P0:r0 = 0 /\ P1:r1 = 0 /\ P2:r2 = 0 /\ P3:r3 = 0 /\ P4:r4 = 0 /\ P5:r5 = 0 /\ P6:r6 = 0
