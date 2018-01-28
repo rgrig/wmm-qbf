@@ -14,12 +14,16 @@ let fr rf co = (sequence (invert rf) co)
 let com rf co fr = rel_union (rel_union rf co) fr
 
 let po_loc po = rel_intersect po (fun a b -> CRel ("sloc", [a;b]))
-             
-let cat_constrain rf co po =
+
+let hb n po rf = tc n (rel_union po rf)
+
+let cat_constrain n rf co po =
   let fr = fr rf co in
+  let hb = hb n po rf in
   And [
-    acyclic (rel_union (com rf co fr) (po_loc po))
-  ; acyclic (rel_union po rf)
+    irreflexive hb
+  ; irreflexive (sequence co hb)
+  ; irreflexive (sequence fr (rel_union hb co))
   ]
 
 let do_decide es accept =
@@ -50,7 +54,7 @@ let do_decide es accept =
           ; rel_subset co (cross g g)
           ; rel_subset rf (cross g g)
 
-          ; cat_constrain rf co po
+          ; cat_constrain size rf co po
           ]
         )
       )
