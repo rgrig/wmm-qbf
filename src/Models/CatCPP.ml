@@ -175,7 +175,7 @@ let race ext conflict hb atomics =
 
 let racy_constrain race =
   let curry_crel name a b = CRel (name, [a; b]) in
-  rel_eq race (curry_crel "empty_set")
+  rel_eq race (curry_crel "empty_rel")
 
 let cat_constrain n rf mo po reads writes rel acq_rel acq sc sloc nas i m f =
   (* Observation: Our po = sb anyway *)
@@ -204,42 +204,11 @@ let do_decide es accept =
   let size = es.E.events_number in
   let curry_crel name a b = CRel (name, [a; b]) in
   let curry_cset name a = CRel (name, [a]) in
-  let g_id = mk_fresh_sv ~prefix:"execution" () in
-  let g x = QRel (g_id, [x]) in
-  let rf_id, rf = mk_fresh_reln ~prefix:"do_decide_rf" () in
-  let co_id, co = mk_fresh_reln ~prefix:"do_decide_co" () in
-  let f_consistent =
-    SoAny (
-      co_id, 2,
-      SoAny (
-        rf_id, 2,
-        And [
-          CatCommon.rf_constrain g rf (curry_crel "justifies") 
-        ; CatCommon.co_constrain g co 
-        ; cat_constrain size rf
-            (mo (curry_cset "na") co)
-            (curry_crel "order")
-            (curry_cset "reads")
-            (curry_cset "writes")
-            (curry_cset "rel")
-            (intersect (curry_cset "rel") (curry_cset "acq"))
-            (curry_cset "acq")
-            (curry_cset "sc")
-            (curry_crel "sloc")
-            (curry_cset "na")
-            (curry_cset "init")
-            (curry_cset "universe")
-            (curry_cset "fences")
-        ]
-      )
-    )
-  in
-
-  let rf_id, rf = mk_fresh_reln ~prefix:"do_decide_rf" () in
-  let co_id, co = mk_fresh_reln ~prefix:"do_decide_co" () in
-  let exec_id = mk_fresh_sv () in
+  let exec_id = mk_fresh_sv ~prefix:"execution" () in
   let exec x = QRel (exec_id, [x]) in
-  let order = (rel_intersect (curry_crel "order") (cross exec exec)) in
+  let rf_id, rf = mk_fresh_reln ~prefix:"do_decide_rf" () in
+  let co_id, co = mk_fresh_reln ~prefix:"do_decide_co" () in
+  let po = (rel_intersect (curry_crel "order") (cross exec exec)) in
   let sloc = (rel_intersect (curry_crel "sloc") (cross exec exec)) in
   let ext = (rel_intersect (curry_crel "ext") (cross exec exec)) in
 
@@ -253,27 +222,43 @@ let do_decide es accept =
   let fences = intersect (curry_cset "fences") exec in
 
   let mo = mo na co in
-  let sb = sb order (curry_cset "init") exec in
+  let sb = sb po (curry_cset "init") exec in
   let rs = rs size writes na sloc sb rf in 
   let sw = sw reads na rel rel_acq acq sc fences rf sb rs in
   let conflict = conflict writes exec sloc in
 
-  let f_race =
+  let f =
     SoAny (
-      co_id, 2,
+      exec_id,1,
       SoAny (
-        rf_id, 2,
-        And [
-          CatCommon.rf_constrain g rf (curry_crel "justifies")
-        ; CatCommon.co_constrain g co
-        ; cat_constrain size rf mo order reads writes rel rel_acq acq sc sloc na (curry_cset "init") exec fences
-        ; Not (
-            racy_constrain
-              (race ext conflict (hb size sb sw)
-                 (set_minus exec  na)
+        co_id,2,
+        SoAny (
+          rf_id,2,
+          And [
+            CatCommon.goal_constrain accept exec_id
+          ; JRSO.valid exec_id
+          ; CatCommon.rf_constrain exec rf
+              (rel_intersect
+                 (curry_crel "justifies")
+                 (cross exec exec)
               )
-          )
-        ]
+          ; CatCommon.co_constrain exec co
+          ; rel_subset co (cross exec exec)
+          ; rel_subset rf (cross exec exec)
+
+          ; Or [
+              racy_constrain
+                (race ext conflict (hb size sb sw)
+                   (set_minus exec  na)
+                )
+            ; cat_constrain size rf
+                mo po reads writes rel rel_acq acq sc sloc na
+                (curry_cset "init")
+                (curry_cset "universe")
+                fences
+            ]
+          ]
+        )
       )
     )
   in
@@ -284,14 +269,45 @@ let do_decide es accept =
   }
   in
 
-  let f = SoAny (
-      exec_id, 1,
-      And [
-        Or [f_consistent; f_race]
-      ; CatCommon.maximal exec_id
-      ; CatCommon.goal_constrain accept exec_id
-      ] 
-    )
-  in
   if Config.dump_query () then SoOps.dump s f;
   Printf.printf "result: %b\n" (SoOps.model_check s f)
+
+
+let na_do_decide es accept =
+  do_decide es accept
+
+let rlx_do_decide es accept =
+  let es =
+    E.{
+      es with
+      na = []
+    ; rlx = es.na
+    }
+  in
+  do_decide es accept
+
+let ra_do_decide es accept =
+  let writes = List.filter
+         (fun f -> not ((List.mem f es.E.reads) || (List.mem f es.E.fences)))
+         (Util.range 1 (es.E.events_number))
+  in
+
+  let es =
+    E.{
+      es with
+      na = []
+    ; rel = es.reads
+    ; acq = writes
+    }
+  in
+  do_decide es accept
+
+let sc_do_decide es accept =
+  let es =
+    E.{
+      es with
+      na = []
+    ; sc = es.na
+    }
+  in
+  do_decide es accept

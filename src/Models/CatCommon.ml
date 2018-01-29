@@ -31,6 +31,7 @@ let build_so_structure es accept =
   let sc = List.map f es.E.sc in
   let rel = List.map f es.E.rel in
   let acq = List.map f es.E.acq in
+  let rlx = List.map f es.E.rlx in
   let con = List.map f es.E.consume in
   let fences = List.map f es.E.fences in
   let universe = List.map f (Util.range 1 es.E.events_number) in
@@ -55,6 +56,7 @@ let build_so_structure es accept =
   ; ("justifies", (2, justifies))
   ; ("ext", (2, ext))
   ; ("empty_set", (1, []))
+  ; ("empty_rel", (2, []))
   ; ("universe", (1, universe))
   ; ("init", (1, [[1]]))
   ; ("reads", (1, reads))
@@ -64,6 +66,7 @@ let build_so_structure es accept =
   ; ("rel", (1, rel))
   ; ("acq", (1, acq))
   ; ("con", (1, con))
+  ; ("rlx", (1, rlx))
   ; ("fences", (1, fences))
   ] @
       List.map (fun fin ->

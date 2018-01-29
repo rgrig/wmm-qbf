@@ -614,6 +614,7 @@ let translate litmus minimum maximum =
     sc = [];
     rel = [];
     acq = [];
+    rlx = [];
     consume = [];
     fences = [];
     ext = []

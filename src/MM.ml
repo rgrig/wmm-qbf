@@ -236,6 +236,7 @@ let sample_conf = { prefix = "C01"
                                         sc = [];
                                         rel = [];
                                         acq = [];
+                                        rlx = [];
                                         consume = [];
                                         fences = [];
                                         ext = [] }
@@ -253,6 +254,7 @@ let sample_rel = { prefix = "C02"
                                         sc = [];
                                         rel = [];
                                         acq = [];
+                                        rlx = [];
                                         consume = [];
                                         fences = [];
                                         ext = [] }
@@ -341,6 +343,7 @@ let sample_conf2 = { prefix = "C03"
                                         sc = [];
                                         rel = [];
                                         acq = [];
+                                        rlx = [];
                                         consume = [];
                                         fences = [];
                                         ext = []}
@@ -399,6 +402,7 @@ let test_same_label = "same_label" >:: (fun () ->
                sc = [];
                rel = [];
                acq = [];
+               rlx = [];
                consume = [];
                fences = [];
                ext = [] }

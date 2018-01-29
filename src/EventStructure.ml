@@ -14,6 +14,7 @@ type t =
   ; sc : set
   ; rel : set
   ; acq : set
+  ; rlx : set
   ; consume : set
   ; fences : set
   ; ext : relation }
@@ -29,6 +30,7 @@ let empty =
   ; sc = []
   ; rel = []
   ; acq = []
+  ; rlx = []
   ; consume = []
   ; fences = []
   ; ext = [] }

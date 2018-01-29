@@ -3,7 +3,11 @@ let available_models =
   ("j+r-so", JRSO.do_decide) (* default *)
   ::
   [
-    "cat-cpp", CatCPP.do_decide
+    "cat-cpp-na", CatCPP.na_do_decide
+  ; "cat-cpp-rlx", CatCPP.na_do_decide
+  ; "cat-cpp-ra", CatCPP.na_do_decide
+  ; "cat-cpp-sc", CatCPP.na_do_decide
+     
   ; "cat-ra", CatRA.do_decide
   ; "cat-sc", CatSC.do_decide
   ]

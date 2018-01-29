@@ -29,6 +29,7 @@
 %token FINAL
 %token EXECUTION
 %token SEQUENTIALLY_CONSISTENT
+%token RELAXED
 %token RELEASE
 %token ACQUIRE
 %token CONSUME
@@ -60,6 +61,7 @@ event_structure:
   scs=option(sc)
   rels=option(rel)
   acqs=option(acq)
+  rlxs=option(rlx)
   consumes=option(consume)
   fences=option(fence)
   exts=option(ext)
@@ -78,6 +80,7 @@ event_structure:
     ; sc=(some_or_empty scs)
     ; rel=(some_or_empty rels)
     ; acq=(some_or_empty acqs)
+    ; rlx=(some_or_empty rlxs)
     ; consume=(some_or_empty consumes)
     ; fences=(some_or_empty fences)
     ; ext=(some_or_empty exts)
@@ -95,9 +98,10 @@ order: v=nl_list(ORDER,nonempty_list(INT),NL+) { flatten_order v };
 reads: v=nl_list(READS,INT,NL*) { v };
 target: v=nl_list(EXECUTION,INT,NL*) { v };
 na: v=nl_list(NON_ATOMIC,INT,NL*) { v };
-sc: v=nl_list(EXECUTION,INT,NL*) { v };
+sc: v=nl_list(SEQUENTIALLY_CONSISTENT,INT,NL*) { v };
 rel: v=nl_list(RELEASE,INT,NL*) { v };
 acq: v=nl_list(ACQUIRE,INT,NL*) { v };
+rlx: v=nl_list(RELAXED,INT,NL*) { v };	
 consume: v=nl_list(CONSUME,INT,NL*) { v };
 fence: v=nl_list(FENCE,INT,NL*) { v };
 ext: v=nl_list(EXT,nonempty_list(INT),NL+) { flatten_order v };
