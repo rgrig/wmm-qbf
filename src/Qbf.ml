@@ -41,21 +41,33 @@ let fresh_var =
     sprintf "%s_%d" prefix !n
 
 
-(* TODO: add small simplifications in these constructors *)
-(* Do we need these functions? Is it really better than having the
-   constructors? *)
 let mk_var v = Var v
-let mk_and ps = And ps
-let mk_or ps = Or ps
-(* An and gate with zero inputs represents the constant true. *)
+
 let mk_true () = And []
-(* An or gate with zero inputs represents the constant false. *)
+
 let mk_false () = Or []
-let mk_not = function Not p -> p | p -> Not p
+
+let mk_and ps =
+  if List.mem (mk_false ()) ps then mk_false () else
+  let f = function And xs -> xs | x -> [x] in
+  And (List.concat (List.map f ps))
+
+let mk_or ps =
+  if List.mem (mk_true ()) ps then mk_true () else
+  let f = function Or xs -> xs | x -> [x] in
+  Or (List.concat (List.map f ps))
+
+let rec mk_not = function
+  | Not p -> p
+  | And ps -> Or (List.map mk_not ps)
+  | Or ps -> And (List.map mk_not ps)
+  | p -> Not p
+  (* TODO; better or worse if we do wants as well? *)
+
 let mk_exists vs p = Exists (vs, p, fresh_qid ())
+
 let mk_forall vs p = Forall (vs, p, fresh_qid ())
 
-(* p₁ ∧ p₂ ∧ pₙ → q  ⇔  ¬p₁ ∨ ¬p₂ ∨ ¬pₙ ∨ q *)
 let mk_implies ps q = mk_or (q :: List.map mk_not ps)
 
 (* {{{ Helpers for preprocess. *)

@@ -2,6 +2,8 @@ type variable = string
 type model = variable list
 type qid = int (* quantifier id *)
 
+(* TODO: Make abstract so other modules are forced to use the constructors.
+Use the on_ trick. *)
 type t =
   | Var of variable
   | Not of t
