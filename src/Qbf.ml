@@ -41,6 +41,13 @@ let fresh_var =
     sprintf "%s_%d" prefix !n
 
 
+(* tailrec; order not preserved *)
+let concat_map f xs =
+  let rec go ys = function
+    | [] -> ys
+    | x :: xs -> go (List.rev_append (f x) ys) xs in
+  go [] xs
+
 let mk_var v = Var v
 
 let mk_true () = And []
@@ -50,12 +57,12 @@ let mk_false () = Or []
 let mk_and ps =
   if List.mem (mk_false ()) ps then mk_false () else
   let f = function And xs -> xs | x -> [x] in
-  And (List.concat (List.map f ps))
+  And (concat_map f ps)
 
 let mk_or ps =
   if List.mem (mk_true ()) ps then mk_true () else
   let f = function Or xs -> xs | x -> [x] in
-  Or (List.concat (List.map f ps))
+  Or (concat_map f ps)
 
 let rec mk_not = function
   | Not p -> p
@@ -129,8 +136,8 @@ let prenex =
   let rec top = function
     | Var v as p -> p
     | Not p -> u_not (top p)
-    | And ps -> u_andor mk_and U.id [] (List.map top ps)
-    | Or ps -> u_andor mk_or U.id [] (List.map top ps)
+    | And ps -> u_andor mk_and U.id [] (List.rev_map top ps)
+    | Or ps -> u_andor mk_or U.id [] (List.rev_map top ps)
     | Exists (vs, p, q) -> Exists (vs, top p, q)
     | Forall (vs, p, q) -> Forall (vs, top p, q)
   in
@@ -187,7 +194,7 @@ let to_clauses p =
     cs := (v, op, vs, ps) :: !cs; (true, v) in
   let neg (b, x) = (not b, x) in
   let rec go_op op ps =
-    add_clause op None (List.map go ps)
+    add_clause op None (List.rev_map go ps)
   and go_q q vs p =
     add_clause q (Some vs) [go p]
   and go = function
@@ -236,7 +243,7 @@ let qcir_to_buffer buffer p =
 
 
 let build_query_string p =
-  let p = preprocess p in
+(*   let p = preprocess p in *)
   let qcir = Buffer.create 16 in
   qcir_to_buffer qcir p;
   Buffer.contents qcir
