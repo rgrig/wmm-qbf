@@ -44,8 +44,15 @@ TESTS = get_suite(argv, get_skip(argv, [
     ("data/jctc-lisa", "j+r-so", "qbf"),
 
     ("data/ra", "cat-ra", "qbf"),
+    ("data/jctc-lisa", "cat-ra", "qbf"),
     
     ("data/sc", "cat-sc", "qbf"),
+    ("data/jctc-lisa", "cat-sc", "qbf"),
+
+    ("data/cpp-na", "cat-cpp-na", "qbf"),
+    ("data/cpp-rlx", "cat-cpp-rlx", "qbf"),
+    ("data/cpp-ra", "cat-cpp-ra", "qbf"),
+    ("data/cpp-sc", "cat-cpp-sc", "qbf"),
 #    ("data/mark-sc-tests", "cat-sc", "so"),
 #    ("data/store_buffer", "cat-sc", "so")
 ]))
