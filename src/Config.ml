@@ -87,11 +87,11 @@ let command_spec available_models =
   ; "--debug-lisa-translate", Set Translate.debug,
     "  debug translation from LISA to EventStructure"
   ; "--dump-es", Set dump_es_val,
-    "  print event structure file before executing"
+    "  write event structure file before executing"
   ; "--dump-qbf", Set dump_qbf_val,
-    "  print QBF query before executing"
+    "  write QBF query file before executing"
   ; "--dump-query", Set dump_query_val,
-    "  print query before executing"
+    "  write query file before executing"
   ; "--model", String (choose_model available_models),
     "  pick a model (default: " ^ (fst (List.hd available_models)) ^ ")"
   ; "--list-models", Unit (list_models available_models),
