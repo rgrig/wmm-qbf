@@ -62,7 +62,7 @@ let rec mk_not = function
   | And ps -> Or (List.map mk_not ps)
   | Or ps -> And (List.map mk_not ps)
   | p -> Not p
-  (* TODO; better or worse if we do wants as well? *)
+  (* TODO; better or worse if we do quants as well? *)
 
 let mk_exists vs p = Exists (vs, p, fresh_qid ())
 
