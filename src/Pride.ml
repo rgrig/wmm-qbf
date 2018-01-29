@@ -38,7 +38,7 @@ let run_on_lisa filename ch =
   let es = EventStructure.apply_axioms es in
   if (Config.dump_es ()) then EventStructure.dump filename es accept;
   if (Config.verbose ()) then (
-    Printf.eprintf "  Model size:  %d"  es.EventStructure.events_number;
+    Printf.eprintf "  Model size:  %d\n"  es.EventStructure.events_number;
     flush stderr;
     print_accept accept;
   );
