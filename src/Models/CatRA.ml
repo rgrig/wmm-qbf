@@ -15,21 +15,22 @@ let com rf co fr = rel_union (rel_union rf co) fr
 
 let po_loc po = rel_intersect po (fun a b -> CRel ("sloc", [a;b]))
 
-let hb n po rf = tc n (rel_union po rf)
+(*let hb n po rf = tc n (rel_union po rf)*)
 
 let cat_constrain rf co po =
+  let fr = fr rf co in
   let x_id, x = mk_fresh_reln () in
-  let y_id, y = mk_fresh_reln () in
+  let hb_id, hb = mk_fresh_reln () in
 
   let a = mk_fresh_fv () in
   let b = mk_fresh_fv () in
-  SoAny(
-    x_id,2,
-    SoAny (
-      y_id,2,
+  And [
+    SoAny(
+      x_id, 2,
       And [
         rel_subset (rel_union po rf) x
       ; transitive x
+      ; irreflexive x  
       ; FoAll (
           a,
           FoAll (
@@ -37,15 +38,22 @@ let cat_constrain rf co po =
             Not (And [co (Var a) (Var b); x (Var b) (Var a)])
           )
         )
-      (* For effeciency we over approximate hb as 
-         ∃y . y ⊆ (po ∪ rf) ∧ transitive y
-      *)
-      ; irreflexive y
-      ; transitive y
-      ; rel_subset (rel_union po rf) y
       ]
     )
-  )
+
+  (* For effeciency we over approximate hb as 
+     ∃y . (po ∪ rf) ⊆ y ∧ transitive y
+  *)
+  ; SoAny (
+      hb_id,2,
+      And [
+        transitive hb
+      ; rel_subset (rel_union po rf) hb
+      ; irreflexive hb
+      ; irreflexive (sequence fr (rel_union hb co))
+      ]
+    )
+  ]
 
 let do_decide es accept =
   let size = es.E.events_number in
