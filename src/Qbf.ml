@@ -54,15 +54,19 @@ let mk_true () = And []
 
 let mk_false () = Or []
 
-let mk_and ps =
-  if List.mem (mk_false ()) ps then mk_false () else
-  let f = function And xs -> xs | x -> [x] in
-  And (concat_map f ps)
+let mk_and = function
+  | [p] -> p
+  | ps ->
+      if List.mem (mk_false ()) ps then mk_false () else
+      let f = function And xs -> xs | x -> [x] in
+      And (concat_map f ps)
 
-let mk_or ps =
-  if List.mem (mk_true ()) ps then mk_true () else
-  let f = function Or xs -> xs | x -> [x] in
-  Or (concat_map f ps)
+let mk_or = function
+  | [p] -> p
+  | ps ->
+      if List.mem (mk_true ()) ps then mk_true () else
+      let f = function Or xs -> xs | x -> [x] in
+      Or (concat_map f ps)
 
 let rec mk_not = function
   | Not p -> p
