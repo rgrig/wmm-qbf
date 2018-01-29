@@ -13,8 +13,6 @@ let fr rf co = (sequence (invert rf) co)
 
 let com rf co fr = rel_union (rel_union rf co) fr
 
-let po_loc po = rel_intersect po (fun a b -> CRel ("sloc", [a;b]))
-
 (*let hb n po rf = tc n (rel_union po rf)*)
 
 let cat_constrain rf co po =
@@ -54,6 +52,24 @@ let cat_constrain rf co po =
       ]
     )
   ]
+
+let cat_constrain rf co po =
+  let fr = fr rf co in
+  let hb_id, hb = mk_fresh_reln () in
+  SoAny (
+    hb_id, 2,
+    And [
+      rel_subset po hb
+    ; rel_subset rf hb
+    ; transitive hb
+    ; irreflexive hb
+    ; irreflexive (sequence co hb)
+    (* We do not support RMW, so all fr;co edges are irreflexive as
+       they're ⊆ (R×W) *)
+    ; irreflexive (sequence fr hb)
+    ]
+  )
+
 
 let do_decide es accept =
   let size = es.E.events_number in
