@@ -66,8 +66,8 @@ let mk_or ps =
 
 let rec mk_not = function
   | Not p -> p
-  | And ps -> Or (List.map mk_not ps)
-  | Or ps -> And (List.map mk_not ps)
+  | And ps -> Or (List.rev_map mk_not ps)
+  | Or ps -> And (List.rev_map mk_not ps)
   | p -> Not p
   (* TODO; better or worse if we do quants as well? *)
 
@@ -243,7 +243,7 @@ let qcir_to_buffer buffer p =
 
 
 let build_query_string p =
-(*   let p = preprocess p in *)
+  let p = preprocess p in
   let qcir = Buffer.create 16 in
   qcir_to_buffer qcir p;
   Buffer.contents qcir
