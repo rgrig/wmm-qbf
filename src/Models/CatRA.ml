@@ -6,52 +6,9 @@ open CatCommon
 
 type reln = fo_var -> fo_var -> formula
 
-let intersect a b =
-    List.filter (fun x -> List.mem x a) b
-
 let fr rf co = (sequence (invert rf) co)
 
 let com rf co fr = rel_union (rel_union rf co) fr
-
-(*let hb n po rf = tc n (rel_union po rf)*)
-
-let cat_constrain rf co po =
-  let fr = fr rf co in
-  let x_id, x = mk_fresh_reln () in
-  let hb_id, hb = mk_fresh_reln () in
-
-  let a = mk_fresh_fv () in
-  let b = mk_fresh_fv () in
-  And [
-    SoAny(
-      x_id, 2,
-      And [
-        rel_subset (rel_union po rf) x
-      ; transitive x
-      ; irreflexive x  
-      ; FoAll (
-          a,
-          FoAll (
-            b,
-            Not (And [co (Var a) (Var b); x (Var b) (Var a)])
-          )
-        )
-      ]
-    )
-
-  (* For effeciency we over approximate hb as 
-     ∃y . (po ∪ rf) ⊆ y ∧ transitive y
-  *)
-  ; SoAny (
-      hb_id,2,
-      And [
-        transitive hb
-      ; rel_subset (rel_union po rf) hb
-      ; irreflexive hb
-      ; irreflexive (sequence fr (rel_union hb co))
-      ]
-    )
-  ]
 
 let cat_constrain rf co po =
   let fr = fr rf co in
