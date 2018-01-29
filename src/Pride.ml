@@ -21,8 +21,11 @@ let run_on_es filename ch =
   Config.set_current_file filename;
   let es, accept = EsOps.parse filename ch in
   let es = EventStructure.apply_axioms es in
-  if (Config.verbose ()) then print_accept accept;
-
+  if (Config.verbose ()) then (
+    Printf.eprintf "  Model size:  %d"  es.EventStructure.events_number;
+    flush stderr;
+    print_accept accept;
+  );
   (Config.model ()) es accept
 
 let run_on_lisa filename ch =
@@ -34,7 +37,11 @@ let run_on_lisa filename ch =
   let es, accept = Translate.translate litmus min max in
   let es = EventStructure.apply_axioms es in
   if (Config.dump_es ()) then EventStructure.dump filename es accept;
-  if (Config.verbose ()) then print_accept accept;
+  if (Config.verbose ()) then (
+    Printf.eprintf "  Model size:  %d"  es.EventStructure.events_number;
+    flush stderr;
+    print_accept accept;
+  );
   (Config.model ()) es accept
 
 let run_on_file run filename =
