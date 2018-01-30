@@ -97,6 +97,8 @@ let rf_constrain g rf jst =
 
 (* NOTE: the user of this function is responsible of requiring that co is acyclic *)
 let co_constrain g co =
+  let curry_crel name a b = CRel (name, [a; b]) in (* TODO: move out *)
+  let sloc_irrefl = rel_minus (curry_crel "sloc") mk_eq in
   let a = mk_fresh_fv () in
   let b = mk_fresh_fv () in
   FoAll (
@@ -109,10 +111,9 @@ let co_constrain g co =
           ; CRel ("writes", [Var b])
           ; g (Var a)
           ; g (Var b)
-          ; CRel ("sloc", [Var a; Var b])
-(*           ; (rel_minus (fun a b -> CRel ("sloc", [a; b])) mk_eq) (Var a) (Var b) *)
+          ; sloc_irrefl (Var a) (Var b)
           ]
-        [Or [(co (Var a) (Var b)); (co (Var b) (Var a)); mk_eq (Var a) (Var b)]]
+        [Or [(co (Var a) (Var b)); (co (Var b) (Var a))]]
       ]
     )
   )
