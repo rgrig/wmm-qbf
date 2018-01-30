@@ -14,34 +14,14 @@ let cat_constrain rf co po =
   let po_strict = rel_minus po mk_eq in
   let fr = fr rf co in
   let hb_id, hb = mk_fresh_reln () in
-  let hb_refl_id, hb_refl = mk_fresh_reln () in
   SoAny (hb_id, 2, And
     [ rel_subset po_strict hb
     ; rel_subset rf hb
     ; transitive hb
     ; irreflexive hb
-    ; SoAny (hb_refl_id, 2, And
-      [ rel_subset mk_eq hb_refl
-      ; rel_subset hb hb_refl
-      ; acyclic (sequence co hb_refl)
-    ; acyclic (sequence fr hb_refl) ] ) ] )
-  (*
-  And
-    [ SoAny (hb_id, 2,
-      And
-        [ rel_subset po_strict hb
-        ; rel_subset co hb
-        ; transitive hb
-        ; irreflexive hb ] )
-    ; SoAny (hb_refl_id, 2,
-      And
-        [ rel_subset po hb_refl
-        ; rel_subset co hb_refl
-        ; transitive hb_refl
-        ; irreflexive (sequence co hb_refl)
-        ; irreflexive (sequence fr hb_refl)
-        (* note: no support for RMW *) ] ) ]
-*)
+    ; acyclic co
+    ; irreflexive (sequence co hb)
+    ; irreflexive (sequence fr hb) ])
 
 let do_decide es accept =
   let size = es.E.events_number in
