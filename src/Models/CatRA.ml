@@ -35,7 +35,8 @@ let do_decide es accept =
   let g x = QRel (g_id, [x]) in
   let rf_id, rf = mk_fresh_reln ~prefix:"do_decide_rf" () in
   let co_id, co = mk_fresh_reln ~prefix:"do_decide_co" () in
-  let po = rel_intersect (rel_minus (curry_crel "order") mk_eq) (cross g g) in
+(*   let po = rel_intersect (rel_minus (curry_crel "order") mk_eq) (cross g g) in *)
+  let po = curry_crel "order" in
 
   let f =
     SoAny (
@@ -48,13 +49,13 @@ let do_decide es accept =
             CatCommon.goal_constrain accept g_id
           ; JRSO.valid g_id
           ; CatCommon.rf_constrain g rf
-              (rel_intersect
+(*               (rel_intersect *)
                  (curry_crel "justifies")
-                 (cross g g)
-              )
+(*                  (cross g g) *)
+(*               ) *)
           ; CatCommon.co_constrain g co
-          ; rel_subset co (cross g g)
-          ; rel_subset rf (cross g g)
+(*           ; rel_subset co (cross g g) *)
+(*           ; rel_subset rf (cross g g) *)
 
           ; cat_constrain rf co po
           ]
