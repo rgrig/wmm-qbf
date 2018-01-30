@@ -30,15 +30,8 @@ let do_decide es accept =
           And [
             CatCommon.goal_constrain accept g_id
           ; JRSO.valid g_id
-          ; CatCommon.rf_constrain g rf
-              (rel_intersect
-                 (curry_crel "justifies")
-                 (cross g g)
-              )
+          ; CatCommon.rf_constrain g rf (curry_crel "justifies")
           ; CatCommon.co_constrain g co
-          ; rel_subset co (cross g g)
-          ; rel_subset rf (cross g g)
-
           ; cat_constrain rf co po
           ]
         )

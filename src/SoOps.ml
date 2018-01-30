@@ -371,7 +371,7 @@ let irreflexive r =
   FoAll (x, Not (r (Var x) (Var x)))
     
 let acyclic e =
-  let r_id, r = mk_fresh_reln ~prefix:"tc1_acycl_" () in
+  let r_id, r = mk_fresh_reln ~prefix:"acycl_" () in
   SoAny (
     r_id, 2,
     And [

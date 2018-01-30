@@ -90,10 +90,12 @@ let rf_constrain g rf jst =
         (FoAny (w, And [
              rf (Var w) (Var r)
            ; CRel ("writes", [Var w])
+           ; g (Var w)
            ]))
     )
   ]
 
+(* NOTE: the user of this function is responsible of requiring that co is acyclic *)
 let co_constrain g co =
   let a = mk_fresh_fv () in
   let b = mk_fresh_fv () in
@@ -107,14 +109,10 @@ let co_constrain g co =
           ; CRel ("writes", [Var b])
           ; g (Var a)
           ; g (Var b)
-          ; (rel_minus (fun a b -> CRel ("sloc", [a; b])) mk_eq) (Var a) (Var b)
+          ; CRel ("sloc", [Var a; Var b])
+(*           ; (rel_minus (fun a b -> CRel ("sloc", [a; b])) mk_eq) (Var a) (Var b) *)
           ]
           [Or [(co (Var a) (Var b)); (co (Var b) (Var a))]]
-
-      (* Alternatively it might be sufficient to constrain co to be
-         acyclic, rather than trancl irrefl. *)
-      ; irreflexive co
-      ; transitive co
       ]
     )
   )
