@@ -112,7 +112,7 @@ let co_constrain g co =
           ; CRel ("sloc", [Var a; Var b])
 (*           ; (rel_minus (fun a b -> CRel ("sloc", [a; b])) mk_eq) (Var a) (Var b) *)
           ]
-          [Or [(co (Var a) (Var b)); (co (Var b) (Var a))]]
+        [Or [(co (Var a) (Var b)); (co (Var b) (Var a)); mk_eq (Var a) (Var b)]]
       ]
     )
   )

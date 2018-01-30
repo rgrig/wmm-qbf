@@ -10,7 +10,8 @@ let com rf co fr = rel_union (rel_union rf co) fr
 
 let cat_constrain rf co po =
   let fr = fr rf co in
-  acyclic (rel_union (com rf co fr) po)
+  let po_strict = rel_minus po mk_eq in
+  acyclic (rel_union (com rf co fr) po_strict)
 
 let do_decide es accept =
   let size = es.E.events_number in
