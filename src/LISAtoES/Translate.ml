@@ -215,7 +215,6 @@ let find_label (instructions : BellBase.parsedPseudo array) (label : string) : i
 let write_justifies_read (write : write) (read : read) : bool =
   read.r_from = write.w_into && read.r_value = write.w_value
 
-(* Returns a list of writes justified by the init event whose id is given. *)
 let writes_from_init init w_id =
   List.fold_left (fun (id, accumulator) init ->
     let (location, (run_type, value)) = init in
