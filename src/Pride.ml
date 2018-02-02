@@ -34,9 +34,9 @@ let run_on_lisa filename ch =
   let litmus = Lisa.load_litmus source in
   (if Config.dump_lisa () then Lisa.print_litmus litmus);
   let min, max = Config.vals () in
-  let es, accept = Translate.translate litmus min max in
+  let es, accept, labels = Translate.translate litmus min max in
   let es = EventStructure.apply_axioms es in
-  if (Config.dump_es ()) then EventStructure.dump filename es accept;
+  if (Config.dump_es ()) then EventStructure.dump filename es accept labels;
   if (Config.verbose ()) then (
     Printf.eprintf "  Model size:  %d\n"  es.EventStructure.events_number;
     flush stderr;

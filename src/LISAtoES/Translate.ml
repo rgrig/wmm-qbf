@@ -494,7 +494,6 @@ let justify_reads (reads : read list) (writes : write list) : EventStructure.rel
 (* Return a list of pairs of events that read or write the same global. *)
 let match_locations (reads : read list) (writes : write list) : EventStructure.relation =
   (* Make one big list of all events and the global they touch. *)
-  (* Type explicitly stated because inference fails here. *)
   let read_addresses = List.map (fun read -> (read.r_id, read.r_from)) reads in
   let write_addresses = List.map (fun write -> (write.w_id, write.w_into)) writes in
   let event_addresses = List.append read_addresses write_addresses in
@@ -537,6 +536,16 @@ let parse_condition (litmus : Lisa.litmus) : (int * int) list ThreadMap.t =
   in
 
   parse_condition_expression ThreadMap.empty expression
+
+let label_events (events : events) : (EventStructure.event * string) list =
+  let open Printf in
+  (* TODO: Call init "Init" if/when it stops doubling as a write event. *)
+  let labels = List.fold_left (fun accumulator read ->
+    (read.r_id, sprintf "R%s[%d]->%d" read.r_from.global read.r_from.offset read.r_value) :: accumulator
+  ) [] events.reads in
+  List.fold_left (fun accumulator write ->
+    (write.w_id, sprintf "W%s[%d]<-%d" write.w_into.global write.w_into.offset write.w_value) :: accumulator
+  ) labels events.writes
 
 (* Translate a program AST into an event structure, this is the entrypoint into the module. *)
 (* `init` gives the initial values for global variables, letting the init event justify non-zero reads. *)
@@ -601,8 +610,10 @@ let translate litmus minimum maximum =
   let justifies = justify_reads events.reads events.writes in
   let reads = List.map (fun r -> r.r_id) events.reads in
 
+  let labels = label_events events in
+
   (* Convert from intermediate representation to final event structure. *)
-  (EventStructure.{
+  let events = EventStructure.{
     events_number = !next_id - 1;
     reads;
     justifies;
@@ -616,5 +627,7 @@ let translate litmus minimum maximum =
     rlx = [];
     consume = [];
     fences = [];
-    ext = []
-  }, accept)
+    ext = [];
+  } in
+  
+  (events, accept, labels)

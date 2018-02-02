@@ -110,13 +110,14 @@ let apply_axioms es =
   check_confusion_free es'';
   es''
 
-let dump filename es accept =
+let dump filename es accept labels =
   let open Printf in
   let basename = Filename.remove_extension filename in
   let f_c = open_out (basename ^ ".es") in
   let list l = String.concat " " (List.map string_of_int l) in
   let pairs = List.iter (fun (a, b) -> fprintf f_c "  %d %d\n" a b) in
   let groups = List.iter (fun g -> fprintf f_c "  %s\n" (list g)) in  
+  let names = List.iter (fun (event, name) -> fprintf f_c "  %d \"%s\"\n" event name) in
   fprintf f_c "events %d\n" es.events_number;
   fprintf f_c "sloc\n";
   pairs es.sloc;
@@ -129,6 +130,8 @@ let dump filename es accept =
   pairs es.order;
   fprintf f_c "final\n";
   groups accept;
+  fprintf f_c "labels\n";
+  names labels;
   close_out f_c
 
 let get_events es = BatList.range 1 `To (es.events_number)
