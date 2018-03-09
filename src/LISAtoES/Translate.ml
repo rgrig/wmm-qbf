@@ -541,10 +541,10 @@ let label_events (events : events) : (EventStructure.event * string) list =
   let open Printf in
   (* TODO: Call init "Init" if/when it stops doubling as a write event. *)
   let labels = List.fold_left (fun accumulator read ->
-    (read.r_id, sprintf "R%s[%d]->%d" read.r_from.global read.r_from.offset read.r_value) :: accumulator
+    (read.r_id, sprintf "R%s[%d]→%d" read.r_from.global read.r_from.offset read.r_value) :: accumulator
   ) [] events.reads in
   List.fold_left (fun accumulator write ->
-    (write.w_id, sprintf "W%s[%d]<-%d" write.w_into.global write.w_into.offset write.w_value) :: accumulator
+    (write.w_id, sprintf "W%s[%d]←%d" write.w_into.global write.w_into.offset write.w_value) :: accumulator
   ) labels events.writes
 
 (* Translate a program AST into an event structure, this is the entrypoint into the module. *)
