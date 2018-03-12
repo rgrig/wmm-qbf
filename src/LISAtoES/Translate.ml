@@ -3,7 +3,7 @@
 open MiscParser
 open Constant
 open BellBase
-open MetaConst
+module MC = MetaConst
 
 module ThreadMap = Util.IntMap
 
@@ -11,12 +11,29 @@ exception LISAtoESException of string
 
 let debug = ref false
 type strength =
-  Non_atomic
-| Release
-| Acquire
-| Release_acquire
-| Consume
-| Relaxed
+    Non_atomic
+  | Sequentially_consistent
+  | Release
+  | Acquire
+  | Release_acquire
+  | Consume
+  | Relaxed
+
+let strength_of_label s =
+  match s with
+    "na" | "NA" | "non atomic" -> Non_atomic
+  | "sc" | "SC" | "sequentially consistent" -> Sequentially_consistent
+  | "rel" | "REL" | "release" -> Release
+  | "acq" | "ACQ" | "acquire" -> Acquire
+  | "rel_acq" | "REL_ACQ" | "release acquire" -> Release_acquire
+  | "con" | "CON" | "consume" -> Consume
+  | "rlx" | "RLX" | "relaxed" -> Relaxed
+  | _ -> failwith (Printf.sprintf "Unknown memory strength '%s' (difim)" s)
+
+(* We only look at the first label. If there are no labels, assume Relaxed *)
+let strength_from_labels = function
+  [] -> Relaxed
+| lbl::lbls -> strength_of_label lbl
 
 (* Range of values to enumerate, includes minimum and maximum. *)
 type values = {
@@ -31,39 +48,26 @@ type address = {
   offset : int;
 }
 
-(* Information about a read event, used as intermediate storage until justification has been calculated. *)
-(*
-type read = {
-  r_id : EventStructure.event;
-  r_from : address;
-  r_value : int;
-  r_strength: strength;
-}
-
-(* Information about a write event, used as intermediate storage until justification has been calculated. *)
-type write = {
-  w_id : EventStructure.event;
-  w_into : address;
-  (* Register thread and number, only given if the write came from a single register. *)
-  w_from : (int * int) option;
-  w_value : int;
-  w_strength: strength;
-}
-*)
+type t_id = int
+type id = t_id * EventStructure.event
 
 type event =
-    Read of EventStructure.event * address * int * strength
-  | Write of EventStructure.event * address * (int * int) option * int * strength
+    Read of id * address * int * strength
+  | Write of id * address * (int * int) option * int * strength
 
 let show_event = function
-    Read (id, from, v, _) ->
+    Read ((_, id), from, v, _) ->
     Format.sprintf "R%s[%d]->%d" from.global from.offset v
-  | Write (id, into, _, v, _) ->
+  | Write ((_, id), into, _, v, _) ->
     Format.sprintf "W%s[%d]<-%d" into.global into.offset v
 
+let event_t_id = function
+    Read ((t_id, _), _, _, _)
+  | Write ((t_id, _), _, _, _, _) -> t_id
+  
 let event_id = function
-    Read (id, _, _, _)
-  | Write (id, _, _, _, _) -> id
+    Read ((_, id), _, _, _)
+  | Write ((_, id), _, _, _, _) -> id
 
 let event_address = function
     Read (_, from, _, _) -> from
@@ -103,8 +107,8 @@ let unwrap_val = function
   | _ -> raise (LISAtoESException "Symbolic values not supported")
 
 let unwrap_metaconst = function
-  | Int value -> value
-  | Meta _ -> raise (LISAtoESException "Symbolic constants not supported")
+  | MC.Int value -> value
+  | MC.Meta _ -> raise (LISAtoESException "Symbolic constants not supported")
 
 let value_from_reg_or_imm store = function
   | Regi reg -> Store.lookup store (unwrap_reg reg)
@@ -190,8 +194,6 @@ let prefix_event (events : events) (event : event) : events =
     order = ord_prefix @ events.order;
   }
 
-
-
 (* Return true if a labelled instruction has the given label. *)
 let rec has_label (pseudo : BellBase.parsedPseudo) (label : string) : bool =
   match pseudo with
@@ -211,6 +213,13 @@ let find_label (instructions : BellBase.parsedPseudo array) (label : string) : i
   (* Search until an index out of range happends. *)
   try search 0
   with Invalid_argument _ -> raise (Invalid_argument ("label not found: " ^ label))
+
+let strength_filter events s =
+    List.map event_id (
+      List.filter
+        (fun x -> event_strength x = s)
+        events.events
+    )
 
 (* Return true if a write has the same address and value as a read. *)
 let write_justifies_read a b = 
@@ -238,7 +247,7 @@ let writes_from_init init w_id =
     | Location_deref(Concrete _, _) -> assert false (* This pattern should be nonsense (but isn't). *)
     in
 
-    id+1, Write (id, w_into, None, w_value, Relaxed) :: accumulator
+    id+1, Write ((-1, id), w_into, None, w_value, Relaxed) :: accumulator
     ) (w_id, []) init
 
 (* Returns true if the state of all registers in the thread match the values in the condition. *)
@@ -304,7 +313,8 @@ and translate_instruction t_id instructions condition pc store vs next_id parent
       let new_store = Store.update store destination value in
       let read_id = get_id next_id in
       let subtree, subaccept = translate_instructions t_id instructions condition pc new_store vs next_id read_id depth in
-      let subtree = prefix_event subtree (Read (read_id, source, value, Relaxed)) in
+      let strength = strength_from_labels labels in
+      let subtree = prefix_event subtree (Read ((t_id, read_id), source, value, strength)) in
       accept := !accept @ subaccept;
       match !last_root with
       | Some last_id -> (events := sum !events subtree last_id read_id)
@@ -338,8 +348,9 @@ and translate_instruction t_id instructions condition pc store vs next_id parent
 
     let write_id = get_id next_id in
     let subtree, accept = translate_instructions t_id instructions condition pc store vs next_id write_id depth in
+    let strength = strength_from_labels labels in
     let events = prefix_event subtree (
-        Write (write_id, destination, source_register, value, Relaxed)
+        Write ((t_id, write_id), destination, source_register, value, strength)
       )
     in
     events, accept
@@ -464,7 +475,6 @@ let translate litmus minimum maximum =
   let next_id = ref (init_id + 1) in (* TODO: wrap in a function *)
 
   let condition = parse_condition litmus in
-
   (* Translate each thread and compose the resulting event structures together. *)
   let compose_threads (events, accept) t_id instructions = 
     let insts = Array.of_list instructions in
@@ -478,6 +488,9 @@ let translate litmus minimum maximum =
   let n_id, inits = writes_from_init litmus.Lisa.init init_id in
   next_id := n_id;
 
+  let partition = BatList.group (fun x y -> compare (event_t_id x) (event_t_id y)) in
+  let square = List.map (fun x -> BatList.n_cartesian_product [x;x]) in
+  
   (* Interpret and compose the program threads *)
   let events, accept = List.fold_left2
     compose_threads (empty_events, []) litmus.Lisa.threads litmus.Lisa.program
@@ -487,14 +500,20 @@ let translate litmus minimum maximum =
   let events = List.fold_left prefix_event events inits in
 
   (* Generate the same location relation. *)
-  let same_location = match_locations (events.events @ inits) in
+  let same_location = match_locations events.events in
 
   (* Generate the justifies relation. *)
   let justifies = justify_reads events.events in
   let reads = List.filter (function Read _ -> true | _ -> false) events.events in
-  (* let strength_filter s es = List.filter (fun x -> event_strength x = s) es in *)
-
+  
   let labels = label_events events in
+
+  let s_thread = square (partition events.events) in
+  let s_thread = List.map (
+      function
+        [x;y] -> (event_id x, event_id y)
+      | _ -> failwith "Internal error (riuxz)"
+    ) (List.flatten s_thread) in
 
   (* Convert from intermediate representation to final event structure. *)
   let events = EventStructure.{
@@ -504,14 +523,14 @@ let translate litmus minimum maximum =
     conflicts = events.conflict;
     order = events.order;
     sloc = same_location;
-    na = [];
-    sc = [];
-    rel = [];
-    acq = [];
-    rlx = [];
-    consume = [];
+    na = strength_filter events Non_atomic;
+    sc = strength_filter events Sequentially_consistent;
+    rel = strength_filter events Release;
+    acq = strength_filter events Acquire;
+    rlx = strength_filter events Relaxed;
+    consume = strength_filter events Consume;
     fences = [];
-    ext = [];
+    ext = s_thread;
   } in
   
   (events, accept, labels)
