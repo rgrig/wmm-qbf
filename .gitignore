@@ -1,6 +1,7 @@
 *.dot
 *.out
 *.qcir
+*.qcir.gz
 *.sol
 *.str
 /*.byte
