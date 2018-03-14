@@ -247,7 +247,7 @@ let writes_from_init init w_id =
     | Location_deref(Concrete _, _) -> assert false (* This pattern should be nonsense (but isn't). *)
     in
 
-    id+1, Write ((-1, id), w_into, None, w_value, Relaxed) :: accumulator
+    id+1, Write ((-1, id), w_into, None, w_value, Non_atomic) :: accumulator
     ) (w_id, []) init
 
 (* Returns true if the state of all registers in the thread match the values in the condition. *)
@@ -508,6 +508,9 @@ let translate litmus minimum maximum =
   
   let labels = label_events events in
 
+  (* Get a list of events on the same thread and then build the cross
+     product of each sub-list. Notably this puts all the init writes
+     on a separate thread, as their t_id is set to -1. *)
   let s_thread = square (partition events.events) in
   let s_thread = List.map (
       function
