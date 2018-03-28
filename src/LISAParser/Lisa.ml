@@ -1,3 +1,5 @@
+exception BadInput of string
+
 type state = MiscParser.state
 type program = BellBase.parsedPseudo list list
 
@@ -38,8 +40,9 @@ let read_to_eof (from : in_channel) : string =
 (* and the constraint on the result. *)
 let load_litmus data =
   (* Find the sections of the file and check it's the right architecture. *)
-  let split_result = SPLITTER.split "TODO: Name" data in
-  assert Splitter.(split_result.is_lisa);
+  (* TODO: "input" should be the name of the input file. *)
+  let split_result = SPLITTER.split "input" data in
+  if not Splitter.(split_result.is_lisa) then raise (BadInput "Missing LISA header");
   let (init_range, program_range, condition_range, _) =
     Splitter.(split_result.locs) in
 

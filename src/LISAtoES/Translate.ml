@@ -57,9 +57,9 @@ type event =
 
 let show_event = function
     Read ((_, id), from, v, _) ->
-    Format.sprintf "R%s[%d]->%d" from.global from.offset v
+    Format.sprintf "R%s[%d]→%d" from.global from.offset v
   | Write ((_, id), into, _, v, _) ->
-    Format.sprintf "W%s[%d]<-%d" into.global into.offset v
+    Format.sprintf "W%s[%d]←%d" into.global into.offset v
 
 let event_t_id = function
     Read ((t_id, _), _, _, _)
