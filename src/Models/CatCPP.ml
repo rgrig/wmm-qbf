@@ -274,6 +274,9 @@ let do_decide es accept =
   if Config.dump_query () then SoOps.dump s f;
   Printf.printf "result: %b\n" (SoOps.model_check s f)
 
+let simple_do_decide _es _accept =
+  failwith "(rbauj)"
+
 
 let na_do_decide es accept =
   do_decide es accept

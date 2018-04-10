@@ -2,12 +2,12 @@
 let available_models =
   ("j+r-so", JRSO.do_decide) (* default *)
   ::
-  [
+  [ (* TODO(rgrig): Are these all supposed to be [na_do_decide]? *)
     "cat-cpp-na", CatCPP.na_do_decide
   ; "cat-cpp-rlx", CatCPP.na_do_decide
   ; "cat-cpp-ra", CatCPP.na_do_decide
   ; "cat-cpp-sc", CatCPP.na_do_decide
-     
+  ; "cat-cpp-simple", CatCPP.simple_do_decide
   ; "cat-ra", CatRA.do_decide
   ; "cat-sc", CatSC.do_decide
   ]
