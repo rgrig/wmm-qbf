@@ -10,7 +10,7 @@ models to QBF queries.
 
 For development, it also helps to install the following:
 
-  opam install merlin
+  opam install merlin utop
   opam user-setup install
 
 ## Usage

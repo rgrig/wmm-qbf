@@ -42,19 +42,13 @@ let parse_models data =
 let run_also program data =
   RunSolver.run_program program [||] data
 
-let re_yes_answer = Str.regexp "^s cnf 1"
-let parse_answer data =
-  (match (Config.run_also ()) with
-     "" -> ()
-   | p -> Printf.eprintf "%s:\n%s\n" p (run_also p data)
-  );
-  try
-    ignore (Str.search_forward re_yes_answer data 0);
-    true
-  (* TODO: Is there a way to detect if the output is malformed due to errors? *)
-  with Not_found -> (
-      try
-        ignore (Str.search_forward (Str.regexp "Satisfiable") data 0);
-        true
-      with Not_found -> false
-    )
+(* TODO: Is there a way to detect if the output is malformed due to errors? *)
+let parse_answer =
+  let re_yes_answer = List.map Str.regexp ["^s cnf 1"; "Satisfiable"] in
+  fun data -> begin
+    (match (Config.run_also ()) with
+      | "" -> ()
+      | p -> Printf.eprintf "%s:\n%s\n" p (run_also p data));
+    let has re = Str.string_match re data 0 in
+    List.exists has re_yes_answer
+  end

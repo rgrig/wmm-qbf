@@ -6,4 +6,4 @@
 val run_qbf_solver: string array -> string -> string
 val run_so_solver: string array -> string -> string
 
-val run_program: string -> string array -> bytes -> string
+val run_program: string -> string array -> string -> string
