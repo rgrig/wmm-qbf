@@ -5,15 +5,8 @@ models to QBF queries.
 
 ## Dependencies
 
-- OCaml 4.04
-- opam packages
-    - ppx_deriving
-    - batteries
-    - oUnit
-    - extlib
-    - ocamlgraph
-Use:
-  opam install batteries extlib ocamlgraph oUnit ppx_deriving
+  OCaml 4.04
+  opam install batteries extlib menhir ocamlgraph oUnit ppx_deriving
 
 ## Usage
 

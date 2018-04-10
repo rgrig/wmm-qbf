@@ -1,4 +1,4 @@
-(** 
+(**
  * Based on Repairing C++ Sequential Consistency (Ori Lahav et. al.)
  *)
 
@@ -37,7 +37,7 @@ let union a b x =
 
 let rel_minus a b x y =
   And [a x y; Not (b x y)]
-    
+
 let rs n writes nas sloc sb rf =
   sequence
     (set_to_reln writes)
@@ -58,7 +58,7 @@ let sw reads nas rel acq_rel acq sc f rf sb rs =
           rs
           (sequence
              rf
-             (sequence 
+             (sequence
                 (set_to_reln (intersect reads (complement nas)))
                 (sequence
                    (reflcl (sequence sb (set_to_reln f)))
@@ -93,7 +93,7 @@ let coh_constrain hb eco =
 
 let atomic1_constrain eco =
   irreflexive eco
-    
+
 let atomic2_constrain fr mo =
   irreflexive (sequence fr mo)
 
@@ -193,9 +193,9 @@ let cat_constrain n rf mo po reads writes rel acq_rel acq sc sloc nas i m f =
   let psc_f =  psc_f f sc hb eco in
   let psc = psc psc_base psc_f in
   And [
-    coh_constrain hb eco 
+    coh_constrain hb eco
   ; atomic1_constrain eco
-  ; atomic2_constrain fr mo 
+  ; atomic2_constrain fr mo
   ; sc_constrain psc
   ]
 
@@ -223,7 +223,7 @@ let do_decide es accept =
 
   let mo = mo na co in
   let sb = sb po (curry_cset "init") exec in
-  let rs = rs size writes na sloc sb rf in 
+  let rs = rs size writes na sloc sb rf in
   let sw = sw reads na rel rel_acq acq sc fences rf sb rs in
   let conflict = conflict writes exec sloc in
 
