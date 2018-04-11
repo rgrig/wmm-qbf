@@ -131,7 +131,8 @@ let print_options () =
   if !use_solver_val = Some SolveSO then
     Printf.eprintf "  Solver Path: %s (%s)\n" !so_solver_bin_val (get_version !so_solver_bin_val);
   if !use_solver_val = Some SolveQbf then
-    Printf.eprintf "  Solver Path: %s (%s)\n" !qbf_solver_bin_val (get_version !qbf_solver_bin_val)
+    Printf.eprintf "  Solver Path: %s (%s)\n" !qbf_solver_bin_val (get_version !qbf_solver_bin_val);
+  Printf.eprintf "%!"
 
 
 let parse_args (available_models : (string * worker) (*nonempty*) list) =

@@ -3,6 +3,7 @@ module GH = GraphHelpers
 open SO
 open SoOps
 
+type event_setset = EventStructure.set list
 
 let name_final i = Printf.sprintf "final%d" i
 
@@ -74,6 +75,10 @@ let build_so_structure es accept =
           (1, List.map (fun f -> [f]) fin)
         ) accept
     )
+
+let sos_of_es es accept = SO.
+  { size = es.EventStructure.events_number
+  ; relations = build_so_structure es accept }
 
 let rf_constrain g rf jst =
   let rf_rf_inv = sequence rf (invert rf) in
