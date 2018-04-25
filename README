@@ -8,6 +8,11 @@ models to QBF queries.
   OCaml 4.04
   opam install batteries extlib menhir ocamlgraph oUnit ppx_deriving
 
+For development, it also helps to install the following:
+
+  opam install merlin utop
+  opam user-setup install
+
 ## Usage
 
 ```

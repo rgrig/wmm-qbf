@@ -1,13 +1,13 @@
 (* NOTE: This cannot go in [Config] because of cyclic module dependencies. *)
-let available_models =
+let available_models : (string * Config.worker) list =
   ("j+r-so", JRSO.do_decide) (* default *)
   ::
-  [
+  [ (* TODO(rgrig): Are these all supposed to be [na_do_decide]? *)
     "cat-cpp-na", CatCPP.na_do_decide
   ; "cat-cpp-rlx", CatCPP.na_do_decide
   ; "cat-cpp-ra", CatCPP.na_do_decide
   ; "cat-cpp-sc", CatCPP.na_do_decide
-     
+  ; "rc11-simple", CatCPP.simple_do_decide
   ; "cat-ra", CatRA.do_decide
   ; "cat-sc", CatSC.do_decide
   ]
@@ -51,10 +51,7 @@ let run_on_file run filename =
 
 let () =
   Config.parse_args available_models;
-  if Config.verbose () then (
-    Config.print_options ();
-    flush stderr;
-  );
+  if Config.verbose () then Config.print_options ();
   List.iter (run_on_file run_on_es) (Config.es_files ());
   List.iter (run_on_file run_on_lisa) (Config.lisa_files ())
 

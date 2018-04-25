@@ -77,7 +77,7 @@ let run_program program options data =
 
   (* Setup buffers for IO. *)
   let to_child_offset = ref 0 in
-  let to_child_data = data in
+  let to_child_data = Bytes.of_string data in
   let output = Buffer.create 16 in
   let errors = Buffer.create 16 in
 

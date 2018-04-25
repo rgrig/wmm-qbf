@@ -49,6 +49,8 @@ TESTS = get_suite(argv, get_skip(argv, [
     ("data/sc", "cat-sc", "qbf"),
     ("data/jctc-lisa", "cat-sc", "qbf"),
 
+    ("data/sc", "rc11-simple", "qbf"),
+
     ("data/cpp-na", "cat-cpp-na", "qbf"),
     ("data/cpp-rlx", "cat-cpp-rlx", "qbf"),
     ("data/cpp-ra", "cat-cpp-ra", "qbf"),
@@ -107,9 +109,10 @@ for directory, model, solver in TESTS:
                 low = int(vals[1].split(',')[0]) or 0
                 high = int(vals[1].split(',')[1]) or 1
                 sys.stdout.write("{:6s}: {:20s} {:3s} {:d}-{:d}     {}\r".format("...", model, solver, low, high, join(directory, test)))
-            output = check_output(
-                [PRIDE_BIN, "--model", model, join(directory, test), "--solver", solver] + vals + aditional_args
-            )
+            command = [PRIDE_BIN, "--model", model, join(directory, test), "--solver", solver] + vals + aditional_args
+            if False:
+              print('COMMAND:',command)
+            output = check_output(command)
             elapsed_time = time.time() - start_time
             qbf_result = b"true" in output
             expected = not ("fail" in test)

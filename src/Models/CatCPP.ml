@@ -3,65 +3,62 @@
  *)
 
 module E = EventStructure
-module GH = GraphHelpers
-open SO
-open SoOps
 
 let set_minus a b x =
-  And [a x; Not (b x)]
+  SO.And [a x; SO.Not (b x)]
 
 let set_eq a b =
-  let x = mk_fresh_fv () in
-  FoAll (x, iff [a (Var x)] [b (Var x)])
+  let x = SO.mk_fresh_fv () in
+  SO.FoAll (x, SoOps.iff [a (SO.Var x)] [b (SO.Var x)])
 
 let set_to_reln r x y =
-  And [
-    mk_eq x y
+  SO.And [
+    SoOps.mk_eq x y
   ; r x
     (*; r y (* redundant as x = y *) *)
   ]
 
 let complement s x =
-  Not (s x)
+  SO.Not (s x)
 
-let reflcl r = rel_union r mk_eq
+let reflcl r = SoOps.rel_union r SoOps.mk_eq
 
 let sb po i m =
-  rel_union po (cross i (set_minus m i))
+  SoOps.rel_union po (SoOps.cross i (set_minus m i))
 
 let intersect a b x =
-  And [a x; b x]
+  SO.And [a x; b x]
 
 let union a b x =
-  Or [a x; b x]
+  SO.Or [a x; b x]
 
 let rel_minus a b x y =
-  And [a x y; Not (b x y)]
+  SO.And [a x y; SO.Not (b x y)]
 
 let rs n writes nas sloc sb rf =
-  sequence
+  SoOps.sequence
     (set_to_reln writes)
-    (sequence
-       (reflcl (rel_intersect sb sloc))
-       (sequence
+    (SoOps.sequence
+       (reflcl (SoOps.rel_intersect sb sloc))
+       (SoOps.sequence
           (set_to_reln (intersect writes (complement nas)))
-          (r_tc n rf)
+          (SoOps.r_tc n rf)
        )
     )
 
 let sw reads nas rel acq_rel acq sc f rf sb rs =
-  sequence
+  SoOps.sequence
     (set_to_reln (union rel (union acq_rel sc)))
-    (sequence
-       (reflcl (sequence (set_to_reln f) sb))
-       (sequence
+    (SoOps.sequence
+       (reflcl (SoOps.sequence (set_to_reln f) sb))
+       (SoOps.sequence
           rs
-          (sequence
+          (SoOps.sequence
              rf
-             (sequence
+             (SoOps.sequence
                 (set_to_reln (intersect reads (complement nas)))
-                (sequence
-                   (reflcl (sequence sb (set_to_reln f)))
+                (SoOps.sequence
+                   (reflcl (SoOps.sequence sb (set_to_reln f)))
                    (set_to_reln (union acq (union acq_rel sc)))
                 )
              )
@@ -70,14 +67,15 @@ let sw reads nas rel acq_rel acq sc f rf sb rs =
     )
 
 let hb n sb sw =
-  tc n (rel_union sb sw)
+  SoOps.tc n (SoOps.rel_union sb sw)
 
-let fr rf mo = rel_minus (sequence (invert rf) mo) mk_eq
+let fr rf mo =
+  SoOps.rel_minus (SoOps.sequence (SoOps.invert rf) mo) SoOps.mk_eq
 
 let eco rf mo fr =
-  rel_union
+  SoOps.rel_union
     rf
-    (rel_union
+    SoOps.(rel_union
        mo
        (rel_union
           fr
@@ -89,93 +87,96 @@ let eco rf mo fr =
     )
 
 let coh_constrain hb eco =
-  irreflexive (sequence hb eco)
+  SoOps.irreflexive (SoOps.sequence hb eco)
 
 let atomic1_constrain eco =
-  irreflexive eco
+  SoOps.irreflexive eco
 
 let atomic2_constrain fr mo =
-  irreflexive (sequence fr mo)
+  SoOps.irreflexive (SoOps.sequence fr mo)
 
-let fhb f sc hb = sequence (set_to_reln (intersect f sc)) (reflcl hb)
-let hbf f sc hb = sequence (reflcl hb) (set_to_reln (intersect f sc))
-let sb_neq_loc sb sloc = rel_minus sb sloc
+let fhb f sc hb =
+  SoOps.sequence (set_to_reln (intersect f sc)) (reflcl hb)
+let hbf f sc hb =
+  SoOps.sequence (reflcl hb) (set_to_reln (intersect f sc))
+let sb_neq_loc sb sloc =
+  SoOps.rel_minus sb sloc
 
 let scb sb hb sb_neq_loc mo fr sloc =
-  rel_union
+  SoOps.rel_union
     sb
-    (rel_union
-       (sequence
+    (SoOps.rel_union
+       (SoOps.sequence
           sb_neq_loc
-          (sequence
+          (SoOps.sequence
              hb
              sb_neq_loc
           )
        )
-       (rel_union
-          (rel_intersect hb sloc)
-          (rel_union mo fr)
+       (SoOps.rel_union
+          (SoOps.rel_intersect hb sloc)
+          (SoOps.rel_union mo fr)
        )
     )
 
 let psc_base sc fhb scb hbf =
-  sequence
-    (rel_union (set_to_reln sc) fhb)
-    (sequence
+  SoOps.sequence
+    (SoOps.rel_union (set_to_reln sc) fhb)
+    (SoOps.sequence
        scb
-       (rel_union (set_to_reln sc) hbf)
+       (SoOps.rel_union (set_to_reln sc) hbf)
     )
 
 let psc_f f sc hb eco =
-  sequence
+  SoOps.sequence
     (set_to_reln (intersect f sc))
-    (sequence
-       (rel_union
+    (SoOps.sequence
+       (SoOps.rel_union
           hb
-          (sequence
+          (SoOps.sequence
              hb
-             (sequence eco hb)
+             (SoOps.sequence eco hb)
           )
        )
        (set_to_reln (intersect f sc))
     )
 
 let psc psc_base psc_f =
-  rel_union psc_base psc_f
+  SoOps.rel_union psc_base psc_f
 
 let sc_constrain psc =
-  acyclic psc
+  SoOps.acyclic psc
 
 let sb_rf_constrain sb rf =
-  acyclic (rel_union sb rf)
+  SoOps.acyclic (SoOps.rel_union sb rf)
 
 let conflict writes universe sloc =
-  rel_intersect
-    (rel_union
-       (cross writes universe)
-       (cross universe writes)
+  SoOps.rel_intersect
+    (SoOps.rel_union
+       (SoOps.cross writes universe)
+       (SoOps.cross universe writes)
     )
     sloc
 
 let mo nas co =
-  sequence
+  SoOps.sequence
     (set_to_reln (complement nas))
-    (sequence co (set_to_reln (complement nas)))
+    (SoOps.sequence co (set_to_reln (complement nas)))
 
 let race ext conflict hb atomics =
-  rel_intersect
+  SoOps.rel_intersect
     ext
     (rel_minus
        (rel_minus
           conflict
-          (rel_union hb (invert hb))
+          (SoOps.rel_union hb (SoOps.invert hb))
        )
-       (cross atomics atomics)
+       (SoOps.cross atomics atomics)
     )
 
 let racy_constrain race =
-  let curry_crel name a b = CRel (name, [a; b]) in
-  rel_eq race (curry_crel "empty_rel")
+  let curry_crel name a b = SO.CRel (name, [a; b]) in
+  SoOps.rel_eq race (curry_crel "empty_rel")
 
 let cat_constrain n rf mo po reads writes rel acq_rel acq sc sloc nas i m f =
   (* Observation: Our po = sb anyway *)
@@ -192,7 +193,7 @@ let cat_constrain n rf mo po reads writes rel acq_rel acq sc sloc nas i m f =
   let psc_base = psc_base sc fhb scb hbf in
   let psc_f =  psc_f f sc hb eco in
   let psc = psc psc_base psc_f in
-  And [
+  SO.And [
     coh_constrain hb eco
   ; atomic1_constrain eco
   ; atomic2_constrain fr mo
@@ -202,15 +203,16 @@ let cat_constrain n rf mo po reads writes rel acq_rel acq sc sloc nas i m f =
 
 let do_decide es accept =
   let size = es.E.events_number in
-  let curry_crel name a b = CRel (name, [a; b]) in
-  let curry_cset name a = CRel (name, [a]) in
-  let exec_id = mk_fresh_sv ~prefix:"execution" () in
-  let exec x = QRel (exec_id, [x]) in
-  let rf_id, rf = mk_fresh_reln ~prefix:"do_decide_rf" () in
-  let co_id, co = mk_fresh_reln ~prefix:"do_decide_co" () in
-  let po = (rel_intersect (curry_crel "order") (cross exec exec)) in
-  let sloc = (rel_intersect (curry_crel "sloc") (cross exec exec)) in
-  let ext = (rel_intersect (curry_crel "ext") (cross exec exec)) in
+  let curry_crel name a b = SO.CRel (name, [a; b]) in
+  let curry_cset name a = SO.CRel (name, [a]) in
+  let exec_id = SO.mk_fresh_sv ~prefix:"execution" () in
+  let exec x = SO.QRel (exec_id, [x]) in
+  let rf_id, rf = SoOps.mk_fresh_reln ~prefix:"do_decide_rf" () in
+  let co_id, co = SoOps.mk_fresh_reln ~prefix:"do_decide_co" () in
+  let exec2 = SoOps.cross exec exec in
+  let po = SoOps.rel_intersect (curry_crel "order") exec2 in
+  let sloc = SoOps.rel_intersect (curry_crel "sloc") exec2 in
+  let ext = SoOps.rel_intersect (curry_crel "ext") exec2 in
 
   let na = intersect (curry_cset "na") exec in
   let writes = intersect (curry_cset "writes") exec in
@@ -228,25 +230,25 @@ let do_decide es accept =
   let conflict = conflict writes exec sloc in
 
   let f =
-    SoAny (
+    SO.SoAny (
       exec_id,1,
-      SoAny (
+      SO.SoAny (
         co_id,2,
-        SoAny (
+        SO.SoAny (
           rf_id,2,
-          And [
+          SO.And [
             CatCommon.goal_constrain accept exec_id
           ; JRSO.valid exec_id
           ; CatCommon.rf_constrain exec rf
-              (rel_intersect
+              (SoOps.rel_intersect
                  (curry_crel "justifies")
-                 (cross exec exec)
+                 (SoOps.cross exec exec)
               )
           ; CatCommon.co_constrain exec co
-          ; rel_subset co (cross exec exec)
-          ; rel_subset rf (cross exec exec)
+          ; SoOps.rel_subset co exec2
+          ; SoOps.rel_subset rf exec2
 
-          ; Or [
+          ; SO.Or [
               racy_constrain
                 (race ext conflict (hb size sb sw)
                    (set_minus exec  na)
@@ -263,7 +265,7 @@ let do_decide es accept =
     )
   in
 
-  let s = {
+  let s = SO.{
     size = size;
     relations = CatCommon.build_so_structure es accept
   }
@@ -271,6 +273,16 @@ let do_decide es accept =
 
   if Config.dump_query () then SoOps.dump s f;
   Printf.printf "result: %b\n" (SoOps.model_check s f)
+
+let simple_rc11_formula () =
+  failwith "igxkw"
+
+(* No RMW, no fences, no data races. *)
+let simple_do_decide es accept =
+  let f = simple_rc11_formula () in
+  let s = CatCommon.sos_of_es es accept in
+  if Config.dump_query () then SoOps.dump s f;
+  Printf.printf "result: %b\n%!" (SoOps.model_check s f)
 
 
 let na_do_decide es accept =
