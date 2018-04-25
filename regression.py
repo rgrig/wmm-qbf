@@ -45,7 +45,7 @@ TESTS = get_suite(argv, get_skip(argv, [
 
     ("data/ra", "cat-ra", "qbf"),
     ("data/jctc-lisa", "cat-ra", "qbf"),
-    
+
     ("data/sc", "cat-sc", "qbf"),
     ("data/jctc-lisa", "cat-sc", "qbf"),
 
@@ -104,7 +104,7 @@ for directory, model, solver in TESTS:
             if "vals" in test:
                 index = test.split("-").index("vals")
                 vals = ["--values", test.split("-")[index+1]]
-            
+
             if not QUIET:
                 low = int(vals[1].split(',')[0]) or 0
                 high = int(vals[1].split(',')[1]) or 1
@@ -125,7 +125,7 @@ for directory, model, solver in TESTS:
             result_string = colorise(TTY_RED, "Except")
             print("{}: {:20s} {:3s} {:6.02f}s {}".format(result_string, model, solver, elapsed_time, join(directory, test)))
             continue
-            
+
         if not QUIET:
             result_string = colorise(TTY_BLUE, "Passed") if result else colorise(TTY_ORANGE, "Failed")
             print("{}: {:20s} {:3s} {:6.02f}s {}".format(result_string, model, solver, elapsed_time, join(directory, test)))

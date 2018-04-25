@@ -275,7 +275,16 @@ let do_decide es accept =
   Printf.printf "result: %b\n" (SoOps.model_check s f)
 
 let simple_rc11_formula () =
-  failwith "igxkw"
+  let co_id, co = SoOps.mk_fresh_reln ~prefix:"co" () in
+  let hb_id, hb = SoOps.mk_fresh_reln ~prefix:"hb" () in
+  let rf_id, rf = SoOps.mk_fresh_reln ~prefix:"rf" () in
+  let hb_axiom () = failwith "(kxuhn)" in
+  let coherence_axiom () = failwith "(xqgtz)" in
+  SO.(SoAny (rf_id, 2, SoAny (co_id, 2, SoAny (hb_id, 2,
+    And
+      [ hb_axiom ()
+      ; coherence_axiom () ]
+  ))))
 
 (* No RMW, no fences, no data races. *)
 let simple_do_decide es accept =
