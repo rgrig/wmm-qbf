@@ -3,6 +3,9 @@ open SO
 module U = Util
 module ArityMap = Map.Make(String)
 
+type rel1 = SO.term -> SO.formula
+type rel2 = SO.term -> SO.term -> SO.formula
+
 let add_rel rs (k, r) =
   if RelMap.mem k rs then failwith ("repeated relation symbol " ^ k ^ " (voxdy)");
   RelMap.add k r rs
@@ -215,6 +218,19 @@ let mk_fresh_reln ?prefix:(prefix="F") () =
   let r_id = mk_fresh_sv ~prefix:prefix () in
   let r i j = QRel (r_id, [i; j]) in
   (r_id, r)
+
+let mk_crel1 id =
+  let mk t = SO.CRel (id, [t]) in
+  (id, mk)
+
+let mk_crel2 id =
+  let mk t s = SO.CRel (id, [t; s]) in
+  (id, mk)
+
+let mk_qrel2 id =
+  let id = SO.S id in
+  let mk t s = SO.QRel (id, [t; s]) in
+  (id, mk)
 
 (* Query: is there a better way to represent the empty relation *)
 (* i.e. ∀x,y. (x,y) ∉ r *)
