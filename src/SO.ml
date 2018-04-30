@@ -53,7 +53,7 @@ let show_term = function
 let show_eq_rel rel ts =
   Format.sprintf "(%s)" (U.map_join " = " show_term ts)
 
-let show_rel rel ts = 
+let show_rel rel ts =
   Format.sprintf "%s(%s)" rel (U.map_join ", " show_term ts)
 
 (* We could provide an interface for show_special here, but as there's
@@ -77,7 +77,7 @@ let rec show_formula = function
   | SoAll (var, a, f) ->
     Format.sprintf "(!%s:%d . (%s))" (show_so_var var) a (show_formula f)
   | SoAny (var, a, f) ->
-    Format.sprintf "(?%s:%d . (%s))" (show_so_var var) a (show_formula f)   
+    Format.sprintf "(?%s:%d . (%s))" (show_so_var var) a (show_formula f)
   | And fs ->
      Format.sprintf "(%s)" (U.map_join " & " show_formula fs)
   | Or fs ->

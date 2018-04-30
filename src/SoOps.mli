@@ -1,7 +1,10 @@
 open SO
 
-type rel1 = SO.term -> SO.formula
-type rel2 = SO.term -> SO.term -> SO.formula
+(* For arities 1 and 2 we have special types because they are used so often.
+Arity-1 relations are sometimes called "predicates"; arity-2 relations are
+sometimes called just "relations". *)
+type rel1 = SO.term -> SO.formula (* arity-1 relations *)
+type rel2 = SO.term -> SO.term -> SO.formula (* arity-2 relations *)
 
 val add_rel : relation RelMap.t -> (rel_sym * relation) -> relation RelMap.t
 val rels : (rel_sym * relation) list -> relation RelMap.t
@@ -25,28 +28,36 @@ val subset : so_var -> so_var -> formula
 val iff : formula list -> formula list -> formula
 val eq : so_var -> so_var -> formula
 
+(* TODO(rgrig): These should probably be refactored as combinators for arity-1
+relations. *)
 val intersect : so_var -> so_var -> so_var -> formula
 val union : so_var -> so_var -> so_var -> formula
 
 val eq_crel: so_var -> rel_sym -> formula
 
+(* Combinators for arity-1 relations. *)
+val and1 : rel1 list -> rel1
+val or1 : rel1 list -> rel1
+
+val set_intersect : rel1 list -> rel1 (* =and1 *)
+val set_union : rel1 list -> rel1 (* =or1 *)
+
+(* Combinators for arity-2 relations. *)
+val r_tc: int -> rel2 -> rel2
+val tc: int -> rel2 -> rel2
 val invert : rel2 -> rel2
 val sequence : rel2 -> rel2 -> rel2
 val rel_union : rel2 -> rel2 -> rel2
 val rel_intersect : rel2 -> rel2 -> rel2
+val rel_minus: rel2 -> rel2 -> rel2
 
+(* From arity-2 relations to formulas. *)
 val rel_subset : rel2 -> rel2 -> formula
 val rel_eq : rel2 -> rel2 -> formula
-
-val r_tc: int -> rel2 -> rel2
-val tc: int -> rel2 -> rel2
-
 val transitive: rel2 -> formula
 val irreflexive: rel2 -> formula
 val acyclic: rel2 -> formula
 
 val eq_crel2: SO.so_var -> string -> SO.formula
-
-val rel_minus: rel2 -> rel2 -> rel2
 
 val cross: (term -> formula) -> (term -> formula) -> term -> term -> formula

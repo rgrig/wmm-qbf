@@ -308,7 +308,21 @@ let eq_crel a n =
      ; mk_implies [CRel (n, [Var x])] (QRel (a, [Var x]))
      ] 
   )
-    
+
+(* {{{ Combinators for arity-1 relations (aka sets/predicates). *)
+
+let and1 (ps : rel1 list) : rel1 = fun (x : term) ->
+  SO.And (List.map (fun p -> p x) ps)
+
+let or1 (ps : rel1 list) : rel1 = fun (x : term) ->
+  SO.Or (List.map (fun p -> p x) ps)
+
+let set_intersect = and1
+let set_union = or1
+
+
+(* }}} Combinators for arity-1 relations (aka sets/predicates). *)
+
 let invert r a b = r b a
 
 let sequence r1 r2 x z = 
