@@ -3,6 +3,9 @@ open SO
 module U = Util
 module ArityMap = Map.Make(String)
 
+type rel1 = SO.term -> SO.formula
+type rel2 = SO.term -> SO.term -> SO.formula
+
 let add_rel rs (k, r) =
   if RelMap.mem k rs then failwith ("repeated relation symbol " ^ k ^ " (voxdy)");
   RelMap.add k r rs
@@ -216,6 +219,19 @@ let mk_fresh_reln ?prefix:(prefix="F") () =
   let r i j = QRel (r_id, [i; j]) in
   (r_id, r)
 
+let mk_crel1 id =
+  let mk t = SO.CRel (id, [t]) in
+  (id, mk)
+
+let mk_crel2 id =
+  let mk t s = SO.CRel (id, [t; s]) in
+  (id, mk)
+
+let mk_qrel2 id =
+  let id = SO.S id in
+  let mk t s = SO.QRel (id, [t; s]) in
+  (id, mk)
+
 (* Query: is there a better way to represent the empty relation *)
 (* i.e. ∀x,y. (x,y) ∉ r *)
 let empty_reln r =
@@ -292,7 +308,21 @@ let eq_crel a n =
      ; mk_implies [CRel (n, [Var x])] (QRel (a, [Var x]))
      ] 
   )
-    
+
+(* {{{ Combinators for arity-1 relations (aka sets/predicates). *)
+
+let and1 (ps : rel1 list) : rel1 = fun (x : term) ->
+  SO.And (List.map (fun p -> p x) ps)
+
+let or1 (ps : rel1 list) : rel1 = fun (x : term) ->
+  SO.Or (List.map (fun p -> p x) ps)
+
+let set_intersect = and1
+let set_union = or1
+
+
+(* }}} Combinators for arity-1 relations (aka sets/predicates). *)
+
 let invert r a b = r b a
 
 let sequence r1 r2 x z = 

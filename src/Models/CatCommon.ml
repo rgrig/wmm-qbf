@@ -167,3 +167,9 @@ let goal_constrain accept g =
       )
       accept
     )
+
+let get_w () = SoOps.mk_crel1 "writes"
+let get_po () = SoOps.mk_crel2 "order"
+let get_hb () = SoOps.mk_qrel2 "hb"
+let get_co () = SoOps.mk_qrel2 "co"
+let get_rf () = SoOps.mk_qrel2 "rf"

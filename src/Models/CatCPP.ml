@@ -275,15 +275,28 @@ let do_decide es accept =
   Printf.printf "result: %b\n" (SoOps.model_check s f)
 
 let simple_rc11_formula () =
-  let co_id, co = SoOps.mk_fresh_reln ~prefix:"co" () in
-  let hb_id, hb = SoOps.mk_fresh_reln ~prefix:"hb" () in
-  let rf_id, rf = SoOps.mk_fresh_reln ~prefix:"rf" () in
-  let hb_axiom () = failwith "(kxuhn)" in
-  let coherence_axiom () = failwith "(xqgtz)" in
+  let co_id, co = CatCommon.get_co () in
+  let hb_id, hb = CatCommon.get_hb () in
+  let rf_id, rf = CatCommon.get_rf () in
+  let po_id, po = CatCommon.get_po () in
+  let sb = SoOps.rel_minus po SoOps.mk_eq in
+  let hb_axiom =
+    let _w_id, _w = CatCommon.get_w () in
+    SO.And
+      [ SoOps.rel_subset sb hb
+      ; failwith "(wjinx)" ]
+  in
+  let coherence_axiom = SO.And
+    [ SoOps.irreflexive hb
+    ; failwith "(tjlog)" ] in
+  let sc_axiom = failwith "(wiknv)" in
+  let no_thin_air_axiom = failwith "(keuwf)" in
   SO.(SoAny (rf_id, 2, SoAny (co_id, 2, SoAny (hb_id, 2,
     And
-      [ hb_axiom ()
-      ; coherence_axiom () ]
+      [ hb_axiom
+      ; coherence_axiom
+      ; sc_axiom
+      ; no_thin_air_axiom ]
   ))))
 
 (* No RMW, no fences, no data races. *)
