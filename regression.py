@@ -4,11 +4,20 @@ from natsort import natsorted
 from os import listdir
 from os.path import isfile, join
 import signal
+import shutil
 from subprocess import check_output, CalledProcessError
 from sys import argv
 import sys
 import time
 
+USAGE = """{} [options]
+
+  -h --help         Print this message
+  -q --quiet        Reduce the printing
+  --list-suites     List the available test suites
+  --suite <suites>  Run a specific test suite (comma separated)
+  --skip <suites>   Skip a specific test suite (comma separated)
+"""
 PRIDE_BIN = "./bin/Pride"
 QUIET = "-q" in argv or "--quiet" in argv
 USE_COLORS = sys.stdout.isatty()
@@ -16,6 +25,10 @@ TTY_RESET = "\033[0m"
 TTY_RED = "\033[31m"
 TTY_BLUE = "\033[34m"
 TTY_ORANGE = "\033[33m"
+
+if "-h" in argv or "--help" in argv:
+    print(USAGE.format(argv[0]))
+    sys.exit(0)
 
 def get_suite(args, tests):
     for i in range(len(args)):
@@ -59,7 +72,18 @@ TESTS = get_suite(argv, get_skip(argv, [
 #    ("data/store_buffer", "cat-sc", "so")
 ]))
 
+if "--list-suites" in argv:
+    print("| Test directory         | Model name   | Execution type |")
+    print("+------------------------+--------------+----------------+")
+    for (d,n,m) in TESTS:
+        print("| {:22s} | {:12s} | {:14s} |".format(d,n,m))
+    sys.exit(0)
 
+if shutil.which("qfm") == None and "--run-anyway" not in argv:
+    print("qfm is not available on the path this is probably in error.")
+    print("Override this message with --run-anyway")
+    sys.exit(1)
+    
 def result_to_bool(res):
     return res[2]
 
