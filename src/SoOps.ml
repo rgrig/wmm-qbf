@@ -220,12 +220,10 @@ let mk_fresh_reln ?prefix:(prefix="F") () =
   (r_id, r)
 
 let mk_crel1 id =
-  let mk t = SO.CRel (id, [t]) in
-  (id, mk)
+  (fun t -> SO.CRel (id, [t]))
 
 let mk_crel2 id =
-  let mk t s = SO.CRel (id, [t; s]) in
-  (id, mk)
+  (fun t s -> SO.CRel (id, [t; s]))
 
 let mk_qrel2 id =
   let id = SO.S id in
@@ -331,6 +329,11 @@ let sequence r1 r2 x z =
       r1 x (Var y)
     ; r2 (Var y) z
     ])
+
+let sequence_n = function
+  | [] -> mk_eq
+  | [r] -> r
+  | r :: rs -> List.fold_left sequence r rs
 
 let rel_union r1 r2 x y =
   Or [r1 x y; r2 x y]

@@ -278,19 +278,48 @@ let simple_rc11_formula () =
   let co_id, co = CatCommon.get_co () in
   let hb_id, hb = CatCommon.get_hb () in
   let rf_id, rf = CatCommon.get_rf () in
-  let po_id, po = CatCommon.get_po () in
+  let po = CatCommon.get_po () in
   let sb = SoOps.rel_minus po SoOps.mk_eq in
   let hb_axiom =
-    let _w_id, _w = CatCommon.get_w () in
+    let w = CatCommon.get_w () in
+    let r = CatCommon.get_r () in
+    let sc = CatCommon.get_sc () in
+    let acq = CatCommon.get_acq () in
+    let rel = CatCommon.get_rel () in
+    let rlx = CatCommon.get_rlx () in
+    let sloc = CatCommon.get_sloc () in
+    let mk_sw p x z = SO.And
+      [ w x; SO.Or [rel x; sc x]
+      ; r z; SO.Or [acq z; sc z]
+      ; p x z ] in
+    let sw1 = mk_sw rf in
+    let sw2 =
+      let y = SO.Var (SO.mk_fresh_fv ()) in
+      let p x z = SO.And
+        [ sb x y; sloc x y; w y; rf y z
+        ; SO.Or [rlx y; rel y; sc y] ] in
+      mk_sw p in
     SO.And
       [ SoOps.rel_subset sb hb
-      ; failwith "(wjinx)" ]
+      ; SoOps.rel_subset sw1 hb
+      ; SoOps.rel_subset sw2 hb
+      ; SoOps.transitive hb ]
   in
   let coherence_axiom = SO.And
     [ SoOps.irreflexive hb
-    ; failwith "(tjlog)" ] in
+    ; SoOps.irreflexive (SoOps.sequence rf hb)
+    ; SoOps.irreflexive (SoOps.sequence_n [co; rf; hb])
+    ; SoOps.irreflexive (SoOps.sequence co hb)
+    ; SoOps.irreflexive (SoOps.sequence_n [co; hb; SoOps.invert rf])
+    ; SoOps.irreflexive (SoOps.sequence_n [co; rf; hb; SoOps.invert rf]) ] in
   let sc_axiom = failwith "(wiknv)" in
-  let no_thin_air_axiom = failwith "(keuwf)" in
+  let no_thin_air_axiom =
+    (* SoOps.acyclic (SoOps.rel_union sb rf), slightly optimized *)
+    let cause_id, cause = CatCommon.get_cause () in
+    SO.SoAny (cause_id, 2, SO.And
+      [ SoOps.rel_subset sb cause
+      ; SoOps.rel_subset rf cause
+      ; SoOps.transitive cause ]) in
   SO.(SoAny (rf_id, 2, SoAny (co_id, 2, SoAny (hb_id, 2,
     And
       [ hb_axiom

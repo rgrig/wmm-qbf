@@ -168,8 +168,15 @@ let goal_constrain accept g =
       accept
     )
 
-let get_w () = SoOps.mk_crel1 "writes"
-let get_po () = SoOps.mk_crel2 "order"
-let get_hb () = SoOps.mk_qrel2 "hb"
+let get_acq () = SoOps.mk_crel1 "acq"
+let get_cause () = SoOps.mk_qrel2 "cause"
 let get_co () = SoOps.mk_qrel2 "co"
+let get_hb () = SoOps.mk_qrel2 "hb"
+let get_po () = SoOps.mk_crel2 "order"
+let get_r () = SoOps.mk_crel1 "reads"
+let get_rel () = SoOps.mk_crel1 "rel"
 let get_rf () = SoOps.mk_qrel2 "rf"
+let get_rlx () = SoOps.mk_crel1 "rlx"
+let get_sc () = SoOps.mk_crel1 "sc"
+let get_sloc () = SoOps.mk_crel2 "sloc"
+let get_w () = SoOps.mk_crel1 "writes"
