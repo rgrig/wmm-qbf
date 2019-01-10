@@ -65,7 +65,7 @@ event_structure:
   consumes=option(consume)
   fences=option(fence)
   exts=option(ext)
-  _=option(labels)
+  _labels=option(labels)
   j=justifies
   c=conflicts
   o=order
