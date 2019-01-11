@@ -330,13 +330,16 @@ let sequence r1 r2 x z =
     ; r2 (Var y) z
     ])
 
-let sequence_n = function
-  | [] -> mk_eq
-  | [r] -> r
-  | r :: rs -> List.fold_left sequence r rs
-
 let rel_union r1 r2 x y =
   Or [r1 x y; r2 x y]
+
+let rel_nary_of_binary f = function
+  | [] -> mk_eq
+  | [r] -> r
+  | r :: rs -> List.fold_left f r rs
+
+let sequence_n = rel_nary_of_binary sequence
+let rel_union_n = rel_nary_of_binary rel_union
 
 let rel_intersect r1 r2 x y =
   And [r1 x y; r2 x y]
@@ -413,6 +416,14 @@ let acyclic e =
     ; rel_subset e r
     ]
   )
+
+let total s r =
+  let x = mk_fresh_fv ~prefix:"total_" () in
+  let y = mk_fresh_fv ~prefix:"total_" () in
+  FoAll (x, FoAll (y,
+    mk_implies
+      [s (Var x); s (Var y)]
+      ((rel_union_n [r; invert r; mk_eq]) (Var x) (Var y))))
 
 let eq_crel2 a n =
   let x = mk_fresh_fv ~prefix:"eq_crel2_x" () in

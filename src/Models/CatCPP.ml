@@ -280,24 +280,26 @@ let simple_rc11_formula () =
   let rf_id, rf = CatCommon.get_rf () in
   let po = CatCommon.get_po () in
   let sb = SoOps.rel_minus po SoOps.mk_eq in
+  let sloc = CatCommon.get_sloc () in
+  let sc = CatCommon.get_sc () in
+  let pre_psc_id, pre_psc = SoOps.mk_qrel2 "prepsc" in
   let hb_axiom =
     let w = CatCommon.get_w () in
     let r = CatCommon.get_r () in
-    let sc = CatCommon.get_sc () in
     let acq = CatCommon.get_acq () in
     let rel = CatCommon.get_rel () in
     let rlx = CatCommon.get_rlx () in
-    let sloc = CatCommon.get_sloc () in
     let mk_sw p x z = SO.And
       [ w x; SO.Or [rel x; sc x]
       ; r z; SO.Or [acq z; sc z]
       ; p x z ] in
     let sw1 = mk_sw rf in
     let sw2 =
-      let y = SO.Var (SO.mk_fresh_fv ()) in
-      let p x z = SO.And
-        [ sb x y; sloc x y; w y; rf y z
-        ; SO.Or [rlx y; rel y; sc y] ] in
+      let y = SO.mk_fresh_fv ~prefix:"sw2_" () in
+      let vy = SO.Var y in
+      let p x z = SO.FoAll (y, SO.And
+        [ sb x vy; sloc x vy; w vy; rf vy z
+        ; SO.Or [rlx vy; rel vy; sc vy] ]) in
       mk_sw p in
     SO.And
       [ SoOps.rel_subset sb hb
@@ -312,7 +314,18 @@ let simple_rc11_formula () =
     ; SoOps.irreflexive (SoOps.sequence co hb)
     ; SoOps.irreflexive (SoOps.sequence_n [co; hb; SoOps.invert rf])
     ; SoOps.irreflexive (SoOps.sequence_n [co; rf; hb; SoOps.invert rf]) ] in
-  let sc_axiom = failwith "(wiknv)" in
+  let sc_axiom =
+    let sb_notloc = SoOps.rel_minus sb sloc in
+    let hb_loc = SoOps.rel_intersect hb sloc in
+    let rb = SoOps.sequence (SoOps.invert rf) co in
+    let scb = SoOps.rel_union_n
+      [ sb; SoOps.sequence_n [sb_notloc; hb; sb_notloc]; hb_loc; co; rb] in
+    let psc x y = SO.And [sc x; sc y; scb x y] in
+    SO.SoAny (pre_psc_id, 2, SO.And
+      [ SoOps.total sc pre_psc
+      ; SoOps.transitive pre_psc
+      ; SoOps.irreflexive pre_psc
+      ; SoOps.irreflexive (SoOps.sequence pre_psc psc) ]) in
   let no_thin_air_axiom =
     (* SoOps.acyclic (SoOps.rel_union sb rf), slightly optimized *)
     let cause_id, cause = CatCommon.get_cause () in
