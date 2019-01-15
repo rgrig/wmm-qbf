@@ -62,7 +62,7 @@ TESTS = get_suite(argv, get_skip(argv, [
     ("data/sc", "cat-sc", "qbf"),
     ("data/jctc-lisa", "cat-sc", "qbf"),
 
-    ("data/sc", "rc11-simple", "qbf"),
+    ("data/rc11simple", "rc11-simple", "qbf"),
 
     ("data/cpp-na", "cat-cpp-na", "qbf"),
     ("data/cpp-rlx", "cat-cpp-rlx", "qbf"),
