@@ -20,8 +20,15 @@ val goal_constrain : event_setset -> SO.so_var -> SO.formula
 val name_final : int -> string
 
 (* Relations used in many CAT memory models. *)
+val get_acq : unit -> SoOps.rel1
+val get_cause : unit -> SO.so_var * SoOps.rel2
 val get_co : unit -> SO.so_var * SoOps.rel2
 val get_hb : unit -> SO.so_var * SoOps.rel2
-val get_po : unit -> SO.rel_sym * SoOps.rel2
+val get_po : unit -> SoOps.rel2
+val get_r : unit -> SoOps.rel1
+val get_rel : unit -> SoOps.rel1
 val get_rf : unit -> SO.so_var * SoOps.rel2
-val get_w : unit -> SO.rel_sym * SoOps.rel1
+val get_rlx : unit -> SoOps.rel1
+val get_sc : unit -> SoOps.rel1
+val get_sloc : unit -> SoOps.rel2
+val get_w : unit -> SoOps.rel1

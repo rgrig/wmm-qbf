@@ -1,4 +1,4 @@
-PKG oUnit ppx_deriving.std ppx_deriving.show batteries ocamlgraph
+PKG oUnit ppx_deriving batteries extlib menhir ocamlgraph
 S src/**
 S test/**
 B _build/**
