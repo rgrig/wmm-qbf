@@ -225,6 +225,11 @@ let mk_crel1 id =
 let mk_crel2 id =
   (fun t s -> SO.CRel (id, [t; s]))
 
+let mk_qrel1 id =
+  let id = SO.S id in
+  let mk t = SO.QRel (id, [t]) in
+  (id, mk)
+
 let mk_qrel2 id =
   let id = SO.S id in
   let mk t s = SO.QRel (id, [t; s]) in

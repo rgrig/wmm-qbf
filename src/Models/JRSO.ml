@@ -45,27 +45,6 @@ let justify a b =
          )
         )
 
-let valid a =
-  let x = mk_fresh_fv () in
-  let y = mk_fresh_fv () in
-  let x' = mk_fresh_fv () in
-  let y' = mk_fresh_fv () in
-  And [
-      FoAll (x, (FoAll (y,
-        mk_implies
-          [ QRel (a, [Var x])
-          ; QRel (a, [Var y])
-          ; CRel ("conflict", [Var x; Var y]) ]
-          (mk_eq (Var x) (Var y)))))
-    ; FoAll (y',
-                 mk_implies [QRel (a, [Var y'])]
-                   (FoAll (x', mk_implies
-                             [CRel ("order", [Var x'; Var y'])]
-                             (QRel (a, [Var x']))
-                          )
-                   )
-    )]
-
 (* Bounded reflexive transitive closure, up to n steps *)
 let rec tc arity f n a b =
   let x = mk_fresh_sv () in
@@ -75,6 +54,8 @@ let rec tc arity f n a b =
     eq a b
   ; SoAny (x, arity, And [f a x; tc arity f (n-1) x b])
   ]
+
+let valid = CatCommon.valid
 
 let always_justifies a b =
   And [justify a b; subset a b; valid a; valid b]

@@ -240,10 +240,10 @@ let do_decide es accept =
             CatCommon.goal_constrain accept exec_id
           ; JRSO.valid exec_id
           ; CatCommon.rf_constrain exec rf
-              (SoOps.rel_intersect
+(* XXX              (SoOps.rel_intersect
                  (curry_crel "justifies")
                  (SoOps.cross exec exec)
-              )
+              ) *)
           ; CatCommon.co_constrain exec co
           ; SoOps.rel_subset co exec2
           ; SoOps.rel_subset rf exec2
@@ -274,10 +274,11 @@ let do_decide es accept =
   if Config.dump_query () then SoOps.dump s f;
   Printf.printf "result: %b\n" (SoOps.model_check s f)
 
-let simple_rc11_formula () =
+let simple_rc11_formula accept =
   let co_id, co = CatCommon.get_co () in
   let hb_id, hb = CatCommon.get_hb () in
   let rf_id, rf = CatCommon.get_rf () in
+  let goal_id, goal = CatCommon.get_goal () in
   let po = CatCommon.get_po () in
   let sb = SoOps.rel_minus po SoOps.mk_eq in
   let sloc = CatCommon.get_sloc () in
@@ -333,17 +334,21 @@ let simple_rc11_formula () =
       [ SoOps.rel_subset sb cause
       ; SoOps.rel_subset rf cause
       ; SoOps.transitive cause ]) in
-  SO.(SoAny (rf_id, 2, SoAny (co_id, 2, SoAny (hb_id, 2,
+  SO.(SoAny (goal_id, 1, (SoAny (rf_id, 2, SoAny (co_id, 2, SoAny (hb_id, 2,
     And
       [ hb_axiom
       ; coherence_axiom
       ; sc_axiom
-      ; no_thin_air_axiom ]
-  ))))
+      ; no_thin_air_axiom
+      ; CatCommon.rf_constrain goal rf
+      ; CatCommon.co_constrain goal co
+      ; SoOps.transitive co
+      ; CatCommon.goal_constrain accept goal_id ]
+  ))))))
 
 (* No RMW, no fences, no data races. *)
 let simple_do_decide es accept =
-  let f = simple_rc11_formula () in
+  let f = simple_rc11_formula accept in
   let s = CatCommon.sos_of_es es accept in
   if Config.dump_query () then SoOps.dump s f;
   Printf.printf "result: %b\n%!" (SoOps.model_check s f)

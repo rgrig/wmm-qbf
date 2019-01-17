@@ -31,7 +31,7 @@ let do_decide es accept =
           And [
             CatCommon.goal_constrain accept g_id
           ; JRSO.valid g_id
-          ; CatCommon.rf_constrain g rf (curry_crel "justifies")
+          ; CatCommon.rf_constrain g rf
           ; CatCommon.co_constrain g co
           ; cat_constrain rf co po
           ]

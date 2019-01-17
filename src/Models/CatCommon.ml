@@ -1,6 +1,5 @@
 module E = EventStructure
 module GH = GraphHelpers
-open SO
 open SoOps
 
 type event_setset = EventStructure.set list
@@ -79,19 +78,25 @@ let build_so_structure es accept =
 let sos_of_es es accept = SO.
   { size = es.EventStructure.events_number
   ; relations = build_so_structure es accept }
+  
 
-let rf_constrain g rf jst =
+let curry_crel name a b = SO.CRel (name, [a; b])
+
+(* NOTE: We do not constrain rf to be included in (gxg). This should be
+fine for most memory models, where adding new rf edges can only invalidate
+constraints. *)
+let rf_constrain g rf =
   let rf_rf_inv = sequence rf (invert rf) in
-  let r = mk_fresh_fv ~prefix:"rf_r" () in
-  let w = mk_fresh_fv ~prefix:"rf_w" () in
-  And [
+  let r = SO.mk_fresh_fv ~prefix:"rf_r" () in
+  let w = SO.mk_fresh_fv ~prefix:"rf_w" () in
+  SO.And [
     (* Each read has at most one incoming rf edge *)
     rel_subset rf_rf_inv mk_eq
-  ; rel_subset rf jst
+  ; rel_subset rf (curry_crel "justifies")
   ; FoAll (
       r,
       mk_implies
-        [CRel ("reads", [Var r]); g (Var r)]
+        [CRel ("reads", [Var r]); g (SO.Var r)]
         (FoAny (w, And [
              rf (Var w) (Var r)
            ; CRel ("writes", [Var w])
@@ -102,11 +107,10 @@ let rf_constrain g rf jst =
 
 (* NOTE: the user of this function is responsible of requiring that co is acyclic *)
 let co_constrain g co =
-  let curry_crel name a b = CRel (name, [a; b]) in (* TODO: move out *)
   let sloc_irrefl = rel_minus (curry_crel "sloc") mk_eq in
-  let a = mk_fresh_fv () in
-  let b = mk_fresh_fv () in
-  FoAll (
+  let a = SO.mk_fresh_fv () in
+  let b = SO.mk_fresh_fv () in
+  SO.(FoAll (
     a,
     FoAll (
       b,
@@ -121,12 +125,12 @@ let co_constrain g co =
         [Or [(co (Var a) (Var b)); (co (Var b) (Var a))]]
       ]
     )
-  )
+  ))
 
 let conflict_free c =
-  let x = mk_fresh_fv () in
-  let y = mk_fresh_fv () in
-  FoAll (
+  let x = SO.mk_fresh_fv () in
+  let y = SO.mk_fresh_fv () in
+  SO.(FoAll (
     x,
     FoAll (
       y,
@@ -140,22 +144,47 @@ let conflict_free c =
         )
       )
     )
-  )
+  ))
 
 let maximal x =
-  let c' = mk_fresh_sv () in
-  SoAll (
+  let c' = SO.mk_fresh_sv () in
+  SO.(SoAll (
     c', 1,
     mk_implies [
       conflict_free x
     ; conflict_free c'
     ; subset x c'
     ] (subset c' x)
-  )
+  ))
 
+let valid a =
+  let open SO in
+  let x = mk_fresh_fv () in
+  let y = mk_fresh_fv () in
+  let x' = mk_fresh_fv () in
+  let y' = mk_fresh_fv () in
+  And [
+      FoAll (x, (FoAll (y,
+        mk_implies
+          [ QRel (a, [Var x])
+          ; QRel (a, [Var y])
+          ; CRel ("conflict", [Var x; Var y]) ]
+          (mk_eq (Var x) (Var y)))))
+    ; FoAll (y',
+                 mk_implies [QRel (a, [Var y'])]
+                   (FoAll (x', mk_implies
+                             [CRel ("order", [Var x'; Var y'])]
+                             (QRel (a, [Var x']))
+                          )
+                   )
+    )]
+
+(* TODO(rg): change type of [g] to [SoOps.rel1], and update uses *)
 let goal_constrain accept g =
   let final_id = ref 0 in
-  And (
+  SO.(And (
+    valid g
+    ::
     List.map (fun a ->
         let e = mk_fresh_fv () in
         FoAny (e,
@@ -166,11 +195,12 @@ let goal_constrain accept g =
         )
       )
       accept
-    )
+    ))
 
 let get_acq () = SoOps.mk_crel1 "acq"
 let get_cause () = SoOps.mk_qrel2 "cause"
 let get_co () = SoOps.mk_qrel2 "co"
+let get_goal () = SoOps.mk_qrel1 "goal"
 let get_hb () = SoOps.mk_qrel2 "hb"
 let get_po () = SoOps.mk_crel2 "order"
 let get_r () = SoOps.mk_crel1 "reads"

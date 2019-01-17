@@ -23,6 +23,7 @@ val mk_eq : rel2
 val mk_fresh_reln : ?prefix:string -> unit -> SO.so_var * rel2
 val mk_crel1 : string -> rel1
 val mk_crel2 : string -> rel2
+val mk_qrel1 : string -> SO.so_var * rel1
 val mk_qrel2 : string -> SO.so_var * rel2
 val subset : so_var -> so_var -> formula
 val iff : formula list -> formula list -> formula
