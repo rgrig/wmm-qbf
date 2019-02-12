@@ -1,0 +1,6 @@
+LISA IRIW
+{x=0;y=0}
+ P0         | P1         | P2        | P3       ;
+ w[sc] x 1  | r[sc] r1 x | w[sc] y 1 | r[sc] r3 y ;
+            | r[sc] r2 y |           | r[sc] r4 x ;
+exists (P1:r1=1 /\ P1:r2=0 /\ P3:r3=1 /\ P3:r4=0)
