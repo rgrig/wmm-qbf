@@ -284,8 +284,8 @@ let simple_rc11_formula accept =
   let sloc = CatCommon.get_sloc () in
   let sc = CatCommon.get_sc () in
   let pre_psc_id, pre_psc = SoOps.mk_qrel2 "prepsc" in
+  let w = CatCommon.get_w () in
   let hb_axiom =
-    let w = CatCommon.get_w () in
     let r = CatCommon.get_r () in
     let acq = CatCommon.get_acq () in
     let rel = CatCommon.get_rel () in
@@ -334,6 +334,15 @@ let simple_rc11_formula accept =
       [ SoOps.rel_subset sb cause
       ; SoOps.rel_subset rf cause
       ; SoOps.transitive cause ]) in
+  let racy_axiom =
+    let na = CatCommon.get_na () in
+    let x = SO.mk_fresh_fv () in let vx = SO.Var x in
+    let y = SO.mk_fresh_fv () in let vy = SO.Var y in
+    SO.FoAny (x, SO.FoAny (y, SO.And
+      [ goal vx; goal vy
+      ; w vx; SO.Not (SoOps.mk_eq vx vy); sloc vx vy
+      ; SO.Not (hb vx vy); SO.Not (hb vy vx)
+      ; SO.Or [na vx; na vy] ])) in
   SO.(SoAny (goal_id, 1, (SoAny (rf_id, 2, SoAny (co_id, 2, SoAny (hb_id, 2,
     And
       [ hb_axiom
@@ -343,7 +352,9 @@ let simple_rc11_formula accept =
       ; CatCommon.rf_constrain goal rf
       ; CatCommon.co_constrain goal co
       ; SoOps.transitive co
-      ; CatCommon.goal_constrain accept goal_id ]
+      ; SO.Or
+        [ CatCommon.goal_constrain accept goal_id
+        ; racy_axiom ] ]
   ))))))
 
 (* No RMW, no fences, no data races. *)

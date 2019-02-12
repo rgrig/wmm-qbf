@@ -34,7 +34,7 @@ let vals () = !vals_val
 let set_vals s =
   let exception Values_parse of string in
   match (String.split_on_char ',' s) with
-    l::h::_ ->
+    l::h::[] ->
     vals_val := (int_of_string l, int_of_string h)
   | _ ->
     raise (Values_parse ("could not parse value range '"^s^"'."))

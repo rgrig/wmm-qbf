@@ -27,7 +27,7 @@ let build_so_structure es accept =
          (Util.range 1 (es.E.events_number))
       )
   in
-  (*  let na = List.map f es.E.na in*)
+  let na = List.map f es.E.na in
   let sc = List.map f es.E.sc in
   let rel = List.map f es.E.rel in
   let acq = List.map f es.E.acq in
@@ -61,7 +61,7 @@ let build_so_structure es accept =
   ; ("init", (1, [[1]]))
   ; ("reads", (1, reads))
   ; ("writes", (1, writes))
-  ; ("na", (1, universe)) (*TODO: The parser needs to emit these sets!*)
+  ; ("na", (1, na))
   ; ("sc", (1, sc))
   ; ("rel", (1, rel))
   ; ("acq", (1, acq))
@@ -202,6 +202,7 @@ let get_cause () = SoOps.mk_qrel2 "cause"
 let get_co () = SoOps.mk_qrel2 "co"
 let get_goal () = SoOps.mk_qrel1 "goal"
 let get_hb () = SoOps.mk_qrel2 "hb"
+let get_na () = SoOps.mk_crel1 "na"
 let get_po () = SoOps.mk_crel2 "order"
 let get_r () = SoOps.mk_crel1 "reads"
 let get_rel () = SoOps.mk_crel1 "rel"

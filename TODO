@@ -1,3 +1,4 @@
+. generat ext in ES and then SOS
 . add back the order insensitive parser (remembering the required order *is* annoying)
 
 :load_local_vimrc

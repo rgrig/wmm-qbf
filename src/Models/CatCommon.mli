@@ -18,6 +18,7 @@ val get_cause : unit -> SO.so_var * SoOps.rel2
 val get_co : unit -> SO.so_var * SoOps.rel2
 val get_goal : unit -> SO.so_var * SoOps.rel1
 val get_hb : unit -> SO.so_var * SoOps.rel2
+val get_na : unit -> SoOps.rel1
 val get_po : unit -> SoOps.rel2
 val get_r : unit -> SoOps.rel1
 val get_rel : unit -> SoOps.rel1
