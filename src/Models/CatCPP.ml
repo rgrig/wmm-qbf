@@ -285,21 +285,30 @@ let simple_rc11_formula accept =
   let sc = CatCommon.get_sc () in
   let pre_psc_id, pre_psc = SoOps.mk_qrel2 "prepsc" in
   let w = CatCommon.get_w () in
+  let rfrmw_id, rfrmw = SoOps.mk_qrel2 "rfrmw" in
+  let rfrmw_axiom =
+    (* "rfrmw" overapproximates "(rf;rmw)*"  *)
+    let rmw = CatCommon.get_rmw () in
+    SO.And
+      [ SoOps.rel_subset (SoOps.sequence rf rmw) rfrmw
+      ; SoOps.rel_subset SoOps.mk_eq rfrmw
+      ; SoOps.transitive rfrmw ] in
   let hb_axiom =
     let r = CatCommon.get_r () in
     let acq = CatCommon.get_acq () in
     let rel = CatCommon.get_rel () in
     let rlx = CatCommon.get_rlx () in
+    let rfrmw_rf = SoOps.sequence rfrmw rf in
     let mk_sw p x z = SO.And
       [ w x; SO.Or [rel x; sc x]
       ; r z; SO.Or [acq z; sc z]
       ; p x z ] in
-    let sw1 = mk_sw rf in
+    let sw1 = mk_sw rfrmw_rf in
     let sw2 =
       let y = SO.mk_fresh_fv ~prefix:"sw2_" () in
       let vy = SO.Var y in
       let p x z = SO.FoAll (y, SO.And
-        [ sb x vy; sloc x vy; w vy; rf vy z
+        [ sb x vy; sloc x vy; w vy; rfrmw_rf vy z
         ; SO.Or [rlx vy; rel vy; sc vy] ]) in
       mk_sw p in
     SO.And
@@ -343,9 +352,15 @@ let simple_rc11_formula accept =
       ; w vx; SO.Not (SoOps.mk_eq vx vy); sloc vx vy
       ; SO.Not (hb vx vy); SO.Not (hb vy vx)
       ; SO.Or [na vx; na vy] ])) in
-  SO.(SoAny (goal_id, 1, (SoAny (rf_id, 2, SoAny (co_id, 2, SoAny (hb_id, 2,
+  SO.(
+  SoAny (goal_id, 1,
+  SoAny (rf_id, 2,
+  SoAny (co_id, 2,
+  SoAny (rfrmw_id, 2,
+  SoAny (hb_id, 2,
     And
       [ hb_axiom
+      ; rfrmw_axiom
       ; coherence_axiom
       ; sc_axiom
       ; no_thin_air_axiom

@@ -24,6 +24,7 @@ val get_r : unit -> SoOps.rel1
 val get_rel : unit -> SoOps.rel1
 val get_rf : unit -> SO.so_var * SoOps.rel2
 val get_rlx : unit -> SoOps.rel1
+val get_rmw : unit -> SoOps.rel2
 val get_sc : unit -> SoOps.rel1
 val get_sloc : unit -> SoOps.rel2
 val get_w : unit -> SoOps.rel1
