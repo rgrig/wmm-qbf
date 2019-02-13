@@ -89,7 +89,7 @@ let rf_constrain g rf =
   let rf_rf_inv = sequence rf (invert rf) in
   let r = SO.mk_fresh_fv ~prefix:"rf_r" () in
   let w = SO.mk_fresh_fv ~prefix:"rf_w" () in
-  SO.And [
+  SO.(And [
     (* Each read has at most one incoming rf edge *)
     rel_subset rf_rf_inv mk_eq
   ; rel_subset rf (curry_crel "justifies")
@@ -103,7 +103,7 @@ let rf_constrain g rf =
            ; g (Var w)
            ]))
     )
-  ]
+  ])
 
 (* NOTE: the user of this function is responsible of requiring that co is acyclic *)
 let co_constrain g co =
