@@ -50,24 +50,25 @@ let build_so_structure es accept =
   let ext = List.map f es.E.ext in
 
   SoOps.rels ([
-    ("sloc", (2, sloc))
-  ; ("conflict", (2,conflict))
-  ; ("order", (2, order))
-  ; ("justifies", (2, justifies))
-  ; ("ext", (2, ext))
-  ; ("empty_set", (1, []))
-  ; ("empty_rel", (2, []))
-  ; ("universe", (1, universe))
-  ; ("init", (1, [[1]]))
-  ; ("reads", (1, reads))
-  ; ("writes", (1, writes))
-  ; ("na", (1, na))
-  ; ("sc", (1, sc))
-  ; ("rel", (1, rel))
-  ; ("acq", (1, acq))
+    ("acq", (1, acq))
   ; ("con", (1, con))
-  ; ("rlx", (1, rlx))
+  ; ("conflict", (2,conflict))
+  ; ("empty_rel", (2, []))
+  ; ("empty_set", (1, []))
+  ; ("ext", (2, ext))
   ; ("fences", (1, fences))
+  ; ("init", (1, [[1]]))
+  ; ("justifies", (2, justifies))
+  ; ("na", (1, na))
+  ; ("order", (2, order))
+  ; ("reads", (1, reads))
+  ; ("rel", (1, rel))
+  ; ("rlx", (1, rlx))
+  ; ("rmw", (2, [(* TODO *)]))
+  ; ("sc", (1, sc))
+  ; ("sloc", (2, sloc))
+  ; ("universe", (1, universe))
+  ; ("writes", (1, writes))
   ] @
       List.map (fun fin ->
           (name_final (incr final_id; !final_id)),
@@ -185,7 +186,7 @@ let goal_constrain accept g =
   SO.(And (
     valid g
     ::
-    List.map (fun a ->
+    List.map (fun _ ->
         let e = mk_fresh_fv () in
         FoAny (e,
           And [
@@ -208,6 +209,7 @@ let get_r () = SoOps.mk_crel1 "reads"
 let get_rel () = SoOps.mk_crel1 "rel"
 let get_rf () = SoOps.mk_qrel2 "rf"
 let get_rlx () = SoOps.mk_crel1 "rlx"
+let get_rmw () = SoOps.mk_crel2 "rmw"
 let get_sc () = SoOps.mk_crel1 "sc"
 let get_sloc () = SoOps.mk_crel2 "sloc"
 let get_w () = SoOps.mk_crel1 "writes"

@@ -47,6 +47,7 @@ val set_union : rel1 list -> rel1 (* =or1 *)
 val r_tc: int -> rel2 -> rel2
 val tc: int -> rel2 -> rel2
 val invert : rel2 -> rel2
+val maybe : rel2 -> rel2
 val sequence : rel2 -> rel2 -> rel2
 val sequence_n : rel2 list -> rel2
 val rel_union : rel2 -> rel2 -> rel2
