@@ -186,7 +186,7 @@ let goal_constrain accept g =
   SO.(And (
     valid g
     ::
-    List.map (fun a ->
+    List.map (fun _ ->
         let e = mk_fresh_fv () in
         FoAny (e,
           And [

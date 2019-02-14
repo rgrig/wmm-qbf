@@ -276,7 +276,7 @@ let do_decide es accept =
 
 let simple_rc11_formula accept =
   let co_id, co = CatCommon.get_co () in
-  let hb_id, hb = CatCommon.get_hb () in
+  let alpha_beta_id, alpha_beta = SoOps.mk_qrel2 "alphabeta" in
   let rf_id, rf = CatCommon.get_rf () in
   let goal_id, goal = CatCommon.get_goal () in
   let po = CatCommon.get_po () in
@@ -285,38 +285,29 @@ let simple_rc11_formula accept =
   let sc = CatCommon.get_sc () in
   let pre_psc_id, pre_psc = SoOps.mk_qrel2 "prepsc" in
   let w = CatCommon.get_w () in
-  let rfrmw_id, rfrmw = SoOps.mk_qrel2 "rfrmw" in
-  let rfrmw_axiom =
-    (* "rfrmw" overapproximates "(rf;rmw)*"  *)
-    let rmw = CatCommon.get_rmw () in
-    SO.And
-      [ SoOps.rel_subset (SoOps.sequence rf rmw) rfrmw
-      ; SoOps.rel_subset SoOps.mk_eq rfrmw
-      ; SoOps.transitive rfrmw ] in
-  let hb_axiom =
-    let r = CatCommon.get_r () in
+  let hb, hb_axiom =
     let acq = CatCommon.get_acq () in
     let rel = CatCommon.get_rel () in
     let rlx = CatCommon.get_rlx () in
-    let rfrmw_rf = SoOps.sequence rfrmw rf in
-    let mk_sw p x z = SO.And
-      [ w x; SO.Or [rel x; sc x]
-      ; r z; SO.Or [acq z; sc z]
-      ; p x z ] in
-    let sw1 = mk_sw rfrmw_rf in
-    let sw2 =
-      let y = SO.mk_fresh_fv ~prefix:"sw2_" () in
-      let vy = SO.Var y in
-      let p x z = SO.FoAll (y, SO.And
-        [ sb x vy; sloc x vy; w vy; rfrmw_rf vy z
-        ; SO.Or [rlx vy; rel vy; sc vy] ]) in
-      mk_sw p in
-    SO.And
-      [ SoOps.rel_subset sb hb
-      ; SoOps.rel_subset sw1 hb
-      ; SoOps.rel_subset sw2 hb
-      ; SoOps.transitive hb ]
-  in
+    let rmw = CatCommon.get_rmw () in
+    let at_least_acq x = SO.Or [ acq x; sc x ] in
+    let at_least_rel x = SO.Or [ rel x; sc x ] in
+    let at_least_rlx x = SO.Or [ rlx x; acq x; rel x; sc x ] in
+    let sw_end x y = SO.And [ rf x y; at_least_acq y ] in
+    let sw_begin x y = SO.Or
+      [ SO.And [ SoOps.mk_eq x y; w x; at_least_rel x ]
+      ; SO.And [ w x; w y; at_least_rel x; at_least_rlx y; sloc x y; sb x y ] ] in
+    let alpha = SoOps.sequence_n [ sw_end; sb; sw_begin ] in
+    let beta = SoOps.sequence rf rmw in
+    let sb_maybe = SoOps.maybe sb in
+    let hb = SoOps.rel_union
+      sb
+      (SoOps.sequence_n [ sb_maybe; sw_begin; alpha_beta; sw_end; sb_maybe ]) in
+    let hb_axiom = SO.And
+      [ SoOps.rel_subset alpha alpha_beta
+      ; SoOps.rel_subset beta alpha_beta
+      ; SoOps.transitive alpha_beta ] in
+    (hb, hb_axiom) in
   let coherence_axiom = SO.And
     [ SoOps.irreflexive hb
     ; SoOps.irreflexive (SoOps.sequence rf hb)
@@ -356,11 +347,9 @@ let simple_rc11_formula accept =
   SoAny (goal_id, 1,
   SoAny (rf_id, 2,
   SoAny (co_id, 2,
-  SoAny (rfrmw_id, 2,
-  SoAny (hb_id, 2,
+  SoAny (alpha_beta_id, 2,
     And
       [ hb_axiom
-      ; rfrmw_axiom
       ; coherence_axiom
       ; sc_axiom
       ; no_thin_air_axiom
@@ -369,8 +358,8 @@ let simple_rc11_formula accept =
       ; SoOps.transitive co
       ; SO.Or
         [ CatCommon.goal_constrain accept goal_id
-        ; racy_axiom ] ]
-  ))))))
+        (*; racy_axiom *)] ]
+  )))))
 
 (* No RMW, no fences, no data races. *)
 let simple_do_decide es accept =

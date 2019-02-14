@@ -338,6 +338,9 @@ let sequence r1 r2 x z =
 let rel_union r1 r2 x y =
   Or [r1 x y; r2 x y]
 
+let maybe r =
+  rel_union r mk_eq
+
 let rel_nary_of_binary f = function
   | [] -> mk_eq
   | [r] -> r
