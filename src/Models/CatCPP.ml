@@ -362,7 +362,7 @@ let simple_rc11_formula accept =
         ; racy_axiom ] ]
   )))))
 
-(* No RMW, no fences, no data races. *)
+(* No fences. *)
 let simple_do_decide es accept =
   let f = simple_rc11_formula accept in
   let s = CatCommon.sos_of_es es accept in
