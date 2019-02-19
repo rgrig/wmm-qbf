@@ -306,6 +306,7 @@ let simple_rc11_formula accept =
     let hb_axiom = SO.And
       [ SoOps.rel_subset alpha alpha_beta
       ; SoOps.rel_subset beta alpha_beta
+      ; SoOps.rel_subset SoOps.mk_eq alpha_beta
       ; SoOps.transitive alpha_beta ] in
     (hb, hb_axiom) in
   let coherence_axiom = SO.And
@@ -358,10 +359,10 @@ let simple_rc11_formula accept =
       ; SoOps.transitive co
       ; SO.Or
         [ CatCommon.goal_constrain accept goal_id
-        (*; racy_axiom *)] ]
+        ; racy_axiom ] ]
   )))))
 
-(* No RMW, no fences, no data races. *)
+(* No fences. *)
 let simple_do_decide es accept =
   let f = simple_rc11_formula accept in
   let s = CatCommon.sos_of_es es accept in

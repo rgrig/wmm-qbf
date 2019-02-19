@@ -54,36 +54,43 @@ type id = t_id * EventStructure.event
 type event =
     Read of id * address * int * strength
   | Write of id * address * (int * int) option * int * strength
+  | Fev of id * strength
 
 let show_event = function
     Read ((_, id), from, v, _) ->
     Format.sprintf "R%s[%d]→%d" from.global from.offset v
   | Write ((_, id), into, _, v, _) ->
     Format.sprintf "W%s[%d]←%d" into.global into.offset v
+  | Fev (_, _) -> failwith "Brf9"
 
 let event_t_id = function
     Read ((t_id, _), _, _, _)
-  | Write ((t_id, _), _, _, _, _) -> t_id
+  | Write ((t_id, _), _, _, _, _)
+  | Fev ((t_id, _), _) -> t_id
   
 let event_id = function
     Read ((_, id), _, _, _)
-  | Write ((_, id), _, _, _, _) -> id
+  | Write ((_, id), _, _, _, _)
+  | Fev ((_, id), _) -> id
 
 let event_address = function
     Read (_, from, _, _) -> from
   | Write (_, into, _, _, _) -> into
+  | Fev (_, _) -> failwith "Brf9"
 
 let write_from = function
-    Read _ -> failwith "Unexpected read event (houhx)"
   | Write (_, _, from, _, _) -> from
-    
+  | _ -> failwith "Unexpected event (houhx)"
+
 let event_value = function
     Read (_, _, value, _)
   | Write (_, _, _, value, _) -> value
+  | Fev (_, _) -> failwith "Brf9"
 
 let event_strength = function
     Read (_, _, _, strength)
-  | Write (_, _, _, _, strength) -> strength
+  | Write (_, _, _, _, strength)
+  | Fev (_, strength) -> strength
 
 (* Intermediate event structure, gets translated to the final datatype before leaving this module. *)
 type events = {
@@ -399,6 +406,18 @@ and translate_instruction t_id instructions condition pc store vs next_id parent
       Printf.printf "Arithmetic r%d = %d\n" destination value;
 
     translate_instructions t_id instructions condition pc store vs next_id parent depth
+  | Pfence (Fence (labels, _)) ->
+    (* Spawn a set of conflicting read events, one for each value that could be read. *)
+    let pc = pc + 1 in
+
+    if !debug then
+      Printf.printf "Fence\n";
+
+    let fence_id = get_id next_id in
+    let subtree, subaccept = translate_instructions t_id instructions condition pc store vs next_id fence_id depth in
+    let strength = strength_from_labels labels in
+    let subtree = prefix_event subtree (Fev ((t_id, fence_id), strength)) in
+    subtree, subaccept
   | _ -> assert false (* TODO: Other instructions. *)
 
 (* Generate the justifies relation. *)
