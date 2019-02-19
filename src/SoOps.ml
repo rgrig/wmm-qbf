@@ -194,8 +194,9 @@ let holds s f =
     there has been a lot of development in QFM for TPTP problems so a lot has changed.
     However, you should be able to get comparable behavior by using the -x option.
     -M
-  *)
-  let o = RunSolver.run_so_solver [|"-x"; (basename ^ ".sol"); (basename ^ ".str")|] "" in
+   *)
+  let extras = Array.of_list (Config.so_solver_opts ()) in
+  let o = RunSolver.run_so_solver (Array.append extras [|(basename ^ ".sol"); (basename ^ ".str")|]) "" in
   Results.parse_answer o
 
 

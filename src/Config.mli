@@ -11,6 +11,7 @@ val use_solver : unit -> solver option
 val qbf_solver_bin : unit -> string
 val run_also : unit -> string
 val so_solver_bin : unit -> string
+val so_solver_opts : unit -> string list
 val verbose : unit -> bool
 val vals : unit -> int * int
 val es_files : unit -> string list

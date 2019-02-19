@@ -26,6 +26,11 @@ let run_also () = !run_also_val
 let so_solver_bin_val = ref "qfm"
 let so_solver_bin () = !so_solver_bin_val
 
+let so_solver_opts_val = ref ([] : string list)
+let so_solver_opt_append opt =
+  so_solver_opts_val := opt :: !so_solver_opts_val
+let so_solver_opts () = !so_solver_opts_val
+
 let use_solver_val = ref (Some SolveQbf)
 let use_solver () = !use_solver_val
 
@@ -100,6 +105,8 @@ let command_spec available_models =
     "  set the path to the Qbf solver binary"
   ; "--run-also", String ((:=) run_also_val),
     "  run this program on the solver output"
+  ; "--so-solver-opt", String so_solver_opt_append,
+    "  pass an additional argument to the SO solver"
   ; "--so-solver-path", String ((:=) so_solver_bin_val),
     "  set the path to the SO solver binary"  
   ; "--solver", String choose_solver,
