@@ -228,6 +228,10 @@ let strength_filter events s =
         events.events
     )
 
+let fence_ids events =
+  let is_fence = function Fev _ -> true | _ -> false in
+  List.map event_id (List.filter is_fence events.events)
+
 (* Return true if a write has the same address and value as a read. *)
 let write_justifies_read a b = 
   match a, b with
@@ -418,6 +422,12 @@ and translate_instruction t_id instructions condition pc store vs next_id parent
     let strength = strength_from_labels labels in
     let subtree = prefix_event subtree (Fev ((t_id, fence_id), strength)) in
     subtree, subaccept
+  | Prmw (reg, op, var_name, labels) ->
+      (* [op] is allowed to mention [var_name], but no other variable names
+        Spawn conflicting reads, for each value. A read for value [v] is followed
+        by a write of value (eval regenv op[var_name->v]). We also create RMW
+        edges from the read to its subsequent write. *)
+      failwith "todo"
   | _ -> assert false (* TODO: Other instructions. *)
 
 (* Generate the justifies relation. *)
@@ -551,7 +561,7 @@ let translate litmus minimum maximum =
     acq = strength_filter events Acquire;
     rlx = strength_filter events Relaxed;
     consume = strength_filter events Consume;
-    fences = [];
+    fences = fence_ids events;
     ext = s_thread;
   } in
   

@@ -58,6 +58,7 @@ val rel_minus: rel2 -> rel2 -> rel2
 (* From arity-2 relations to formulas. *)
 val rel_subset : rel2 -> rel2 -> formula
 val rel_eq : rel2 -> rel2 -> formula
+val rel_empty : rel2 -> formula
 val transitive: rel2 -> formula
 val irreflexive: rel2 -> formula
 val acyclic: rel2 -> formula

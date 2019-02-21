@@ -285,11 +285,11 @@ let simple_rc11_formula accept =
   let sc = CatCommon.get_sc () in
   let pre_psc_id, pre_psc = SoOps.mk_qrel2 "prepsc" in
   let w = CatCommon.get_w () in
+  let rmw = CatCommon.get_rmw () in
   let hb, hb_axiom =
     let acq = CatCommon.get_acq () in
     let rel = CatCommon.get_rel () in
     let rlx = CatCommon.get_rlx () in
-    let rmw = CatCommon.get_rmw () in
     let at_least_acq x = SO.Or [ acq x; sc x ] in
     let at_least_rel x = SO.Or [ rel x; sc x ] in
     let at_least_rlx x = SO.Or [ rlx x; acq x; rel x; sc x ] in
@@ -316,10 +316,12 @@ let simple_rc11_formula accept =
     ; SoOps.irreflexive (SoOps.sequence co hb)
     ; SoOps.irreflexive (SoOps.sequence_n [co; hb; SoOps.invert rf])
     ; SoOps.irreflexive (SoOps.sequence_n [co; rf; hb; SoOps.invert rf]) ] in
+  let rb = SoOps.sequence (SoOps.invert rf) co in
+  let atomicity_axiom =
+    SoOps.rel_empty (SoOps.rel_intersect rmw (SoOps.sequence rb co)) in
   let sc_axiom =
     let sb_notloc = SoOps.rel_minus sb sloc in
     let hb_loc = SoOps.rel_intersect hb sloc in
-    let rb = SoOps.sequence (SoOps.invert rf) co in
     let scb = SoOps.rel_union_n
       [ sb; SoOps.sequence_n [sb_notloc; hb; sb_notloc]; hb_loc; co; rb] in
     let psc x y = SO.And [sc x; sc y; scb x y] in
@@ -352,6 +354,7 @@ let simple_rc11_formula accept =
     And
       [ hb_axiom
       ; coherence_axiom
+      ; atomicity_axiom
       ; sc_axiom
       ; no_thin_air_axiom
       ; CatCommon.rf_constrain goal rf

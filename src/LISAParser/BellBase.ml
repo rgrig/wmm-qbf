@@ -106,6 +106,8 @@ let string_of_reg_or_imm r = match r with
 
 open Constant
 
+type var_name = string [@@deriving show]
+
 type reg_or_addr =
   | Rega of reg  (* address given in register *)
   | Abs of SymbConstant.v (* address given as a constant *)
@@ -187,7 +189,7 @@ type 'k kinstruction =
 | Pst of 'k addr_op * 'k reg_or_imm * string list
 | Pfence of barrier
 | Pcall of string
-| Prmw of reg * 'k op * 'k addr_op * string list
+| Prmw of reg * 'k op * var_name * string list
 | Pbranch of reg option * lbl * string list
 | Pmov of reg * 'k op
                    [@@deriving show]
@@ -196,7 +198,7 @@ let instruction_tr f = function
   | Pld (r,x,s) -> Pld (r,addr_op_tr f x,s)
   | Pst (x,ri,s) -> Pst (addr_op_tr f x,reg_or_imm_tr f ri,s)
   | Pfence _ as i -> i
-  | Prmw (r,op,x,s) -> Prmw (r,op_tr f op,addr_op_tr f x,s)
+  | Prmw (r,op,x,s) -> Prmw (r,op_tr f op,x,s)
   | Pbranch _|Pcall _ as i -> i
   | Pmov (r,op) -> Pmov (r,op_tr f op)
 
@@ -247,7 +249,7 @@ let dump_instruction i = match i with
       (string_of_annot_list s)
       (show_reg r)
       (show_op op)
-      (show_addr_op x)
+      (show_var_name x)
 
 | Pfence f -> pp_fence_ins f
 
@@ -331,7 +333,7 @@ let map_regs f_reg f_symb =
   let map_ins ins = begin match ins with
     | Pld(r,addr_op,s) -> Pld(map_reg r, map_addr_op addr_op, s)
     | Pst(addr_op,roi,s) -> Pst(map_addr_op addr_op, map_roi roi, s)
-    | Prmw(r,op,x,s) -> Prmw(map_reg r,map_op op, map_addr_op x, s)
+    | Prmw(r,op,x,s) -> Prmw(map_reg r,map_op op, x, s)
     | Pbranch(Some r,lbl,s) -> Pbranch(Some (map_reg r),lbl,s)
     | Pfence _|Pcall _|Pbranch (None,_,_) -> ins
     | Pmov(r,op) -> Pmov(map_reg r,map_op op)
@@ -364,7 +366,7 @@ let fold_addrs f =
   fun c ins -> match ins with
   | Pbranch _ | Pfence _|Pcall _ -> c
   | Pld (_,ao,_) | Pst (ao,_,_) -> fold_ao ao c
-  | Prmw (_,op,x,_) -> fold_op op (fold_ao x c)
+  | Prmw (_,op,x,_) -> fold_op op (f (Symbolic x) c)
   | Pmov (_,op) -> fold_op op c
 
 let pp_instruction _m ins = dump_instruction ins

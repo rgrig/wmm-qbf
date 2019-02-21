@@ -374,6 +374,11 @@ let rel_subset r1 r2 =
 
 let rel_eq a b = And [rel_subset a b; rel_subset b a]
 
+let rel_empty a =
+  let x = mk_fresh_fv ~prefix:"empty" () in
+  let y = mk_fresh_fv ~prefix:"empty" () in
+  FoAll (x, FoAll (y, Not (a (Var x) (Var y))))
+
 (* Bounded reflexive transitive closure, up to n steps *)
 let rec r_tc n f a b =
   let x = mk_fresh_fv ~prefix:"r_tc_x" () in

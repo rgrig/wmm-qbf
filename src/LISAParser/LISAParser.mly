@@ -154,7 +154,7 @@ instr:
 | CALL LBRAC name RBRAC
   { Pcall $3 }
 
-| RMW annot_list_option reg operation addr_op
+| RMW annot_list_option reg operation name
   { Prmw($3,$4,$5,$2)}
 
 | BRANCH annot_list_option reg NAME
