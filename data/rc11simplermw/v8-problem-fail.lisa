@@ -1,0 +1,7 @@
+LISA V8-PROBLEM
+{ x = 0; y = 0; z = 0; }
+ P0                   | P1                       ;
+ r[rlx] r1 y          | r[rlx] r2 z              ;
+ w[rlx] z r1          | rmw[rel] r3 (add r3 1) x ;
+                      | w[rlx] y r3              ;
+exists(P0:r1=1 /\ P1:r2=1 /\ P1:r3=2)

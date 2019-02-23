@@ -1,0 +1,7 @@
+LISA store buffer with 8 threads
+{ x0=0; x1=0; x2=0; x3=0; x4=0; x5=0; x6=0; x7=0;}
+P0        | P1        | P2        | P3        | P4        | P5        | P6        | P7        ;
+w[rlx] x1 1  | w[rlx] x2 1  | w[rlx] x3 1  | w[rlx] x4 1  | w[rlx] x5 1  | w[rlx] x6 1  | w[rlx] x7 1  | w[rlx] x0 1  ;
+r[rlx] r0 x0 | r[rlx] r1 x1 | r[rlx] r2 x2 | r[rlx] r3 x3 | r[rlx] r4 x4 | r[rlx] r5 x5 | r[rlx] r6 x6 | r[rlx] r7 x7 ;
+
+exists P0:r0 = 0 /\ P1:r1 = 0 /\ P2:r2 = 0 /\ P3:r3 = 0 /\ P4:r4 = 0 /\ P5:r5 = 0 /\ P6:r6 = 0 /\ P7:r7 = 0

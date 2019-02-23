@@ -226,39 +226,13 @@ open EventStructure
 
 let sample_conf = { prefix = "C01"
                   ; arity = 1
-                  ; event_structure = { events_number = 4;
-                                        reads = [];
-                                        justifies = [];
-                                        conflicts = [];
-                                        order = [];
-                                        sloc = [];
-                                        na = [];
-                                        sc = [];
-                                        rel = [];
-                                        acq = [];
-                                        rlx = [];
-                                        consume = [];
-                                        fences = [];
-                                        ext = [] }
+                  ; event_structure = { empty with events_number = 4; }
                   }
 
 let sample_rel = { prefix = "C02"
                   ; arity = 2
-                  ; event_structure = { events_number = 4;
-                                        reads = [];
-                                        justifies = [];
-                                        conflicts = [];
-                                        order = [];
-                                        sloc = [];
-                                        na = [];
-                                        sc = [];
-                                        rel = [];
-                                        acq = [];
-                                        rlx = [];
-                                        consume = [];
-                                        fences = [];
-                                        ext = [] }
-                  }
+                  ; event_structure = { empty with events_number = 4;}
+                 }
 
 let test_sizeof = "size of empty ES" >:: (fun () ->
     let x = fresh_so_var sample_rel.event_structure 1 in
@@ -333,20 +307,7 @@ let test_flip = "flip" >:: (fun () ->
 
 let sample_conf2 = { prefix = "C03"
                   ; arity = 1
-                  ; event_structure = { events_number = 4;
-                                        reads = [];
-                                        justifies = [];
-                                        conflicts = [];
-                                        order = [];
-                                        sloc = [];
-                                        na = [];
-                                        sc = [];
-                                        rel = [];
-                                        acq = [];
-                                        rlx = [];
-                                        consume = [];
-                                        fences = [];
-                                        ext = []}
+                  ; event_structure = { empty with events_number = 4; }
                   }
 
 let test_subset2 = "subset 2" >:: (fun () ->
@@ -392,20 +353,13 @@ let test_union = "union" >:: (fun () ->
   )
 
 let test_same_label = "same_label" >:: (fun () ->
-    let es = { events_number = 5;
+    let es = { empty with events_number = 5;
                reads = [3;5];
+               writes = [1;2;4];
                justifies = [(2,3); (2,5); (4,3); (4,5)];
                conflicts = [(2,4)];
                order = [(1,2);(2,3);(1,4);(4,5)];
-               sloc = [];
-               na = [];
-               sc = [];
-               rel = [];
-               acq = [];
-               rlx = [];
-               consume = [];
-               fences = [];
-               ext = [] }
+             }
     in
     assert_bool "same_label" (same_label es 1 1);
     assert_bool "same label" (same_label es 2 4);

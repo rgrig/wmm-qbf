@@ -6,6 +6,7 @@ type relation = (event * event) list
 type t =
   { events_number : int
   ; reads : set (* more properly named "events that need justification" *)
+  ; writes : set
   ; justifies : relation
   ; conflicts : relation
   ; order : relation
@@ -17,11 +18,13 @@ type t =
   ; rlx : set
   ; consume : set
   ; fences : set
-  ; ext : relation }
+  ; ext : relation
+  ; rmw : relation }
 
 let empty =
   { events_number = 0
   ; reads = []
+  ; writes = []
   ; justifies = []
   ; conflicts = []
   ; order = []
@@ -33,7 +36,8 @@ let empty =
   ; rlx = []
   ; consume = []
   ; fences = []
-  ; ext = [] }
+  ; ext = []
+  ; rmw = [] }
 
 exception Bad_count of int
 exception Bad_event of int
@@ -128,6 +132,8 @@ let dump filename es accept labels =
   pairs es.conflicts;
   fprintf f_c "order\n";
   pairs es.order;
+  fprintf f_c "rmw\n";
+  pairs es.rmw;
   fprintf f_c "final\n";
   groups accept;
   fprintf f_c "labels\n";

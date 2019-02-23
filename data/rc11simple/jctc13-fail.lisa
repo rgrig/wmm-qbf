@@ -1,0 +1,10 @@
+LISA JCTC13
+{ x = 0; y = 0; }
+P0                         | P1                      ;
+r[acq] r1 x                | r[acq] r2 y             ;
+mov r3 (ne r1 1)           | mov r4 (ne r2 1)        ;
+b[] r3 ENDIFP0             | b[] r4 ENDIFP1          ;
+w[rel] y 1                 | w[rel] x 1              ;
+ENDIFP0:                   | ENDIFP1:                ;
+(* Expected result: false. *)
+exists P0:r1 = 1 /\ P1:r2 = 1

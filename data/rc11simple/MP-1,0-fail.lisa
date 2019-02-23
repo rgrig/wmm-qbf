@@ -1,0 +1,6 @@
+LISA MP
+{x=0; y=0 }
+ P0       | P1       ;
+ w[rel] x 1  | r[acq] r1 y ;
+ w[rel] y 1  | r[acq] r2 x ;
+exists (P1:r1=1 /\ P1:r2=0)

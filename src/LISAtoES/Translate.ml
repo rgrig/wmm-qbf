@@ -54,42 +54,53 @@ type id = t_id * EventStructure.event
 type event =
     Read of id * address * int * strength
   | Write of id * address * (int * int) option * int * strength
+  | RMW of id * address * (int * int) option * int * strength
   | Fev of id * strength
 
 let show_event = function
     Read ((_, id), from, v, _) ->
     Format.sprintf "R%s[%d]→%d" from.global from.offset v
   | Write ((_, id), into, _, v, _) ->
-    Format.sprintf "W%s[%d]←%d" into.global into.offset v
+     Format.sprintf "W%s[%d]←%d" into.global into.offset v
+  | RMW ((_, id), addr, _, v, _) ->
+     (* TODO: Santiy check *)
+     Format.sprintf "RMW%s[%d]←%d" addr.global addr.offset v
   | Fev (_, _) -> failwith "Brf9"
 
 let event_t_id = function
     Read ((t_id, _), _, _, _)
   | Write ((t_id, _), _, _, _, _)
+  | RMW ((t_id, _), _, _, _, _)
   | Fev ((t_id, _), _) -> t_id
   
 let event_id = function
     Read ((_, id), _, _, _)
   | Write ((_, id), _, _, _, _)
+  | RMW  ((_, id), _, _, _, _)
   | Fev ((_, id), _) -> id
 
 let event_address = function
     Read (_, from, _, _) -> from
   | Write (_, into, _, _, _) -> into
+  | RMW (_, addr, _, _, _) -> addr
   | Fev (_, _) -> failwith "Brf9"
 
 let write_from = function
   | Write (_, _, from, _, _) -> from
+  (* TODO: Sanity check *)
+  | RMW (_, _, from , _, _) -> from
   | _ -> failwith "Unexpected event (houhx)"
 
 let event_value = function
     Read (_, _, value, _)
-  | Write (_, _, _, value, _) -> value
+  | Write (_, _, _, value, _)
+  | RMW (_,  _, _, value, _) -> value
   | Fev (_, _) -> failwith "Brf9"
 
 let event_strength = function
     Read (_, _, _, strength)
   | Write (_, _, _, _, strength)
+  | RMW (_, _, _, _, strength)
   | Fev (_, strength) -> strength
 
 (* Intermediate event structure, gets translated to the final datatype before leaving this module. *)
@@ -97,12 +108,14 @@ type events = {
   events : event list;
   conflict : EventStructure.relation;
   order : EventStructure.relation;
+  rmw : EventStructure.relation;
 }
 
 let empty_events = {
   events = [];
   conflict = [];
   order = [];
+  rmw = [];
 }
 
 let unwrap_reg = function
@@ -173,6 +186,8 @@ let sum (a : events) (b : events) (root_a : EventStructure.event) (root_b : Even
     conflict = (root_a, root_b) :: a.conflict @ b.conflict;
     (* "≤1 ∪ ≤2". *)
     order =  a.order @ b.order;
+    (* rmw = rmw u rm2 *)
+    rmw = a.rmw @ b.rmw;
   }
 
 (* Cross event trees. *)
@@ -185,6 +200,8 @@ let product (a : events) (b : events) : events =
     conflict = a.conflict @ b.conflict;
     (* "≤1 ∪ ≤2". *)
     order =  a.order @ b.order;
+    (* rmw = rmw u rm2 *)
+    rmw = a.rmw @ b.rmw;
   }
 
 let get_id (next_id : EventStructure.event ref) : EventStructure.event =
@@ -365,6 +382,56 @@ and translate_instruction t_id instructions condition pc store vs next_id parent
       )
     in
     events, accept
+
+  (* rmw[rlx] r1 (add r1 1) x; *)
+  | Prmw (destination, OP (op, a, b), var_name, labels) ->
+    (* [op] is allowed to mention [var_name], but no other variable names
+       Spawn conflicting reads, for each value. A read for  value [v] is followed
+       by a write of value (eval regenv op[var_name->v]). We also create RMW
+       edges from the read to its subsequent write. *)        
+    (* Spawn a set of conflicting read events, one for each value that could be read. *)
+    let destination = unwrap_reg destination in
+
+    let source = { global=var_name; offset = 0; }in
+    let pc = pc + 1 in
+    let events = ref empty_events in
+    let accept = ref [] in
+    let last_root = ref None in
+
+    let operand store = function
+        IAR_roa (Rega r) -> value_from_reg_or_imm store (Regi r)
+      | IAR_imm (MC.Int i) -> i
+      | _ -> failwith "todo (bwmln)"
+    in
+    
+    let f store v = match op with
+        Add -> (operand store a) + (operand store b)
+      | _ -> failwith "todo (jsfdp)"
+    in
+
+    for value = vs.minimum to vs.maximum do
+      let new_store = Store.update store destination value in
+      let read_id = get_id next_id in
+      let write_id = get_id next_id in
+      let strength = strength_from_labels labels in
+      let source_register = match b with
+        | IAR_roa (Rega (GPRreg number)) -> Some(t_id, number)
+        | _ -> None
+      in
+      let v' = f new_store value in
+      let new_store = Store.update store destination v' in
+      let subtree, subaccept = translate_instructions t_id instructions condition pc new_store vs next_id write_id depth in      
+      let subtree = prefix_event subtree (Write ((t_id, write_id), source, source_register, v', strength)) in
+      let subtree = prefix_event subtree (Read ((t_id, read_id), source, value, strength)) in
+      let subtree = { subtree with rmw = (read_id, write_id) :: subtree.rmw } in
+      accept := !accept @ subaccept;
+      match !last_root with
+      | Some last_id -> (events := sum !events subtree last_id write_id)
+      | None -> (events := subtree);
+      last_root := Some write_id
+    done;
+    !events, !accept
+
   | Pbranch(Some test, destination, labels) ->
     (* Conditional jump, doesn't create any events directly. *)
     let test = unwrap_reg test in
@@ -422,12 +489,6 @@ and translate_instruction t_id instructions condition pc store vs next_id parent
     let strength = strength_from_labels labels in
     let subtree = prefix_event subtree (Fev ((t_id, fence_id), strength)) in
     subtree, subaccept
-  | Prmw (reg, op, var_name, labels) ->
-      (* [op] is allowed to mention [var_name], but no other variable names
-        Spawn conflicting reads, for each value. A read for value [v] is followed
-        by a write of value (eval regenv op[var_name->v]). We also create RMW
-        edges from the read to its subsequent write. *)
-      failwith "todo"
   | _ -> assert false (* TODO: Other instructions. *)
 
 (* Generate the justifies relation. *)
@@ -534,6 +595,7 @@ let translate litmus minimum maximum =
   (* Generate the justifies relation. *)
   let justifies = justify_reads events.events in
   let reads = List.filter (function Read _ -> true | _ -> false) events.events in
+  let writes = List.filter (function Write _ -> true | _ -> false) events.events in
   
   let labels = label_events events in
 
@@ -551,6 +613,7 @@ let translate litmus minimum maximum =
   let events = EventStructure.{
     events_number = !next_id - 1;
     reads = List.map event_id reads;
+    writes = List.map event_id writes;
     justifies;
     conflicts = events.conflict;
     order = events.order;
@@ -563,6 +626,7 @@ let translate litmus minimum maximum =
     consume = strength_filter events Consume;
     fences = fence_ids events;
     ext = s_thread;
+    rmw = events.rmw;
   } in
   
   (events, accept, labels)

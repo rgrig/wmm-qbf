@@ -48,6 +48,7 @@ let build_so_structure es accept =
   let justifies = List.map f es.E.justifies in
   let conflict = List.map f es.E.conflicts in
   let ext = List.map f es.E.ext in
+  let rmw = List.map f es.E.rmw in
 
   SoOps.rels ([
     ("acq", (1, acq))
@@ -64,7 +65,7 @@ let build_so_structure es accept =
   ; ("reads", (1, reads))
   ; ("rel", (1, rel))
   ; ("rlx", (1, rlx))
-  ; ("rmw", (2, [(* TODO *)]))
+  ; ("rmw", (2, rmw))
   ; ("sc", (1, sc))
   ; ("sloc", (2, sloc))
   ; ("universe", (1, universe))
