@@ -3,4 +3,4 @@ LISA RMW-SIMPLE
  P0                        | P1          ;
  rmw[rlx] r1 (add r1 1) x  | w[rlx] x 2  ;
                            | r[rlx] r2 x ;
-exists(P0:r1 = 0 /\ P1:r2 = 2)
+exists(P0:r1 = 1 /\ P1:r2 = 2)

@@ -1,0 +1,7 @@
+LISA MP+Fences
+{ x = 0; y = 0; }
+ P0            | P1             ;
+w[rlx] x 1     | r[rlx] r1 y    ;
+f[rel]         | f[acq]         ;
+w[rlx] y 1     | r[rlx] r2 x    ;
+exists(P1:r1=1 /\ P1:r2=0)

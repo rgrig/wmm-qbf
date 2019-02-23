@@ -202,6 +202,7 @@ let goal_constrain accept g =
 let get_acq () = SoOps.mk_crel1 "acq"
 let get_cause () = SoOps.mk_qrel2 "cause"
 let get_co () = SoOps.mk_qrel2 "co"
+let get_f () = SoOps.mk_crel1 "fences"
 let get_goal () = SoOps.mk_qrel1 "goal"
 let get_hb () = SoOps.mk_qrel2 "hb"
 let get_na () = SoOps.mk_crel1 "na"

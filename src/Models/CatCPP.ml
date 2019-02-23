@@ -285,6 +285,8 @@ let simple_rc11_formula accept =
   let sc = CatCommon.get_sc () in
   let pre_psc_id, pre_psc = SoOps.mk_qrel2 "prepsc" in
   let w = CatCommon.get_w () in
+  let r = CatCommon.get_r () in
+  let f = CatCommon.get_f () in
   let rmw = CatCommon.get_rmw () in
   let hb, hb_axiom =
     let acq = CatCommon.get_acq () in
@@ -293,10 +295,21 @@ let simple_rc11_formula accept =
     let at_least_acq x = SO.Or [ acq x; sc x ] in
     let at_least_rel x = SO.Or [ rel x; sc x ] in
     let at_least_rlx x = SO.Or [ rlx x; acq x; rel x; sc x ] in
-    let sw_end x y = SO.And [ rf x y; at_least_acq y ] in
-    let sw_begin x y = SO.Or
-      [ SO.And [ SoOps.mk_eq x y; w x; at_least_rel x ]
-      ; SO.And [ w x; w y; at_least_rel x; at_least_rlx y; sloc x y; sb x y ] ] in
+    let sw_end_sfx x y = SO.And
+      [ r x; at_least_rlx x; at_least_acq y
+      ; SO.Or [SoOps.mk_eq x y ; SO.And [sb x y; f y] ] ] in
+    let sw_end = SoOps.sequence rf sw_end_sfx in
+
+    let sw_begin_pfx x y = SO.And
+      [ at_least_rel x
+      ; SO.Or [SoOps.mk_eq x y ; SO.And [f x; sb x y] ] ] in
+
+    let rs_pfx x y = SO.And
+      [ w x
+      ; SO.Or [ SoOps.mk_eq x y ; SO.And [ sb x y; sloc x y ] ]
+      ; w y ; at_least_rlx y ] in
+    let sw_begin = SoOps.sequence sw_begin_pfx rs_pfx in
+    
     let alpha = SoOps.sequence_n [ sw_end; sb; sw_begin ] in
     let beta = SoOps.sequence rf rmw in
     let sb_maybe = SoOps.maybe sb in
@@ -323,8 +336,15 @@ let simple_rc11_formula accept =
     let sb_notloc = SoOps.rel_minus sb sloc in
     let hb_loc = SoOps.rel_intersect hb sloc in
     let scb = SoOps.rel_union_n
-      [ sb; SoOps.sequence_n [sb_notloc; hb; sb_notloc]; hb_loc; co; rb] in
-    let psc x y = SO.And [sc x; sc y; scb x y] in
+                [ sb; SoOps.sequence_n [sb_notloc; hb; sb_notloc]; hb_loc; co; rb] in
+    let psc_base = SoOps.sequence_n 
+      [ (fun i j -> SO.Or [ SO.And [SoOps.mk_eq i j ; sc i ]; SO.And [ f i ; sc i; hb i j ] ] )
+      ; scb
+      ; (fun i j -> SO.Or [ SO.And [SoOps.mk_eq i j ; sc i ]; SO.And [ hb i j; f j; sc j ] ] ) ] in
+    let psc_f = SoOps.rel_intersect
+      (fun i j -> SO.And [ f i ; sc i ; f j ; sc j ] )
+      (SoOps.rel_union hb (SoOps.sequence_n [hb; eco rf co rb; hb] ) ) in    
+    let psc = SoOps.rel_union psc_base psc_f in
     SO.SoAny (pre_psc_id, 2, SO.And
       [ SoOps.total sc pre_psc
       ; SoOps.transitive pre_psc
