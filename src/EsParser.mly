@@ -36,6 +36,7 @@
 %token NON_ATOMIC
 %token FENCE
 %token EXT
+%token RMW
 
 %start <EventStructure.t * EventStructure.set list> top
 
@@ -65,6 +66,7 @@ event_structure:
   consumes=option(consume)
   fences=option(fence)
   exts=option(ext)
+  rmws=option(rmw)
   _labels=option(labels)
   j=justifies
   c=conflicts
@@ -75,6 +77,7 @@ event_structure:
     ; conflicts=c
     ; order=o
     ; reads=r
+    ; writes=[] (* TODO: writes = events \ reads *)
     ; sloc=(some_or_empty s)
     ; na=(some_or_empty nas)
     ; sc=(some_or_empty scs)
@@ -84,6 +87,7 @@ event_structure:
     ; consume=(some_or_empty consumes)
     ; fences=(some_or_empty fences)
     ; ext=(some_or_empty exts)
+    ; rmw=(some_or_empty rmws)
     }
   }
 ;
@@ -105,6 +109,7 @@ rlx: v=nl_list(RELAXED,INT,NL*) { v };
 consume: v=nl_list(CONSUME,INT,NL*) { v };
 fence: v=nl_list(FENCE,INT,NL*) { v };
 ext: v=nl_list(EXT,nonempty_list(INT),NL+) { flatten_order v };
+rmw: v=nl_list(RMW,nonempty_list(INT),NL+) { flatten_order v };
 
 
 
