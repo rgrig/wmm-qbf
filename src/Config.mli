@@ -1,5 +1,5 @@
 type worker = EventStructure.t -> EventStructure.set list -> unit
-type solver = SolveQbf | SolveSO
+type solver = SolveQbf | SolveSO | SolveNitpick
 
 val model : unit -> worker
 val dump_es : unit -> bool

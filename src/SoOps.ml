@@ -207,7 +207,13 @@ let model_check s f =
     Some (Config.SolveQbf) ->
     Qbf.holds (so_to_qbf s f)
   | Some (Config.SolveSO) ->
-    holds s f
+     holds s f
+  | Some (Config.SolveNitpick) ->
+     let basename = Filename.remove_extension (Config.filename ()) in
+     let f_c = open_out (basename ^ ".thy") in
+     Printf.fprintf f_c "%s\n" (SO.show_isabelle_structure basename s);
+     Printf.fprintf f_c "%s\n" (SO.show_isabelle_formula f);
+     false
   | None -> failwith "Solver disabled."
 
 let mk_implies prems conclusion =

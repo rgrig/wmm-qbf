@@ -1,5 +1,5 @@
 type worker = EventStructure.t -> EventStructure.set list -> unit
-type solver = SolveQbf | SolveSO
+type solver = SolveQbf | SolveSO | SolveNitpick
 
 let dump_es_val = ref false
 let dump_es () = !dump_es_val
@@ -73,6 +73,7 @@ let default_solver = Some SolveQbf
 let solver_of_string = function
     "qbf" | "QBF" -> Some SolveQbf
   | "so"  | "SO"  -> Some SolveSO
+  | "nitpick" -> Some SolveNitpick                    
   | "none" -> None
   | _ -> default_solver
 
@@ -83,6 +84,7 @@ let choose_solver name = set_solver (solver_of_string name)
 let show_solver = function
     Some SolveQbf -> "qbf"
   | Some SolveSO -> "so"
+  | Some SolveNitpick -> "nitpick"
   | None -> "no solver"
 
 let command_spec available_models =
@@ -115,11 +117,6 @@ let command_spec available_models =
     "  use this range of values to build event structures. (default: " ^ (show_vals !vals_val) ^ ")"
   ; "--verbose", Set verbose_val,
     "  print aditional status information during execution"]
-
-let show_solver = function
-    Some SolveSO -> "SO"
-  | Some SolveQbf -> "QBF"
-  | None -> "None"
 
 let get_version p =
   try

@@ -65,7 +65,7 @@ let show_event = function
   | RMW ((_, id), addr, _, v, _) ->
      (* TODO: Santiy check *)
      Format.sprintf "RMW%s[%d]←%d" addr.global addr.offset v
-  | Fev (_, _) -> failwith "Brf9"
+  | Fev (_, _) -> Format.sprintf "F[]"
 
 let event_t_id = function
     Read ((t_id, _), _, _, _)
@@ -83,7 +83,7 @@ let event_address = function
     Read (_, from, _, _) -> from
   | Write (_, into, _, _, _) -> into
   | RMW (_, addr, _, _, _) -> addr
-  | Fev (_, _) -> failwith "Brf9"
+  | Fev (_, _) -> raise (Invalid_argument "Fences don't have addresses! (ubltn)")
 
 let write_from = function
   | Write (_, _, from, _, _) -> from
@@ -95,7 +95,7 @@ let event_value = function
     Read (_, _, value, _)
   | Write (_, _, _, value, _)
   | RMW (_,  _, _, value, _) -> value
-  | Fev (_, _) -> failwith "Brf9"
+  | Fev (_, _) -> raise (Invalid_argument "Fences don't have addresses! (viyjg)")
 
 let event_strength = function
     Read (_, _, _, strength)
@@ -413,6 +413,9 @@ and translate_instruction t_id instructions condition pc store vs next_id parent
       let new_store = Store.update store destination value in
       let read_id = get_id next_id in
       let write_id = get_id next_id in
+      if condition_met new_store condition then
+        accept := read_id :: !accept;
+
       let strength = strength_from_labels labels in
       let source_register = match b with
         | IAR_roa (Rega (GPRreg number)) -> Some(t_id, number)
@@ -420,10 +423,12 @@ and translate_instruction t_id instructions condition pc store vs next_id parent
       in
       let v' = f new_store value in
       let new_store = Store.update store destination v' in
+      (* Need call for translate_instructions' condition_met thingy*) 
       let subtree, subaccept = translate_instructions t_id instructions condition pc new_store vs next_id write_id depth in      
       let subtree = prefix_event subtree (Write ((t_id, write_id), source, source_register, v', strength)) in
       let subtree = prefix_event subtree (Read ((t_id, read_id), source, value, strength)) in
       let subtree = { subtree with rmw = (read_id, write_id) :: subtree.rmw } in
+
       accept := !accept @ subaccept;
       match !last_root with
       | Some last_id -> (events := sum !events subtree last_id write_id)
@@ -505,7 +510,9 @@ let justify_reads events : EventStructure.relation =
 (* Return a list of pairs of events that read or write the same global. *)
 let match_locations events : EventStructure.relation =
   (* Make one big list of all events and the global they touch. *)
-  let event_addresses = List.map (fun r -> (event_id r, event_address r)) events in
+  (* Ignore fences *)
+  let event_addresses = List.map (fun r -> (event_id r, event_address r))
+                                 (List.filter (function Fev _ -> false| _ -> true) events) in
 
   (* Find pairs with the same source/destination. *)
   List.fold_left (fun accumulator (a_event, a_global) ->

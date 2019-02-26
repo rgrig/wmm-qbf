@@ -263,7 +263,8 @@ let call_solver options parse p =
   (* Discard the return code *)
   (* TODO: Handle solver errors? *)
   let out = R.run_qbf_solver options query in
+  Printf.printf "%s\n" out;
   parse out
 
-let holds = call_solver [||] Results.parse_answer
-let models p = call_solver [|"-e"|] Results.parse_models p
+let holds = call_solver [|"-g"|] Results.parse_answer
+let models p = call_solver [|"-a"; "-i"; "64"; "-e"|] Results.parse_models p

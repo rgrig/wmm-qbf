@@ -10,6 +10,8 @@ let available_models : (string * Config.worker) list =
   ; "rc11-simple", CatCPP.simple_do_decide
   ; "cat-ra", CatRA.do_decide
   ; "cat-sc", CatSC.do_decide
+
+  ; "so-toy", SOToy.do_decide
   ]
 
 let print_accept accept =
