@@ -309,10 +309,10 @@ let simple_rc11_formula accept =
       ; SO.Or [ SoOps.mk_eq x y ; SO.And [ sb x y; sloc x y ] ]
       ; w y ; at_least_rlx y ] in
     let sw_begin = SoOps.sequence sw_begin_pfx rs_pfx in
-    
-    let alpha = SoOps.sequence_n [ sw_end; sb; sw_begin ] in
-    let beta = SoOps.sequence rf rmw in
+
     let sb_maybe = SoOps.maybe sb in
+    let alpha = SoOps.sequence_n [ sw_end; sb_maybe; sw_begin ] in
+    let beta = SoOps.sequence rf rmw in
     let hb = SoOps.rel_union
       sb
       (SoOps.sequence_n [ sb_maybe; sw_begin; alpha_beta; sw_end; sb_maybe ]) in

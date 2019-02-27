@@ -213,6 +213,7 @@ let model_check s f =
      let f_c = open_out (basename ^ ".thy") in
      Printf.fprintf f_c "%s\n" (SO.show_isabelle_structure basename s);
      Printf.fprintf f_c "%s\n" (SO.show_isabelle_formula f);
+     close_out f_c;
      false
   | None -> failwith "Solver disabled."
 
