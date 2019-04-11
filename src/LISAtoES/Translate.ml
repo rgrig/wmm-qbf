@@ -550,7 +550,8 @@ let parse_condition (litmus : Lisa.litmus) : (int * int) list ThreadMap.t =
   (* Check this is an exists expression and get the enclosed logic. *)
   let expression = match condition with
   | ConstrGen.ExistsState expression -> expression
-  | _ -> failwith "not supported"
+  | ConstrGen.ForallStates _ -> failwith "forall not supported"
+  | ConstrGen.NotExistsState _ -> failwith "not exists not supported"
   in
 
   parse_condition_expression ThreadMap.empty expression
@@ -566,7 +567,7 @@ let translate litmus minimum maximum =
   let vs = { minimum; maximum } in
 
   (* The init event is special, and always gets the first ID number. *)
-  let init_id = 1 in
+  let init_id = 0 in
 
   (* This boxed counter is used to make sure all events get unique ID numbers. *)
   let next_id = ref (init_id + 1) in (* TODO: wrap in a function *)
@@ -581,9 +582,11 @@ let translate litmus minimum maximum =
     let subtree, subaccept = translate_instructions t_id insts t_cond pc Store.empty vs next_id init_id depth in
     (product events subtree), subaccept :: accept
   in
-  
+
+  (*
   let n_id, inits = writes_from_init litmus.Lisa.init init_id in
   next_id := n_id;
+   *)
 
   let partition = BatList.group (fun x y -> compare (event_t_id x) (event_t_id y)) in
   let square = List.map (fun x -> BatList.n_cartesian_product [x;x]) in
@@ -594,7 +597,20 @@ let translate litmus minimum maximum =
   in
 
   (* Prefix the init events *)
-  let events = List.fold_left prefix_event events inits in
+  let get_loc = function Read (_, l, _, _) | Write (_, l, _, _, _) |  RMW (_, l, _, _, _) -> Some l | Fev _ -> None in
+  let locations = BatList.unique @@ List.map (fun e -> get_loc e) events.events in
+  let locations = List.filter (function Some _ -> true | _ -> false) locations in
+  let prefixed_writes =
+    List.map (fun sl ->
+        match sl with
+          (Some l) -> let w = Write ((0, !next_id), l, None, 0, Sequentially_consistent) in
+                     incr next_id;
+                     w
+                   
+        | _ -> failwith "invairiant broken!"
+      ) locations in
+  let events = List.fold_left prefix_event events prefixed_writes in 
+  (* let events = List.fold_left prefix_event events inits in *)
 
   (* Generate the same location relation. *)
   let same_location = match_locations events.events in

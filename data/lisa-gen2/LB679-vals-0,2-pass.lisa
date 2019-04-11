@@ -1,0 +1,20 @@
+LISA LB679
+"DpAddrsR PodRW Rfe DpCtrlsR PodRW Rfe"
+Cycle=Rfe DpAddrsR PodRW Rfe DpCtrlsR PodRW
+Relax=Rfe PodRW DpAddrsR DpCtrlsR
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpAddrsR PodRW Rfe DpCtrlsR PodRW Rfe
+{
+}
+ P0                 | P1               ;
+ r[] r0 x           | r[] r0 y         ;
+ mov r1 (xor r0 r0) | mov r1 (eq r0 0) ;
+ r[] r2 x+r1        | b[] r1 LC00      ;
+ w[] y 1            | LC00:            ;
+                    | r[] r2 y         ;
+                    | w[] x 1          ;
+exists
+(0:r0=1 /\ 1:r0=1)

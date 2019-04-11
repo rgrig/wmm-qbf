@@ -1,0 +1,20 @@
+LISA S630
+"PodWR PodRR DpDatasW Rfe PodRW Wse"
+Cycle=Rfe PodRW Wse PodWR PodRR DpDatasW
+Relax=Rfe PodWR PodRW PodRR DpDatasW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=W
+Com=Rf Ws
+Orig=PodWR PodRR DpDatasW Rfe PodRW Wse
+{
+}
+ P0                 | P1       ;
+ w[] x 2            | r[] r0 z ;
+ r[] r0 y           | w[] x 1  ;
+ r[] r1 z           | r[] r1 x ;
+ mov r2 (xor r1 r1) |          ;
+ mov r2 (add r2 1)  |          ;
+ w[] z r2           |          ;
+exists
+(1:r1=2 /\ 1:r0=1)

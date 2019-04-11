@@ -1,0 +1,18 @@
+LISA 2+2W009
+"FenceReldWW Wse FenceReldWW Wse"
+Cycle=Wse FenceReldWW Wse FenceReldWW
+Relax=FenceReldWW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Ws Ws
+Orig=FenceReldWW Wse FenceReldWW Wse
+{
+}
+ P0       | P1       ;
+ w[] x 2  | w[] y 2  ;
+ f[rel]   | f[rel]   ;
+ w[] y 1  | w[] x 1  ;
+ r[] r0 y | r[] r0 x ;
+exists
+(0:r0=2 /\ 1:r0=2)

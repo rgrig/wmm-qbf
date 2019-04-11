@@ -1,0 +1,20 @@
+LISA R193
+"PodWR DpAddrdW Wsi Wse PodWR Fre"
+Cycle=Fre PodWR DpAddrdW Wsi Wse PodWR
+Relax=PodWR DpAddrdW
+Safe=Fre Wsi Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=T
+Com=Ws Fr
+Orig=PodWR DpAddrdW Wsi Wse PodWR Fre
+{
+}
+ P0                 | P1       ;
+ w[] x 1            | w[] z 3  ;
+ r[] r0 y           | r[] r0 x ;
+ mov r1 (xor r0 r0) |          ;
+ w[] z+r1 1         |          ;
+ w[] z 2            |          ;
+ r[] r2 z           |          ;
+exists
+(0:r2=3 /\ 1:r0=0)

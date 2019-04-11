@@ -1,0 +1,25 @@
+LISA RW+WR077
+"DpCtrlsW Rfi DpCtrldW Wse PodWR Hat"
+Cycle=Hat DpCtrlsW Rfi DpCtrldW Wse PodWR
+Relax=Hat Rfi PodWR DpCtrlsW DpCtrldW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Ws Fr
+Orig=DpCtrlsW Rfi DpCtrldW Wse PodWR Hat
+{
+}
+ P0               | P1       ;
+ r[] r0 x         | w[] y 2  ;
+ mov r1 (eq r0 0) | r[] r0 x ;
+ b[] r1 LC00      |          ;
+ LC00:            |          ;
+ w[] x 1          |          ;
+ r[] r2 x         |          ;
+ mov r3 (eq r2 0) |          ;
+ b[] r3 LC01      |          ;
+ LC01:            |          ;
+ w[] y 1          |          ;
+ r[] r4 y         |          ;
+exists
+(0:r4=2 /\ 0:r0=0 /\ 0:r2=1 /\ 1:r0=0)

@@ -1,0 +1,21 @@
+LISA LB054
+"DpAddrdW Rfe DpDatadW Rfi DpAddrsW Rfe"
+Cycle=Rfi DpAddrsW Rfe DpAddrdW Rfe DpDatadW
+Relax=Rfi Rfe DpAddrsW DpAddrdW DpDatadW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpAddrdW Rfe DpDatadW Rfi DpAddrsW Rfe
+{
+}
+ P0                 | P1                 ;
+ r[] r0 x           | r[] r0 y           ;
+ mov r1 (xor r0 r0) | mov r1 (xor r0 r0) ;
+ w[] y+r1 1         | mov r1 (add r1 1)  ;
+                    | w[] x r1           ;
+                    | r[] r2 x           ;
+                    | mov r3 (xor r2 r2) ;
+                    | w[] x+r3 2         ;
+exists
+(0:r0=2 /\ 1:r0=1 /\ 1:r2=1)

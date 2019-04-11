@@ -1,0 +1,21 @@
+LISA MP045
+"PodWW PodWW Rfe DpCtrldW Rfi Fre"
+Cycle=Rfi Fre PodWW PodWW Rfe DpCtrldW
+Relax=Rfi Rfe PodWW DpCtrldW
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=T
+Com=Rf Fr
+Orig=PodWW PodWW Rfe DpCtrldW Rfi Fre
+{
+}
+ P0      | P1               ;
+ w[] x 2 | r[] r0 z         ;
+ w[] y 1 | mov r1 (eq r0 0) ;
+ w[] z 1 | b[] r1 LC00      ;
+         | LC00:            ;
+         | w[] x 1          ;
+         | r[] r2 x         ;
+         | r[] r3 x         ;
+exists
+(1:r3=2 /\ 1:r0=1 /\ 1:r2=1)

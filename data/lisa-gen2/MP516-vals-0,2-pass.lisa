@@ -1,0 +1,20 @@
+LISA MP516
+"PodWR PosRR DpDatasW Rfe DpAddrdR Fre"
+Cycle=Rfe DpAddrdR Fre PodWR PosRR DpDatasW
+Relax=Rfe PosRR PodWR DpAddrdR DpDatasW
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Rf Fr
+Orig=PodWR PosRR DpDatasW Rfe DpAddrdR Fre
+{
+}
+ P0                 | P1                 ;
+ w[] x 1            | r[] r0 y           ;
+ r[] r0 y           | mov r1 (xor r0 r0) ;
+ r[] r1 y           | r[] r2 x+r1        ;
+ mov r2 (xor r1 r1) |                    ;
+ mov r2 (add r2 1)  |                    ;
+ w[] y r2           |                    ;
+exists
+(1:r0=1 /\ 1:r2=0)

@@ -1,0 +1,18 @@
+LISA R144
+"PodWW Wse PodWW PodWR PodRR Fre"
+Cycle=Fre PodWW Wse PodWW PodWR PodRR
+Relax=PodWW PodWR PodRR
+Safe=Fre Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Ws Fr
+Orig=PodWW Wse PodWW PodWR PodRR Fre
+{
+}
+ P0       | P1       ;
+ w[] x 1  | w[] y 2  ;
+ w[] y 1  | w[] z 1  ;
+ r[] r0 y | r[] r0 a ;
+          | r[] r1 x ;
+exists
+(0:r0=2 /\ 1:r1=0)

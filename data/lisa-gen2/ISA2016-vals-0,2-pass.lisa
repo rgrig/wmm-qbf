@@ -1,0 +1,17 @@
+LISA ISA2016
+"PodWW Rfe PodRW Rfe DpAddrdR Fre"
+Cycle=Rfe PodRW Rfe DpAddrdR Fre PodWW
+Relax=Rfe PodWW PodRW DpAddrdR
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:z=W,2:z=F,2:x=T
+Com=Rf Rf Fr
+Orig=PodWW Rfe PodRW Rfe DpAddrdR Fre
+{
+}
+ P0      | P1       | P2                 ;
+ w[] x 1 | r[] r0 y | r[] r0 z           ;
+ w[] y 1 | w[] z 1  | mov r1 (xor r0 r0) ;
+         |          | r[] r2 x+r1        ;
+exists
+(1:r0=1 /\ 2:r0=1 /\ 2:r2=0)

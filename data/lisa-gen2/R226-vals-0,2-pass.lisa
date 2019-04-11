@@ -1,0 +1,20 @@
+LISA R226
+"PodWR PodRW Wse PodWR DpCtrldR Fre"
+Cycle=Fre PodWR PodRW Wse PodWR DpCtrldR
+Relax=PodWR PodRW DpCtrldR
+Safe=Fre Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=T
+Com=Ws Fr
+Orig=PodWR PodRW Wse PodWR DpCtrldR Fre
+{
+}
+ P0       | P1               ;
+ w[] x 1  | w[] z 2          ;
+ r[] r0 y | r[] r0 a         ;
+ w[] z 1  | mov r1 (eq r0 0) ;
+ r[] r1 z | b[] r1 LC00      ;
+          | LC00:            ;
+          | r[] r2 x         ;
+exists
+(0:r1=2 /\ 1:r2=0)

@@ -1,0 +1,18 @@
+LISA MP075
+"Rfi DpAddrdW Rfe DpAddrsW PodWR Fre"
+Cycle=Rfi DpAddrdW Rfe DpAddrsW PodWR Fre
+Relax=Rfi Rfe PodWR DpAddrsW DpAddrdW
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Rf Fr
+Orig=Rfi DpAddrdW Rfe DpAddrsW PodWR Fre
+{
+}
+ P0                 | P1                 ;
+ w[] x 1            | r[] r0 y           ;
+ r[] r0 x           | mov r1 (xor r0 r0) ;
+ mov r1 (xor r0 r0) | w[] y+r1 2         ;
+ w[] y+r1 1         | r[] r2 x           ;
+exists
+(0:r0=1 /\ 1:r0=1 /\ 1:r2=0)

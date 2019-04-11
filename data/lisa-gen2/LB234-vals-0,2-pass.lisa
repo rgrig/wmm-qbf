@@ -1,0 +1,18 @@
+LISA LB234
+"PodRW Rfe DpAddrdW PodWW Rfe"
+Cycle=Rfe PodRW Rfe DpAddrdW PodWW
+Relax=Rfe PodWW PodRW DpAddrdW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=PodRW Rfe DpAddrdW PodWW Rfe
+{
+}
+ P0       | P1                 ;
+ r[] r0 x | r[] r0 y           ;
+ w[] y 1  | mov r1 (xor r0 r0) ;
+          | w[] z+r1 1         ;
+          | w[] x 1            ;
+exists
+(0:r0=1 /\ 1:r0=1)

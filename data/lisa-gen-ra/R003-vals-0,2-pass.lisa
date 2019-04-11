@@ -1,0 +1,17 @@
+LISA R003
+"PodWW Wse FenceRel_acqdWR Fre"
+Cycle=Fre PodWW Wse FenceRel_acqdWR
+Relax=PodWW FenceRel_acqdWR
+Safe=Fre Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Ws Fr
+Orig=PodWW Wse FenceRel_acqdWR Fre
+{
+}
+ P0       | P1         ;
+ w[] x 1  | w[] y 2    ;
+ w[] y 1  | f[rel_acq] ;
+ r[] r0 y | r[] r0 x   ;
+exists
+(0:r0=2 /\ 1:r0=0)

@@ -1,0 +1,20 @@
+LISA S744
+"PodWR DpCtrldW Rfe PosRR DpAddrdW Wse"
+Cycle=Rfe PosRR DpAddrdW Wse PodWR DpCtrldW
+Relax=Rfe PosRR PodWR DpAddrdW DpCtrldW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=W
+Com=Rf Ws
+Orig=PodWR DpCtrldW Rfe PosRR DpAddrdW Wse
+{
+}
+ P0               | P1                 ;
+ w[] x 2          | r[] r0 z           ;
+ r[] r0 y         | r[] r1 z           ;
+ mov r1 (eq r0 0) | mov r2 (xor r1 r1) ;
+ b[] r1 LC00      | w[] x+r2 1         ;
+ LC00:            | r[] r3 x           ;
+ w[] z 1          |                    ;
+exists
+(1:r3=2 /\ 1:r0=1)

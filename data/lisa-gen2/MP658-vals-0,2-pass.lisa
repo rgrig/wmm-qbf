@@ -1,0 +1,21 @@
+LISA MP658
+"PodWR DpCtrlsR Fri Rfe DpAddrdR Fre"
+Cycle=Rfe DpAddrdR Fre PodWR DpCtrlsR Fri
+Relax=Rfe PodWR DpAddrdR DpCtrlsR
+Safe=Fri Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Rf Fr
+Orig=PodWR DpCtrlsR Fri Rfe DpAddrdR Fre
+{
+}
+ P0               | P1                 ;
+ w[] x 1          | r[] r0 y           ;
+ r[] r0 y         | mov r1 (xor r0 r0) ;
+ mov r1 (eq r0 0) | r[] r2 x+r1        ;
+ b[] r1 LC00      |                    ;
+ LC00:            |                    ;
+ r[] r2 y         |                    ;
+ w[] y 1          |                    ;
+exists
+(0:r2=0 /\ 1:r0=1 /\ 1:r2=0)

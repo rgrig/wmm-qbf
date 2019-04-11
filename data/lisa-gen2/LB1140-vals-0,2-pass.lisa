@@ -1,0 +1,19 @@
+LISA LB1140
+"DpDatadW Rfe PodRR DpAddrdR Fri Rfe"
+Cycle=Rfe PodRR DpAddrdR Fri Rfe DpDatadW
+Relax=Rfe PodRR DpAddrdR DpDatadW
+Safe=Fri
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpDatadW Rfe PodRR DpAddrdR Fri Rfe
+{
+}
+ P0                 | P1                 ;
+ r[] r0 x           | r[] r0 y           ;
+ mov r1 (xor r0 r0) | r[] r1 z           ;
+ mov r1 (add r1 1)  | mov r2 (xor r1 r1) ;
+ w[] y r1           | r[] r3 x+r2        ;
+                    | w[] x 1            ;
+exists
+(0:r0=1 /\ 1:r0=1 /\ 1:r3=0)

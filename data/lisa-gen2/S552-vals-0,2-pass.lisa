@@ -1,0 +1,19 @@
+LISA S552
+"PodWW PodWR DpAddrdW Rfe PodRW Wse"
+Cycle=Rfe PodRW Wse PodWW PodWR DpAddrdW
+Relax=Rfe PodWW PodWR PodRW DpAddrdW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:a=W,1:a=F,1:x=W
+Com=Rf Ws
+Orig=PodWW PodWR DpAddrdW Rfe PodRW Wse
+{
+}
+ P0                 | P1       ;
+ w[] x 2            | r[] r0 a ;
+ w[] y 1            | w[] x 1  ;
+ r[] r0 z           | r[] r1 x ;
+ mov r1 (xor r0 r0) |          ;
+ w[] a+r1 1         |          ;
+exists
+(1:r1=2 /\ 1:r0=1)

@@ -1,0 +1,18 @@
+LISA MP184
+"PodWW PodWW PodWW Rfe DpAddrdR Fre"
+Cycle=Rfe DpAddrdR Fre PodWW PodWW PodWW
+Relax=Rfe PodWW DpAddrdR
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:a=W,1:a=F,1:x=T
+Com=Rf Fr
+Orig=PodWW PodWW PodWW Rfe DpAddrdR Fre
+{
+}
+ P0      | P1                 ;
+ w[] x 1 | r[] r0 a           ;
+ w[] y 1 | mov r1 (xor r0 r0) ;
+ w[] z 1 | r[] r2 x+r1        ;
+ w[] a 1 |                    ;
+exists
+(1:r0=1 /\ 1:r2=0)

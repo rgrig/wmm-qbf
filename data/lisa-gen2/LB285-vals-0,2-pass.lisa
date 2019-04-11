@@ -1,0 +1,20 @@
+LISA LB285
+"DpDatasW PodWW Rfe PodRR DpCtrlsW Rfe"
+Cycle=Rfe PodRR DpCtrlsW Rfe DpDatasW PodWW
+Relax=Rfe PodWW PodRR DpDatasW DpCtrlsW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpDatasW PodWW Rfe PodRR DpCtrlsW Rfe
+{
+}
+ P0                 | P1               ;
+ r[] r0 x           | r[] r0 y         ;
+ mov r1 (xor r0 r0) | r[] r1 x         ;
+ mov r1 (add r1 2)  | mov r2 (eq r1 0) ;
+ w[] x r1           | b[] r2 LC00      ;
+ w[] y 1            | LC00:            ;
+                    | w[] x 1          ;
+exists
+(0:r0=1 /\ 1:r0=1)

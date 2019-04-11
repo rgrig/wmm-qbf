@@ -1,0 +1,19 @@
+LISA RR+RR004
+"DpAddrsR Hat PodRR DpAddrdW Rfi Hat"
+Cycle=Hat PodRR DpAddrdW Rfi Hat DpAddrsR
+Relax=Hat Rfi PodRR DpAddrsR DpAddrdW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=
+Com=Rf Rf
+Orig=DpAddrsR Hat PodRR DpAddrdW Rfi Hat
+{
+}
+ P0                 | P1                 ;
+ r[] r0 x           | r[] r0 x           ;
+ mov r1 (xor r0 r0) | r[] r1 y           ;
+ r[] r2 x+r1        | mov r2 (xor r1 r1) ;
+                    | w[] x+r2 1         ;
+                    | r[] r3 x           ;
+exists
+(0:r0=1 /\ 0:r2=1 /\ 1:r0=1 /\ 1:r3=1)

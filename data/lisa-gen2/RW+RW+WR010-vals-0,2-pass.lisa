@@ -1,0 +1,19 @@
+LISA RW+RW+WR010
+"DpDatadW Rfe DpDatadW Wse Rfi Hat"
+Cycle=Hat DpDatadW Rfe DpDatadW Wse Rfi
+Relax=Hat Rfi Rfe DpDatadW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Ws Rf
+Orig=DpDatadW Rfe DpDatadW Wse Rfi Hat
+{
+}
+ P0                 | P1                 | P2       ;
+ r[] r0 x           | r[] r0 y           | w[] x 2  ;
+ mov r1 (xor r0 r0) | mov r1 (xor r0 r0) | r[] r0 x ;
+ mov r1 (add r1 1)  | mov r1 (add r1 1)  |          ;
+ w[] y r1           | w[] x r1           |          ;
+                    | r[] r2 x           |          ;
+exists
+(0:r0=2 /\ 1:r2=2 /\ 1:r0=1 /\ 2:r0=2)

@@ -1,0 +1,19 @@
+LISA WRW+2W049
+"Rfe DpDatadW Wse PodWR PodRW Wse"
+Cycle=Rfe DpDatadW Wse PodWR PodRW Wse
+Relax=Rfe PodWR PodRW DpDatadW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=1:x=F,1:y=W,2:y=F,2:x=W
+Com=Rf Ws Ws
+Orig=Rfe DpDatadW Wse PodWR PodRW Wse
+{
+}
+ P0      | P1                 | P2       ;
+ w[] x 2 | r[] r0 x           | w[] y 2  ;
+         | mov r1 (xor r0 r0) | r[] r0 z ;
+         | mov r1 (add r1 1)  | w[] x 1  ;
+         | w[] y r1           | r[] r1 x ;
+         | r[] r2 y           |          ;
+exists
+(1:r2=2 /\ 1:r0=2 /\ 2:r1=2)

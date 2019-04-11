@@ -1,0 +1,20 @@
+LISA IRWIW006
+"Rfe DpAddrdW Wse Rfe DpCtrldW Wse"
+Cycle=Rfe DpAddrdW Wse Rfe DpCtrldW Wse
+Relax=Rfe DpAddrdW DpCtrldW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=1:x=F,1:y=W,3:y=F,3:x=W
+Com=Rf Ws Rf Ws
+Orig=Rfe DpAddrdW Wse Rfe DpCtrldW Wse
+{
+}
+ P0      | P1                 | P2      | P3               ;
+ w[] x 2 | r[] r0 x           | w[] y 2 | r[] r0 y         ;
+         | mov r1 (xor r0 r0) |         | mov r1 (eq r0 0) ;
+         | w[] y+r1 1         |         | b[] r1 LC00      ;
+         | r[] r2 y           |         | LC00:            ;
+         |                    |         | w[] x 1          ;
+         |                    |         | r[] r2 x         ;
+exists
+(1:r2=2 /\ 1:r0=2 /\ 3:r2=2 /\ 3:r0=2)

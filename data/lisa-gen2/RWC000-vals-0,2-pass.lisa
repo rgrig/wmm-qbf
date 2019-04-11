@@ -1,0 +1,19 @@
+LISA RWC000
+"Rfe DpAddrdW Rfi Fre PodWR Fre"
+Cycle=Rfi Fre PodWR Fre Rfe DpAddrdW
+Relax=Rfi Rfe PodWR DpAddrdW
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=1:x=F,1:y=T,2:y=F,2:x=T
+Com=Rf Fr Fr
+Orig=Rfe DpAddrdW Rfi Fre PodWR Fre
+{
+}
+ P0      | P1                 | P2       ;
+ w[] x 1 | r[] r0 x           | w[] y 2  ;
+         | mov r1 (xor r0 r0) | r[] r0 x ;
+         | w[] y+r1 1         |          ;
+         | r[] r2 y           |          ;
+         | r[] r3 y           |          ;
+exists
+(1:r3=2 /\ 1:r0=1 /\ 1:r2=1 /\ 2:r0=0)

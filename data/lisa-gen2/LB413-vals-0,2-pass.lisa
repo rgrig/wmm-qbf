@@ -1,0 +1,19 @@
+LISA LB413
+"PodRW Rfe DpAddrsW PodWR PodRW Rfe"
+Cycle=Rfe PodRW Rfe DpAddrsW PodWR PodRW
+Relax=Rfe PodWR PodRW DpAddrsW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=PodRW Rfe DpAddrsW PodWR PodRW Rfe
+{
+}
+ P0       | P1                 ;
+ r[] r0 x | r[] r0 y           ;
+ w[] y 1  | mov r1 (xor r0 r0) ;
+          | w[] y+r1 2         ;
+          | r[] r2 z           ;
+          | w[] x 1            ;
+exists
+(0:r0=1 /\ 1:r0=1)

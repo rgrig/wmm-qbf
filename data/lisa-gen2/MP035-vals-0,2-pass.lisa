@@ -1,0 +1,20 @@
+LISA MP035
+"Rfi DpDatadW Rfe DpDatadW Rfi Fre"
+Cycle=Rfi Fre Rfi DpDatadW Rfe DpDatadW
+Relax=Rfi Rfe DpDatadW
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Rf Fr
+Orig=Rfi DpDatadW Rfe DpDatadW Rfi Fre
+{
+}
+ P0                 | P1                 ;
+ w[] x 2            | r[] r0 y           ;
+ r[] r0 x           | mov r1 (xor r0 r0) ;
+ mov r1 (xor r0 r0) | mov r1 (add r1 1)  ;
+ mov r1 (add r1 1)  | w[] x r1           ;
+ w[] y r1           | r[] r2 x           ;
+                    | r[] r3 x           ;
+exists
+(0:r0=2 /\ 1:r3=2 /\ 1:r0=1 /\ 1:r2=1)

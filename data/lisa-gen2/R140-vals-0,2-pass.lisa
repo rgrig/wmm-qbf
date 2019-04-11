@@ -1,0 +1,21 @@
+LISA R140
+"PodWW PodWR DpDatasW Wse PodWR Fre"
+Cycle=Fre PodWW PodWR DpDatasW Wse PodWR
+Relax=PodWW PodWR DpDatasW
+Safe=Fre Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=T
+Com=Ws Fr
+Orig=PodWW PodWR DpDatasW Wse PodWR Fre
+{
+}
+ P0                 | P1       ;
+ w[] x 1            | w[] z 2  ;
+ w[] y 1            | r[] r0 x ;
+ r[] r0 z           |          ;
+ mov r1 (xor r0 r0) |          ;
+ mov r1 (add r1 1)  |          ;
+ w[] z r1           |          ;
+ r[] r2 z           |          ;
+exists
+(0:r2=2 /\ 1:r0=0)

@@ -1,0 +1,21 @@
+LISA S367
+"PodWW Rfe PosRR PosRR DpDatadW Wse"
+Cycle=Rfe PosRR PosRR DpDatadW Wse PodWW
+Relax=Rfe PosRR PodWW DpDatadW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Ws
+Orig=PodWW Rfe PosRR PosRR DpDatadW Wse
+{
+}
+ P0      | P1                 ;
+ w[] x 2 | r[] r0 y           ;
+ w[] y 1 | r[] r1 y           ;
+         | r[] r2 y           ;
+         | mov r3 (xor r2 r2) ;
+         | mov r3 (add r3 1)  ;
+         | w[] x r3           ;
+         | r[] r4 x           ;
+exists
+(1:r4=2 /\ 1:r0=1)

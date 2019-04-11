@@ -1,0 +1,19 @@
+LISA ISA2033
+"PodWW Rfe DpCtrlsW Rfe DpCtrldR Fre"
+Cycle=Rfe DpCtrlsW Rfe DpCtrldR Fre PodWW
+Relax=Rfe PodWW DpCtrlsW DpCtrldR
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,2:y=F,2:x=T
+Com=Rf Rf Fr
+Orig=PodWW Rfe DpCtrlsW Rfe DpCtrldR Fre
+{
+}
+ P0      | P1               | P2               ;
+ w[] x 1 | r[] r0 y         | r[] r0 y         ;
+ w[] y 1 | mov r1 (eq r0 0) | mov r1 (eq r0 0) ;
+         | b[] r1 LC00      | b[] r1 LC01      ;
+         | LC00:            | LC01:            ;
+         | w[] y 2          | r[] r2 x         ;
+exists
+(1:r0=1 /\ 2:r0=2 /\ 2:r2=0)

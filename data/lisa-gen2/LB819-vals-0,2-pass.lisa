@@ -1,0 +1,20 @@
+LISA LB819
+"PosRR DpCtrldW Rfe PodRR DpAddrsW Rfe"
+Cycle=Rfe PosRR DpCtrldW Rfe PodRR DpAddrsW
+Relax=Rfe PosRR PodRR DpAddrsW DpCtrldW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=PosRR DpCtrldW Rfe PodRR DpAddrsW Rfe
+{
+}
+ P0               | P1                 ;
+ r[] r0 x         | r[] r0 y           ;
+ r[] r1 x         | r[] r1 x           ;
+ mov r2 (eq r1 0) | mov r2 (xor r1 r1) ;
+ b[] r2 LC00      | w[] x+r2 1         ;
+ LC00:            |                    ;
+ w[] y 1          |                    ;
+exists
+(0:r0=1 /\ 1:r0=1)

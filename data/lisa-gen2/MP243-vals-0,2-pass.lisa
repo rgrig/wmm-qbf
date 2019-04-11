@@ -1,0 +1,18 @@
+LISA MP243
+"PodWW Rfe PosRR PodRR PosRR Fre"
+Cycle=Rfe PosRR PodRR PosRR Fre PodWW
+Relax=Rfe PosRR PodWW PodRR
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Rf Fr
+Orig=PodWW Rfe PosRR PodRR PosRR Fre
+{
+}
+ P0      | P1       ;
+ w[] x 1 | r[] r0 y ;
+ w[] y 1 | r[] r1 y ;
+         | r[] r2 x ;
+         | r[] r3 x ;
+exists
+(1:r0=1 /\ 1:r3=0)

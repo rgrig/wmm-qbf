@@ -1,0 +1,20 @@
+LISA WRR+2W054
+"Rfe DpCtrldR Fre PodWR DpDatadW Wse"
+Cycle=Rfe DpCtrldR Fre PodWR DpDatadW Wse
+Relax=Rfe PodWR DpDatadW DpCtrldR
+Safe=Fre Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=1:x=F,1:y=T,2:y=F,2:x=W
+Com=Rf Fr Ws
+Orig=Rfe DpCtrldR Fre PodWR DpDatadW Wse
+{
+}
+ P0      | P1               | P2                 ;
+ w[] x 2 | r[] r0 x         | w[] y 1            ;
+         | mov r1 (eq r0 0) | r[] r0 z           ;
+         | b[] r1 LC00      | mov r1 (xor r0 r0) ;
+         | LC00:            | mov r1 (add r1 1)  ;
+         | r[] r2 y         | w[] x r1           ;
+         |                  | r[] r2 x           ;
+exists
+(1:r0=2 /\ 1:r2=0 /\ 2:r2=2)

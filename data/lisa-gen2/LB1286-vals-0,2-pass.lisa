@@ -1,0 +1,18 @@
+LISA LB1286
+"DpAddrdW Wsi Rfe DpAddrdW Wsi Rfe"
+Cycle=Rfe DpAddrdW Wsi Rfe DpAddrdW Wsi
+Relax=Rfe DpAddrdW
+Safe=Wsi
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpAddrdW Wsi Rfe DpAddrdW Wsi Rfe
+{
+}
+ P0                 | P1                 ;
+ r[] r0 x           | r[] r0 y           ;
+ mov r1 (xor r0 r0) | mov r1 (xor r0 r0) ;
+ w[] y+r1 1         | w[] x+r1 1         ;
+ w[] y 2            | w[] x 2            ;
+exists
+(0:r0=2 /\ 1:r0=2)

@@ -1,0 +1,8 @@
+"C11 Bell annotation"
+
+
+enum memorder = 'rlx || 'acq || 'rel || 'rel_acq || 'sc
+
+instructions R[{'rlx,'acq,'sc}]
+instructions W[{'rlx,'rel,'sc}]
+instructions F[{'acq,'rel,'rel_acq,'sc}]

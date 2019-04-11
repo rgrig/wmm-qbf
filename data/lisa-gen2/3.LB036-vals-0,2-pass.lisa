@@ -1,0 +1,19 @@
+LISA 3.LB036
+"DpCtrldW Rfe DpCtrldW Rfe PodRW Rfe"
+Cycle=Rfe PodRW Rfe DpCtrldW Rfe DpCtrldW
+Relax=Rfe PodRW DpCtrldW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:z=W,2:z=F,2:x=W
+Com=Rf Rf Rf
+Orig=DpCtrldW Rfe DpCtrldW Rfe PodRW Rfe
+{
+}
+ P0               | P1               | P2       ;
+ r[] r0 x         | r[] r0 y         | r[] r0 z ;
+ mov r1 (eq r0 0) | mov r1 (eq r0 0) | w[] x 1  ;
+ b[] r1 LC00      | b[] r1 LC01      |          ;
+ LC00:            | LC01:            |          ;
+ w[] y 1          | w[] z 1          |          ;
+exists
+(0:r0=1 /\ 1:r0=1 /\ 2:r0=1)

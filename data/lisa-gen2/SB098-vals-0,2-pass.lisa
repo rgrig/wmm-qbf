@@ -1,0 +1,20 @@
+LISA SB098
+"PodWR DpCtrlsR Fre PodWR PodRR Fre"
+Cycle=Fre PodWR PodRR Fre PodWR DpCtrlsR
+Relax=PodWR PodRR DpCtrlsR
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=T,1:y=F,1:x=T
+Com=Fr Fr
+Orig=PodWR DpCtrlsR Fre PodWR PodRR Fre
+{
+}
+ P0               | P1       ;
+ w[] x 1          | w[] y 1  ;
+ r[] r0 y         | r[] r0 z ;
+ mov r1 (eq r0 0) | r[] r1 x ;
+ b[] r1 LC00      |          ;
+ LC00:            |          ;
+ r[] r2 y         |          ;
+exists
+(0:r2=0 /\ 1:r1=0)

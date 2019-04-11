@@ -1,0 +1,22 @@
+LISA S369
+"PodWW Rfe DpAddrsR PosRR DpDatadW Wse"
+Cycle=Rfe DpAddrsR PosRR DpDatadW Wse PodWW
+Relax=Rfe PosRR PodWW DpAddrsR DpDatadW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Ws
+Orig=PodWW Rfe DpAddrsR PosRR DpDatadW Wse
+{
+}
+ P0      | P1                 ;
+ w[] x 2 | r[] r0 y           ;
+ w[] y 1 | mov r1 (xor r0 r0) ;
+         | r[] r2 y+r1        ;
+         | r[] r3 y           ;
+         | mov r4 (xor r3 r3) ;
+         | mov r4 (add r4 1)  ;
+         | w[] x r4           ;
+         | r[] r5 x           ;
+exists
+(1:r5=2 /\ 1:r0=1)

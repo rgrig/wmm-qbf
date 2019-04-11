@@ -1,0 +1,20 @@
+LISA LB755
+"DpCtrldR PodRW Rfe DpCtrldR PodRW Rfe"
+Cycle=Rfe DpCtrldR PodRW Rfe DpCtrldR PodRW
+Relax=Rfe PodRW DpCtrldR
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=W
+Com=Rf Rf
+Orig=DpCtrldR PodRW Rfe DpCtrldR PodRW Rfe
+{
+}
+ P0               | P1               ;
+ r[] r0 x         | r[] r0 z         ;
+ mov r1 (eq r0 0) | mov r1 (eq r0 0) ;
+ b[] r1 LC00      | b[] r1 LC01      ;
+ LC00:            | LC01:            ;
+ r[] r2 y         | r[] r2 a         ;
+ w[] z 1          | w[] x 1          ;
+exists
+(0:r0=1 /\ 1:r0=1)

@@ -1,0 +1,20 @@
+LISA S728
+"PodWR DpCtrldW Rfe PodRW PodWW Wse"
+Cycle=Rfe PodRW PodWW Wse PodWR DpCtrldW
+Relax=Rfe PodWW PodWR PodRW DpCtrldW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=W
+Com=Rf Ws
+Orig=PodWR DpCtrldW Rfe PodRW PodWW Wse
+{
+}
+ P0               | P1       ;
+ w[] x 2          | r[] r0 z ;
+ r[] r0 y         | w[] a 1  ;
+ mov r1 (eq r0 0) | w[] x 1  ;
+ b[] r1 LC00      | r[] r1 x ;
+ LC00:            |          ;
+ w[] z 1          |          ;
+exists
+(1:r1=2 /\ 1:r0=1)

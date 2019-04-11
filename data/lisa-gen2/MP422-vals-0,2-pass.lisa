@@ -1,0 +1,20 @@
+LISA MP422
+"PodWR PodRW Rfe DpCtrlsR PodRR Fre"
+Cycle=Rfe DpCtrlsR PodRR Fre PodWR PodRW
+Relax=Rfe PodWR PodRW PodRR DpCtrlsR
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=T
+Com=Rf Fr
+Orig=PodWR PodRW Rfe DpCtrlsR PodRR Fre
+{
+}
+ P0       | P1               ;
+ w[] x 1  | r[] r0 z         ;
+ r[] r0 y | mov r1 (eq r0 0) ;
+ w[] z 1  | b[] r1 LC00      ;
+          | LC00:            ;
+          | r[] r2 z         ;
+          | r[] r3 x         ;
+exists
+(1:r0=1 /\ 1:r3=0)

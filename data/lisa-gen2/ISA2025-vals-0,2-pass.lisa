@@ -1,0 +1,20 @@
+LISA ISA2025
+"PodWW Rfe DpAddrdW Rfe DpCtrlsR Fre"
+Cycle=Rfe DpAddrdW Rfe DpCtrlsR Fre PodWW
+Relax=Rfe PodWW DpAddrdW DpCtrlsR
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf Fr
+Orig=PodWW Rfe DpAddrdW Rfe DpCtrlsR Fre
+{
+}
+ P0      | P1                 | P2               ;
+ w[] x 2 | r[] r0 y           | r[] r0 x         ;
+ w[] y 1 | mov r1 (xor r0 r0) | mov r1 (eq r0 0) ;
+         | w[] x+r1 1         | b[] r1 LC00      ;
+         |                    | LC00:            ;
+         |                    | r[] r2 x         ;
+         |                    | r[] r3 x         ;
+exists
+(1:r0=1 /\ 2:r3=2 /\ 2:r0=1 /\ 2:r2=1)

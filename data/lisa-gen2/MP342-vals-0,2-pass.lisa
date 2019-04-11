@@ -1,0 +1,19 @@
+LISA MP342
+"PodWW Rfe PosRR PosRR DpAddrdR Fre"
+Cycle=Rfe PosRR PosRR DpAddrdR Fre PodWW
+Relax=Rfe PosRR PodWW DpAddrdR
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Rf Fr
+Orig=PodWW Rfe PosRR PosRR DpAddrdR Fre
+{
+}
+ P0      | P1                 ;
+ w[] x 1 | r[] r0 y           ;
+ w[] y 1 | r[] r1 y           ;
+         | r[] r2 y           ;
+         | mov r3 (xor r2 r2) ;
+         | r[] r4 x+r3        ;
+exists
+(1:r0=1 /\ 1:r4=0)

@@ -1,0 +1,18 @@
+LISA SB051
+"PodWR DpAddrsR Fre PodWR PosRR Fre"
+Cycle=Fre PodWR PosRR Fre PodWR DpAddrsR
+Relax=PosRR PodWR DpAddrsR
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=T,1:y=F,1:x=T
+Com=Fr Fr
+Orig=PodWR DpAddrsR Fre PodWR PosRR Fre
+{
+}
+ P0                 | P1       ;
+ w[] x 1            | w[] y 1  ;
+ r[] r0 y           | r[] r0 x ;
+ mov r1 (xor r0 r0) | r[] r1 x ;
+ r[] r2 y+r1        |          ;
+exists
+(0:r2=0 /\ 1:r1=0)

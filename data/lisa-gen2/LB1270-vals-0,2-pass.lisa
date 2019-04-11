@@ -1,0 +1,20 @@
+LISA LB1270
+"DpCtrldW Wsi Rfe PosRR DpCtrldW Rfe"
+Cycle=Rfe PosRR DpCtrldW Rfe DpCtrldW Wsi
+Relax=Rfe PosRR DpCtrldW
+Safe=Wsi
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpCtrldW Wsi Rfe PosRR DpCtrldW Rfe
+{
+}
+ P0               | P1               ;
+ r[] r0 x         | r[] r0 y         ;
+ mov r1 (eq r0 0) | r[] r1 y         ;
+ b[] r1 LC00      | mov r2 (eq r1 0) ;
+ LC00:            | b[] r2 LC01      ;
+ w[] y 1          | LC01:            ;
+ w[] y 2          | w[] x 1          ;
+exists
+(0:r0=1 /\ 1:r0=2)

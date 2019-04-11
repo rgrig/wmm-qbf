@@ -1,0 +1,22 @@
+LISA 2+2W100
+"PodWW Wse PodWR DpCtrlsR Fri Wse"
+Cycle=Fri Wse PodWW Wse PodWR DpCtrlsR
+Relax=PodWW PodWR DpCtrlsR
+Safe=Fri Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Ws Ws
+Orig=PodWW Wse PodWR DpCtrlsR Fri Wse
+{
+}
+ P0       | P1               ;
+ w[] x 2  | w[] y 2          ;
+ w[] y 1  | r[] r0 x         ;
+ r[] r0 y | mov r1 (eq r0 0) ;
+          | b[] r1 LC00      ;
+          | LC00:            ;
+          | r[] r2 x         ;
+          | w[] x 1          ;
+          | r[] r3 x         ;
+exists
+(0:r0=2 /\ 1:r3=2 /\ 1:r2=0)

@@ -1,0 +1,22 @@
+LISA LB850
+"DpAddrdW Rfe DpCtrlsR PosRR DpAddrdW Rfe"
+Cycle=Rfe DpAddrdW Rfe DpCtrlsR PosRR DpAddrdW
+Relax=Rfe PosRR DpAddrdW DpCtrlsR
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpAddrdW Rfe DpCtrlsR PosRR DpAddrdW Rfe
+{
+}
+ P0                 | P1                 ;
+ r[] r0 x           | r[] r0 y           ;
+ mov r1 (xor r0 r0) | mov r1 (eq r0 0)   ;
+ w[] y+r1 1         | b[] r1 LC00        ;
+                    | LC00:              ;
+                    | r[] r2 y           ;
+                    | r[] r3 y           ;
+                    | mov r4 (xor r3 r3) ;
+                    | w[] x+r4 1         ;
+exists
+(0:r0=1 /\ 1:r0=1)

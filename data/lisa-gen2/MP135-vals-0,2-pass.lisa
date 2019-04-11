@@ -1,0 +1,20 @@
+LISA MP135
+"Rfi DpDatadW PodWW Rfe DpAddrdR Fre"
+Cycle=Rfi DpDatadW PodWW Rfe DpAddrdR Fre
+Relax=Rfi Rfe PodWW DpAddrdR DpDatadW
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=T
+Com=Rf Fr
+Orig=Rfi DpDatadW PodWW Rfe DpAddrdR Fre
+{
+}
+ P0                 | P1                 ;
+ w[] x 1            | r[] r0 z           ;
+ r[] r0 x           | mov r1 (xor r0 r0) ;
+ mov r1 (xor r0 r0) | r[] r2 x+r1        ;
+ mov r1 (add r1 1)  |                    ;
+ w[] y r1           |                    ;
+ w[] z 1            |                    ;
+exists
+(0:r0=1 /\ 1:r0=1 /\ 1:r2=0)

@@ -1,0 +1,20 @@
+LISA LB560
+"PodRW Rfe DpCtrldR Fri Rfe"
+Cycle=Rfe PodRW Rfe DpCtrldR Fri
+Relax=Rfe PodRW DpCtrldR
+Safe=Fri
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=PodRW Rfe DpCtrldR Fri Rfe
+{
+}
+ P0       | P1               ;
+ r[] r0 x | r[] r0 y         ;
+ w[] y 1  | mov r1 (eq r0 0) ;
+          | b[] r1 LC00      ;
+          | LC00:            ;
+          | r[] r2 x         ;
+          | w[] x 1          ;
+exists
+(0:r0=1 /\ 1:r0=1 /\ 1:r2=0)

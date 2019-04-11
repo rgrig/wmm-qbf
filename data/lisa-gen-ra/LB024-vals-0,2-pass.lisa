@@ -1,0 +1,18 @@
+LISA LB024
+"FenceRel_acqdRW Rfe DpDatadW Rfe"
+Cycle=Rfe FenceRel_acqdRW Rfe DpDatadW
+Relax=Rfe FenceRel_acqdRW DpDatadW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=FenceRel_acqdRW Rfe DpDatadW Rfe
+{
+}
+ P0         | P1                 ;
+ r[] r0 x   | r[] r0 y           ;
+ f[rel_acq] | mov r1 (xor r0 r0) ;
+ w[] y 1    | mov r1 (add r1 1)  ;
+            | w[] x r1           ;
+exists
+(0:r0=1 /\ 1:r0=1)

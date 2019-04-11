@@ -1,0 +1,20 @@
+LISA R123
+"PodWR DpAddrdW PodWW Wse PodWR Fre"
+Cycle=Fre PodWR DpAddrdW PodWW Wse PodWR
+Relax=PodWW PodWR DpAddrdW
+Safe=Fre Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:a=W,1:a=F,1:x=T
+Com=Ws Fr
+Orig=PodWR DpAddrdW PodWW Wse PodWR Fre
+{
+}
+ P0                 | P1       ;
+ w[] x 1            | w[] a 2  ;
+ r[] r0 y           | r[] r0 x ;
+ mov r1 (xor r0 r0) |          ;
+ w[] z+r1 1         |          ;
+ w[] a 1            |          ;
+ r[] r2 a           |          ;
+exists
+(0:r2=2 /\ 1:r0=0)

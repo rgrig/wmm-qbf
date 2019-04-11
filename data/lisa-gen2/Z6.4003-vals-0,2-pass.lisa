@@ -1,0 +1,17 @@
+LISA Z6.4003
+"Wsi Wse PodWR Fre PodWR Fre"
+Cycle=Fre Wsi Wse PodWR Fre PodWR
+Relax=PodWR
+Safe=Fre Wsi Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=1:x=F,1:y=T,2:y=F,2:x=T
+Com=Ws Fr Fr
+Orig=Wsi Wse PodWR Fre PodWR Fre
+{
+}
+ P0       | P1       | P2       ;
+ w[] x 1  | w[] x 3  | w[] y 1  ;
+ w[] x 2  | r[] r0 y | r[] r0 x ;
+ r[] r0 x |          |          ;
+exists
+(0:r0=3 /\ 1:r0=0 /\ 2:r0=0)

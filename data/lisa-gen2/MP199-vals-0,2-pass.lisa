@@ -1,0 +1,18 @@
+LISA MP199
+"PodWW PodWW Rfe DpAddrsR PodRR Fre"
+Cycle=Rfe DpAddrsR PodRR Fre PodWW PodWW
+Relax=Rfe PodWW PodRR DpAddrsR
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=T
+Com=Rf Fr
+Orig=PodWW PodWW Rfe DpAddrsR PodRR Fre
+{
+}
+ P0      | P1                 ;
+ w[] x 1 | r[] r0 z           ;
+ w[] y 1 | mov r1 (xor r0 r0) ;
+ w[] z 1 | r[] r2 z+r1        ;
+         | r[] r3 x           ;
+exists
+(1:r0=1 /\ 1:r3=0)

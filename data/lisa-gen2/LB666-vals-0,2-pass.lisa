@@ -1,0 +1,19 @@
+LISA LB666
+"DpDatadW Rfe DpAddrsR PodRR PodRW Rfe"
+Cycle=Rfe DpAddrsR PodRR PodRW Rfe DpDatadW
+Relax=Rfe PodRW PodRR DpAddrsR DpDatadW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpDatadW Rfe DpAddrsR PodRR PodRW Rfe
+{
+}
+ P0                 | P1                 ;
+ r[] r0 x           | r[] r0 y           ;
+ mov r1 (xor r0 r0) | mov r1 (xor r0 r0) ;
+ mov r1 (add r1 1)  | r[] r2 y+r1        ;
+ w[] y r1           | r[] r3 z           ;
+                    | w[] x 1            ;
+exists
+(0:r0=1 /\ 1:r0=1)

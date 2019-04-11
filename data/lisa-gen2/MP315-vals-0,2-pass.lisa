@@ -1,0 +1,19 @@
+LISA MP315
+"PodWW Rfe PosRR DpAddrdR PodRR Fre"
+Cycle=Rfe PosRR DpAddrdR PodRR Fre PodWW
+Relax=Rfe PosRR PodWW PodRR DpAddrdR
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Rf Fr
+Orig=PodWW Rfe PosRR DpAddrdR PodRR Fre
+{
+}
+ P0      | P1                 ;
+ w[] x 1 | r[] r0 y           ;
+ w[] y 1 | r[] r1 y           ;
+         | mov r2 (xor r1 r1) ;
+         | r[] r3 z+r2        ;
+         | r[] r4 x           ;
+exists
+(1:r0=1 /\ 1:r4=0)

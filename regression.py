@@ -51,27 +51,15 @@ def get_passthrough_args(args):
     return []
 
 TESTS = get_suite(argv, get_skip(argv, [
-    ("data/mark-sc-tests", "cat-cpp", "so"),
-
-    ("data/jctc-lisa", "j+r-so", "so"),
-    ("data/jctc-lisa", "j+r-so", "qbf"),
-
-    ("data/ra", "cat-ra", "qbf"),
-    ("data/jctc-lisa", "cat-ra", "qbf"),
-
-    ("data/sc", "cat-sc", "qbf"),
-    ("data/jctc-lisa", "cat-sc", "qbf"),
-
-    ("data/rc11simplermw", "rc11-simple", "so"),
-    ("data/rc11simple", "rc11-simple", "so"),
-
-
-    ("data/cpp-na", "cat-cpp-na", "qbf"),
-    ("data/cpp-rlx", "cat-cpp-rlx", "qbf"),
-    ("data/cpp-ra", "cat-cpp-ra", "qbf"),
-    ("data/cpp-sc", "cat-cpp-sc", "qbf"),
-#    ("data/mark-sc-tests", "cat-sc", "so"),
-#    ("data/store_buffer", "cat-sc", "so")
+    ("data/jctc-lisa", "j+r-so", "so", ["--so-solver-opt", "-x"]),
+    ("data/lisa-gen2/", "rc11-simple", "so", []),
+    ("data/lisa-gen-ra/", "rc11-simple", "so", []),
+    ("data/ra", "cat-ra", "so", []),
+    ("data/sc", "cat-sc", "so", []),
+    ("data/rc11simplermw", "rc11-simple", "so", []),
+    ("data/rc11simple", "rc11-simple", "so", []),
+    ("data/mark-sc-tests", "cat-sc", "so", []),
+    ("data/store_buffer", "cat-sc", "so", [])
 ]))
 
 if "--list-suites" in argv:
@@ -120,7 +108,7 @@ def interrupt(signal, frame):
 signal.signal(signal.SIGINT, interrupt)
 
 
-for directory, model, solver in TESTS:
+for directory, model, solver, opts in TESTS:
     files = [path for path in listdir(directory) if (isfile(join(directory, path)) and (".es" in path or ".lisa" in path))]
     files = natsorted(files)
     for test in files:
@@ -135,6 +123,8 @@ for directory, model, solver in TESTS:
                 low = int(vals[1].split(',')[0]) or 0
                 high = int(vals[1].split(',')[1]) or 1
                 sys.stdout.write("{:6s}: {:20s} {:3s} {:d}-{:d}     {}\r".format("...", model, solver, low, high, join(directory, test)))
+            if opts is not None:
+                aditional_args += opts
             command = [PRIDE_BIN, "--model", model, join(directory, test), "--solver", solver] + vals + aditional_args
             if False:
               print('COMMAND:',command)

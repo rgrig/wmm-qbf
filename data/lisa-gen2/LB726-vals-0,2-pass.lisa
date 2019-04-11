@@ -1,0 +1,19 @@
+LISA LB726
+"DpCtrldW Rfe PosRR DpAddrdR PodRW Rfe"
+Cycle=Rfe PosRR DpAddrdR PodRW Rfe DpCtrldW
+Relax=Rfe PosRR PodRW DpAddrdR DpCtrldW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpCtrldW Rfe PosRR DpAddrdR PodRW Rfe
+{
+}
+ P0               | P1                 ;
+ r[] r0 x         | r[] r0 y           ;
+ mov r1 (eq r0 0) | r[] r1 y           ;
+ b[] r1 LC00      | mov r2 (xor r1 r1) ;
+ LC00:            | r[] r3 z+r2        ;
+ w[] y 1          | w[] x 1            ;
+exists
+(0:r0=1 /\ 1:r0=1)

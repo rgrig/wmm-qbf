@@ -1,0 +1,18 @@
+LISA Z6.2046
+"PodWW Rfe DpDatadW Rfe Fri Wse"
+Cycle=Rfe Fri Wse PodWW Rfe DpDatadW
+Relax=Rfe PodWW DpDatadW
+Safe=Fri Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf Ws
+Orig=PodWW Rfe DpDatadW Rfe Fri Wse
+{
+}
+ P0      | P1                 | P2       ;
+ w[] x 3 | r[] r0 y           | r[] r0 x ;
+ w[] y 1 | mov r1 (xor r0 r0) | w[] x 2  ;
+         | mov r1 (add r1 1)  | r[] r1 x ;
+         | w[] x r1           |          ;
+exists
+(1:r0=1 /\ 2:r1=3 /\ 2:r0=1)

@@ -1,0 +1,20 @@
+LISA LB125
+"DpAddrdW Rfe DpDatadW PodWW PodWW Rfe"
+Cycle=Rfe DpAddrdW Rfe DpDatadW PodWW PodWW
+Relax=Rfe PodWW DpAddrdW DpDatadW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpAddrdW Rfe DpDatadW PodWW PodWW Rfe
+{
+}
+ P0                 | P1                 ;
+ r[] r0 x           | r[] r0 y           ;
+ mov r1 (xor r0 r0) | mov r1 (xor r0 r0) ;
+ w[] y+r1 1         | mov r1 (add r1 1)  ;
+                    | w[] z r1           ;
+                    | w[] a 1            ;
+                    | w[] x 1            ;
+exists
+(0:r0=1 /\ 1:r0=1)

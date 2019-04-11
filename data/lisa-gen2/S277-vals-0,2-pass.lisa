@@ -1,0 +1,19 @@
+LISA S277
+"PodWW Rfe PosRR PosRR PodRW Wse"
+Cycle=Rfe PosRR PosRR PodRW Wse PodWW
+Relax=Rfe PosRR PodWW PodRW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Ws
+Orig=PodWW Rfe PosRR PosRR PodRW Wse
+{
+}
+ P0      | P1       ;
+ w[] x 2 | r[] r0 y ;
+ w[] y 1 | r[] r1 y ;
+         | r[] r2 y ;
+         | w[] x 1  ;
+         | r[] r3 x ;
+exists
+(1:r3=2 /\ 1:r0=1)

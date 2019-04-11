@@ -1,0 +1,22 @@
+LISA R175
+"PodWR DpCtrldR PodRW Wse PodWR Fre"
+Cycle=Fre PodWR DpCtrldR PodRW Wse PodWR
+Relax=PodWR PodRW DpCtrldR
+Safe=Fre Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:a=W,1:a=F,1:x=T
+Com=Ws Fr
+Orig=PodWR DpCtrldR PodRW Wse PodWR Fre
+{
+}
+ P0               | P1       ;
+ w[] x 1          | w[] a 2  ;
+ r[] r0 y         | r[] r0 x ;
+ mov r1 (eq r0 0) |          ;
+ b[] r1 LC00      |          ;
+ LC00:            |          ;
+ r[] r2 z         |          ;
+ w[] a 1          |          ;
+ r[] r3 a         |          ;
+exists
+(0:r3=2 /\ 1:r0=0)

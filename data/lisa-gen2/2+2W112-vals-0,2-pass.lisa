@@ -1,0 +1,20 @@
+LISA 2+2W112
+"PodWR DpDatadW Wse PodWR PodRW Wse"
+Cycle=Wse PodWR PodRW Wse PodWR DpDatadW
+Relax=PodWR PodRW DpDatadW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=W
+Com=Ws Ws
+Orig=PodWR DpDatadW Wse PodWR PodRW Wse
+{
+}
+ P0                 | P1       ;
+ w[] x 2            | w[] z 2  ;
+ r[] r0 y           | r[] r0 a ;
+ mov r1 (xor r0 r0) | w[] x 1  ;
+ mov r1 (add r1 1)  | r[] r1 x ;
+ w[] z r1           |          ;
+ r[] r2 z           |          ;
+exists
+(0:r2=2 /\ 1:r1=2)

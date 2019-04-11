@@ -1,0 +1,21 @@
+LISA 2+2W032
+"Rfi DpCtrldW Wse PodWR DpAddrdW Wse"
+Cycle=Rfi DpCtrldW Wse PodWR DpAddrdW Wse
+Relax=Rfi PodWR DpAddrdW DpCtrldW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Ws Ws
+Orig=Rfi DpCtrldW Wse PodWR DpAddrdW Wse
+{
+}
+ P0               | P1                 ;
+ w[] x 2          | w[] y 2            ;
+ r[] r0 x         | r[] r0 z           ;
+ mov r1 (eq r0 0) | mov r1 (xor r0 r0) ;
+ b[] r1 LC00      | w[] x+r1 1         ;
+ LC00:            | r[] r2 x           ;
+ w[] y 1          |                    ;
+ r[] r2 y         |                    ;
+exists
+(0:r2=2 /\ 0:r0=2 /\ 1:r2=2)

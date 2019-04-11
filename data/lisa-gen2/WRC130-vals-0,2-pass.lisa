@@ -1,0 +1,18 @@
+LISA WRC130
+"Rfe DpDatadW Rfe PodRR DpAddrsR Fre"
+Cycle=Rfe PodRR DpAddrsR Fre Rfe DpDatadW
+Relax=Rfe PodRR DpAddrsR DpDatadW
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=1:x=F,1:y=W,2:y=F,2:x=T
+Com=Rf Rf Fr
+Orig=Rfe DpDatadW Rfe PodRR DpAddrsR Fre
+{
+}
+ P0      | P1                 | P2                 ;
+ w[] x 1 | r[] r0 x           | r[] r0 y           ;
+         | mov r1 (xor r0 r0) | r[] r1 x           ;
+         | mov r1 (add r1 1)  | mov r2 (xor r1 r1) ;
+         | w[] y r1           | r[] r3 x+r2        ;
+exists
+(1:r0=1 /\ 2:r0=1 /\ 2:r3=0)

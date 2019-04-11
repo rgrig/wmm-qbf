@@ -1,0 +1,19 @@
+LISA R137
+"PodWW PodWR PodRW Wse PodWR Fre"
+Cycle=Fre PodWW PodWR PodRW Wse PodWR
+Relax=PodWW PodWR PodRW
+Safe=Fre Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:a=W,1:a=F,1:x=T
+Com=Ws Fr
+Orig=PodWW PodWR PodRW Wse PodWR Fre
+{
+}
+ P0       | P1       ;
+ w[] x 1  | w[] a 2  ;
+ w[] y 1  | r[] r0 x ;
+ r[] r0 z |          ;
+ w[] a 1  |          ;
+ r[] r1 a |          ;
+exists
+(0:r1=2 /\ 1:r0=0)

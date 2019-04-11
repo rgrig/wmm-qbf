@@ -1,0 +1,23 @@
+LISA MP369
+"PodWW Rfe DpDatadW PodWR DpCtrlsR Fre"
+Cycle=Rfe DpDatadW PodWR DpCtrlsR Fre PodWW
+Relax=Rfe PodWW PodWR DpDatadW DpCtrlsR
+Safe=Fre
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=T
+Com=Rf Fr
+Orig=PodWW Rfe DpDatadW PodWR DpCtrlsR Fre
+{
+}
+ P0      | P1                 ;
+ w[] x 1 | r[] r0 y           ;
+ w[] y 1 | mov r1 (xor r0 r0) ;
+         | mov r1 (add r1 1)  ;
+         | w[] z r1           ;
+         | r[] r2 x           ;
+         | mov r3 (eq r2 0)   ;
+         | b[] r3 LC00        ;
+         | LC00:              ;
+         | r[] r4 x           ;
+exists
+(1:r0=1 /\ 1:r4=0)

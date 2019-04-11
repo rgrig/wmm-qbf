@@ -1,0 +1,18 @@
+LISA S020
+"FenceReldWW Rfe FenceScdRW Wse"
+Cycle=Rfe FenceScdRW Wse FenceReldWW
+Relax=Rfe FenceReldWW FenceScdRW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Ws
+Orig=FenceReldWW Rfe FenceScdRW Wse
+{
+}
+ P0      | P1       ;
+ w[] x 2 | r[] r0 y ;
+ f[rel]  | f[sc]    ;
+ w[] y 1 | w[] x 1  ;
+         | r[] r1 x ;
+exists
+(1:r1=2 /\ 1:r0=1)

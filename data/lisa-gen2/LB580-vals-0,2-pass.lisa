@@ -1,0 +1,20 @@
+LISA LB580
+"DpCtrldR PodRW Rfe PosRR PodRW Rfe"
+Cycle=Rfe PosRR PodRW Rfe DpCtrldR PodRW
+Relax=Rfe PosRR PodRW DpCtrldR
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=W
+Com=Rf Rf
+Orig=DpCtrldR PodRW Rfe PosRR PodRW Rfe
+{
+}
+ P0               | P1       ;
+ r[] r0 x         | r[] r0 z ;
+ mov r1 (eq r0 0) | r[] r1 z ;
+ b[] r1 LC00      | w[] x 1  ;
+ LC00:            |          ;
+ r[] r2 y         |          ;
+ w[] z 1          |          ;
+exists
+(0:r0=1 /\ 1:r0=1)

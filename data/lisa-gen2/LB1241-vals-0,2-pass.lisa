@@ -1,0 +1,22 @@
+LISA LB1241
+"DpCtrldW Rfe DpAddrdR PodRR DpCtrldW Rfe"
+Cycle=Rfe DpAddrdR PodRR DpCtrldW Rfe DpCtrldW
+Relax=Rfe PodRR DpAddrdR DpCtrldW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpCtrldW Rfe DpAddrdR PodRR DpCtrldW Rfe
+{
+}
+ P0               | P1                 ;
+ r[] r0 x         | r[] r0 y           ;
+ mov r1 (eq r0 0) | mov r1 (xor r0 r0) ;
+ b[] r1 LC00      | r[] r2 z+r1        ;
+ LC00:            | r[] r3 a           ;
+ w[] y 1          | mov r4 (eq r3 0)   ;
+                  | b[] r4 LC01        ;
+                  | LC01:              ;
+                  | w[] x 1            ;
+exists
+(0:r0=1 /\ 1:r0=1)

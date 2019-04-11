@@ -1,0 +1,20 @@
+LISA LB304
+"DpDatadW PodWW Rfe DpCtrldW PodWW Rfe"
+Cycle=Rfe DpDatadW PodWW Rfe DpCtrldW PodWW
+Relax=Rfe PodWW DpDatadW DpCtrldW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=W
+Com=Rf Rf
+Orig=DpDatadW PodWW Rfe DpCtrldW PodWW Rfe
+{
+}
+ P0                 | P1               ;
+ r[] r0 x           | r[] r0 z         ;
+ mov r1 (xor r0 r0) | mov r1 (eq r0 0) ;
+ mov r1 (add r1 1)  | b[] r1 LC00      ;
+ w[] y r1           | LC00:            ;
+ w[] z 1            | w[] a 1          ;
+                    | w[] x 1          ;
+exists
+(0:r0=1 /\ 1:r0=1)

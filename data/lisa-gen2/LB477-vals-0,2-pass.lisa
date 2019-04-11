@@ -1,0 +1,20 @@
+LISA LB477
+"PodRW Rfe PodRR PosRR DpDatasW Rfe"
+Cycle=Rfe PodRW Rfe PodRR PosRR DpDatasW
+Relax=Rfe PosRR PodRW PodRR DpDatasW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=PodRW Rfe PodRR PosRR DpDatasW Rfe
+{
+}
+ P0       | P1                 ;
+ r[] r0 x | r[] r0 y           ;
+ w[] y 1  | r[] r1 x           ;
+          | r[] r2 x           ;
+          | mov r3 (xor r2 r2) ;
+          | mov r3 (add r3 1)  ;
+          | w[] x r3           ;
+exists
+(0:r0=1 /\ 1:r0=1)

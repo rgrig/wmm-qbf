@@ -1,0 +1,20 @@
+LISA LB866
+"DpAddrdW Rfe PodRR PosRR DpDatasW Rfe"
+Cycle=Rfe PodRR PosRR DpDatasW Rfe DpAddrdW
+Relax=Rfe PosRR PodRR DpAddrdW DpDatasW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpAddrdW Rfe PodRR PosRR DpDatasW Rfe
+{
+}
+ P0                 | P1                 ;
+ r[] r0 x           | r[] r0 y           ;
+ mov r1 (xor r0 r0) | r[] r1 x           ;
+ w[] y+r1 1         | r[] r2 x           ;
+                    | mov r3 (xor r2 r2) ;
+                    | mov r3 (add r3 1)  ;
+                    | w[] x r3           ;
+exists
+(0:r0=1 /\ 1:r0=1)

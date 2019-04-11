@@ -1,0 +1,21 @@
+LISA S777
+"PodWR DpCtrldR Fri Rfe DpDatadW Wse"
+Cycle=Rfe DpDatadW Wse PodWR DpCtrldR Fri
+Relax=Rfe PodWR DpDatadW DpCtrldR
+Safe=Fri Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:z=W,1:z=F,1:x=W
+Com=Rf Ws
+Orig=PodWR DpCtrldR Fri Rfe DpDatadW Wse
+{
+}
+ P0               | P1                 ;
+ w[] x 2          | r[] r0 z           ;
+ r[] r0 y         | mov r1 (xor r0 r0) ;
+ mov r1 (eq r0 0) | mov r1 (add r1 1)  ;
+ b[] r1 LC00      | w[] x r1           ;
+ LC00:            | r[] r2 x           ;
+ r[] r2 z         |                    ;
+ w[] z 1          |                    ;
+exists
+(0:r2=0 /\ 1:r2=2 /\ 1:r0=1)

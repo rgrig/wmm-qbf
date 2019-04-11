@@ -1,0 +1,20 @@
+LISA RR+RW232
+"DpAddrdR Hat DpDatasW PodWW PodWW Rfe"
+Cycle=Hat DpDatasW PodWW PodWW Rfe DpAddrdR
+Relax=Hat Rfe PodWW DpAddrdR DpDatasW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=T,1:y=F,1:x=W
+Com=Fr Rf
+Orig=DpAddrdR Hat DpDatasW PodWW PodWW Rfe
+{
+}
+ P0                 | P1                 ;
+ r[] r0 x           | r[] r0 y           ;
+ mov r1 (xor r0 r0) | mov r1 (xor r0 r0) ;
+ r[] r2 y+r1        | mov r1 (add r1 1)  ;
+                    | w[] y r1           ;
+                    | w[] z 1            ;
+                    | w[] x 1            ;
+exists
+(0:r0=1 /\ 0:r2=0 /\ 1:r0=0)

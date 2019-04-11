@@ -1,0 +1,19 @@
+LISA LB178
+"DpCtrldW Rfe DpAddrsR PodRW PodWW Rfe"
+Cycle=Rfe DpAddrsR PodRW PodWW Rfe DpCtrldW
+Relax=Rfe PodWW PodRW DpAddrsR DpCtrldW
+Safe=
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Rf
+Orig=DpCtrldW Rfe DpAddrsR PodRW PodWW Rfe
+{
+}
+ P0               | P1                 ;
+ r[] r0 x         | r[] r0 y           ;
+ mov r1 (eq r0 0) | mov r1 (xor r0 r0) ;
+ b[] r1 LC00      | r[] r2 y+r1        ;
+ LC00:            | w[] z 1            ;
+ w[] y 1          | w[] x 1            ;
+exists
+(0:r0=1 /\ 1:r0=1)

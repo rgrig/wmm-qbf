@@ -1,0 +1,20 @@
+LISA S517
+"PodWR DpAddrsW Rfe DpDatadW PodWW Wse"
+Cycle=Rfe DpDatadW PodWW Wse PodWR DpAddrsW
+Relax=Rfe PodWW PodWR DpAddrsW DpDatadW
+Safe=Wse
+Generator=diy.native (version 7.52+5(dev))
+Prefetch=0:x=F,0:y=W,1:y=F,1:x=W
+Com=Rf Ws
+Orig=PodWR DpAddrsW Rfe DpDatadW PodWW Wse
+{
+}
+ P0                 | P1                 ;
+ w[] x 2            | r[] r0 y           ;
+ r[] r0 y           | mov r1 (xor r0 r0) ;
+ mov r1 (xor r0 r0) | mov r1 (add r1 1)  ;
+ w[] y+r1 1         | w[] z r1           ;
+                    | w[] x 1            ;
+                    | r[] r2 x           ;
+exists
+(1:r2=2 /\ 1:r0=1)
