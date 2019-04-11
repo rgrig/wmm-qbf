@@ -266,5 +266,5 @@ let call_solver options parse p =
   Printf.printf "%s\n" out;
   parse out
 
-let holds = call_solver [|"-g"|] Results.parse_answer
+let holds = call_solver [||] Results.parse_answer
 let models p = call_solver [|"-a"; "-i"; "64"; "-e"|] Results.parse_models p

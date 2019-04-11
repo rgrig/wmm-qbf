@@ -380,6 +380,7 @@ let simple_rc11_formula accept =
       ; CatCommon.rf_constrain goal rf
       ; CatCommon.co_constrain goal co
       ; SoOps.transitive co
+        (* TODO: the above probably needs moving in CatCommon. Test SC model! *)
       ; SO.Or
         [ CatCommon.goal_constrain accept goal_id
         ; racy_axiom ] ]

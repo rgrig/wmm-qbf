@@ -95,7 +95,7 @@ let maximal c =
 
 let do_decide es accept =
   let size = es.E.events_number in
-  let x = mk_fresh_sv () in
+  let x = mk_fresh_sv ~prefix:"empty" () in
   let y = mk_fresh_sv ~prefix:"execution" () in
   let f =
     SoAny (x, 1,
