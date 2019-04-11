@@ -3,6 +3,18 @@
 This tool is designed to evaluate instances of Event Structure Memory
 models to QBF queries.
 
+## Running the tool
+
+We have included binaries for running on Linux. You can most easily
+run the program by sourcing the `setenv` script to include the solver
+on your $PATH; followed by running the `./regression.py` script.
+
+```
+pip3 install natsort # Required by regression.py
+. setenv
+./regression.py
+```
+
 ## Dependencies
 
   OCaml 4.04
