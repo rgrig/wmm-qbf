@@ -15,6 +15,9 @@ pip3 install natsort # Required by regression.py
 ./regression.py
 ```
 
+Note that JCTC 3, 7, and 11 report failures under the J+R model. This
+is expected and replicates the result of the original paper.
+
 ## Dependencies
 
   OCaml 4.04
